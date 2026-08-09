@@ -17,6 +17,7 @@
     "build": "webpack --config webpack.config.prod.js",
     "start": "node server/index.js",
     "seed": "node server/db/seed.js",
+    "set-password": "node server/db/setPassword.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {
