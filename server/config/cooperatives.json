@@ -1,0 +1,9 @@
+[
+  { "name": "Cooperativa de Caficultores de Manizales", "region": "Caldas", "differentialPct": 0.02 },
+  { "name": "Cooperativa de Caficultores de Antioquia", "region": "Antioquia", "differentialPct": -0.01 },
+  { "name": "Cooperativa Departamental de Caficultores del Huila", "region": "Huila", "differentialPct": 0.035 },
+  { "name": "Cooperativa de Caficultores de Pitalito", "region": "Huila", "differentialPct": 0.015 },
+  { "name": "Cootolima (Cooperativa de Caficultores del Tolima)", "region": "Tolima", "differentialPct": -0.02 },
+  { "name": "Cooperativa de Caficultores de Nariño", "region": "Nariño", "differentialPct": 0.01 },
+  { "name": "Cooperativa de Caficultores del Cauca", "region": "Cauca", "differentialPct": -0.005 }
+]

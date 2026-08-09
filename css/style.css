@@ -1,0 +1,781 @@
+/*! HTML5 Boilerplate v9.0.1 | MIT License | https://html5boilerplate.com/ */
+
+/* main.css 3.0.0 | MIT License | https://github.com/h5bp/main.css#readme */
+/*
+ * What follows is the result of much research on cross-browser styling.
+ * Credit left inline and big thanks to Nicolas Gallagher, Jonathan Neal,
+ * Kroc Camen, and the H5BP dev community and team.
+ */
+
+/* ==========================================================================
+   Base styles: opinionated defaults
+   ========================================================================== */
+
+html {
+  color: #222;
+  font-size: 1em;
+  line-height: 1.4;
+}
+
+/*
+ * Remove text-shadow in selection highlight:
+ * https://twitter.com/miketaylr/status/12228805301
+ *
+ * Customize the background color to match your design.
+ */
+
+::-moz-selection {
+  background: #b3d4fc;
+  text-shadow: none;
+}
+
+::selection {
+  background: #b3d4fc;
+  text-shadow: none;
+}
+
+/*
+ * A better looking default horizontal rule
+ */
+
+hr {
+  display: block;
+  height: 1px;
+  border: 0;
+  border-top: 1px solid #ccc;
+  margin: 1em 0;
+  padding: 0;
+}
+
+/*
+ * Remove the gap between audio, canvas, iframes,
+ * images, videos and the bottom of their containers:
+ * https://github.com/h5bp/html5-boilerplate/issues/440
+ */
+
+audio,
+canvas,
+iframe,
+img,
+svg,
+video {
+  vertical-align: middle;
+}
+
+/*
+ * Remove default fieldset styles.
+ */
+
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * Allow only vertical resizing of textareas.
+ */
+
+textarea {
+  resize: vertical;
+}
+
+/* ==========================================================================
+   Author's custom styles
+   ========================================================================== */
+
+:root {
+  --av-bg: #020617;
+  --av-surface: #0f172a;
+  --av-surface-alt: #1e293b;
+  --av-muted-bg: #1a1e2f;
+  --av-border: #334155;
+  --av-fg: #f8fafc;
+  --av-fg-muted: #94a3b8;
+  --av-accent: #22c55e;
+  --av-accent-strong: #16a34a;
+  --av-accent-soft: rgba(34, 197, 94, 0.14);
+  --av-warning: #f59e0b;
+  --av-warning-soft: rgba(245, 158, 11, 0.14);
+  --av-danger: #ef4444;
+  --av-danger-soft: rgba(239, 68, 68, 0.14);
+  --av-chart-line: #38bdf8;
+
+  --av-radius-sm: 8px;
+  --av-radius-md: 12px;
+  --av-radius-lg: 16px;
+
+  --av-space-1: 4px;
+  --av-space-2: 8px;
+  --av-space-3: 16px;
+  --av-space-4: 24px;
+  --av-space-5: 32px;
+  --av-space-6: 48px;
+
+  --av-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --av-duration: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --av-duration: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--av-bg);
+  color: var(--av-fg);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+a {
+  color: var(--av-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--av-accent);
+  outline-offset: 2px;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes av-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes av-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.av-fade-in {
+  animation: av-fade-up 420ms var(--av-ease-out) both;
+  animation-delay: var(--av-delay, 0ms);
+}
+
+.skeleton {
+  display: inline-block;
+  border-radius: var(--av-radius-sm);
+  background: var(--av-muted-bg);
+  animation: av-pulse 1.4s ease-in-out infinite;
+}
+
+/* Brand mark */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--av-space-2);
+}
+
+.brand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--av-radius-sm);
+  background: var(--av-accent-soft);
+  color: var(--av-accent);
+  flex-shrink: 0;
+}
+
+.brand-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Login */
+
+.login-screen {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--av-space-3);
+  background:
+    radial-gradient(circle at 15% 15%, rgba(34, 197, 94, 0.08), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(56, 189, 248, 0.06), transparent 45%),
+    var(--av-bg);
+}
+
+.login-card {
+  background: var(--av-surface);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-lg);
+  padding: var(--av-space-5);
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5);
+  animation: av-fade-up 420ms var(--av-ease-out) both;
+}
+
+.login-card .brand {
+  margin-bottom: var(--av-space-4);
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--av-fg);
+}
+
+.login-subtitle {
+  margin: var(--av-space-1) 0 var(--av-space-4);
+  color: var(--av-fg-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.login-card label {
+  display: block;
+  margin: var(--av-space-3) 0 var(--av-space-1);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--av-fg-muted);
+}
+
+.login-card input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.7rem 0.85rem;
+  background: var(--av-muted-bg);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-sm);
+  color: var(--av-fg);
+  font-size: 1rem;
+  transition: border-color var(--av-duration) var(--av-ease-out), box-shadow var(--av-duration) var(--av-ease-out);
+}
+
+.login-card input:hover {
+  border-color: #475569;
+}
+
+.login-card input:focus-visible {
+  border-color: var(--av-accent);
+  box-shadow: 0 0 0 3px var(--av-accent-soft);
+}
+
+.login-card button {
+  margin-top: var(--av-space-4);
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  border-radius: var(--av-radius-sm);
+  background: var(--av-accent);
+  color: #052e16;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--av-duration) var(--av-ease-out), transform var(--av-duration) var(--av-ease-out);
+}
+
+.login-card button:hover {
+  background: var(--av-accent-strong);
+}
+
+.login-card button:active {
+  transform: scale(0.97);
+}
+
+.login-error {
+  color: #fca5a5;
+  background: var(--av-danger-soft);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: var(--av-radius-sm);
+  padding: var(--av-space-2) var(--av-space-3);
+  margin-top: var(--av-space-3);
+  font-size: 0.85rem;
+}
+
+/* Dashboard */
+
+.dashboard-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--av-space-3) var(--av-space-4);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--av-border);
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.dashboard-user {
+  display: flex;
+  align-items: center;
+  gap: var(--av-space-3);
+  font-size: 0.9rem;
+  color: var(--av-fg-muted);
+}
+
+.dashboard-user button {
+  min-height: 44px;
+  padding: 0 var(--av-space-3);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-sm);
+  background: transparent;
+  color: var(--av-fg);
+  cursor: pointer;
+  transition: background var(--av-duration) var(--av-ease-out), border-color var(--av-duration) var(--av-ease-out);
+}
+
+.dashboard-user button:hover {
+  background: var(--av-surface-alt);
+  border-color: #475569;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--av-space-4);
+  padding: var(--av-space-4);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    padding: var(--av-space-5);
+    gap: var(--av-space-5);
+  }
+}
+
+.dashboard-grid .span-2 {
+  grid-column: 1 / -1;
+}
+
+.panel {
+  background: var(--av-surface);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-lg);
+  padding: var(--av-space-4);
+  transition: border-color var(--av-duration) var(--av-ease-out);
+}
+
+.panel:hover {
+  border-color: #475569;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--av-space-2);
+  justify-content: space-between;
+  margin-bottom: var(--av-space-3);
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.panel-error {
+  color: #fca5a5;
+  font-size: 0.9rem;
+}
+
+.price-current {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--av-space-2);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--av-fg);
+  margin-bottom: var(--av-space-1);
+}
+
+.price-current .price-secondary {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--av-fg-muted);
+}
+
+.price-meta {
+  font-size: 0.8rem;
+  color: var(--av-fg-muted);
+  margin-bottom: var(--av-space-3);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.badge-real {
+  background: var(--av-accent-soft);
+  color: #4ade80;
+}
+
+.badge-simulated {
+  background: var(--av-warning-soft);
+  color: #fbbf24;
+}
+
+.badge-stale {
+  background: var(--av-danger-soft);
+  color: #fca5a5;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin: 0 calc(var(--av-space-4) * -1);
+  padding: 0 var(--av-space-4);
+}
+
+.coop-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.coop-table th {
+  text-align: left;
+  padding: var(--av-space-2) var(--av-space-3);
+  color: var(--av-fg-muted);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--av-border);
+}
+
+.coop-table td {
+  text-align: left;
+  padding: var(--av-space-3);
+  border-bottom: 1px solid var(--av-border);
+  transition: background var(--av-duration) var(--av-ease-out);
+}
+
+.coop-table tbody tr {
+  transition: background var(--av-duration) var(--av-ease-out);
+}
+
+.coop-table tbody tr:hover {
+  background: var(--av-surface-alt);
+}
+
+.coop-table td .cop {
+  display: block;
+}
+
+.coop-table td .usd {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--av-fg-muted);
+}
+
+.row-highest td:first-child {
+  box-shadow: inset 3px 0 0 var(--av-danger);
+}
+
+.row-lowest td:first-child {
+  box-shadow: inset 3px 0 0 var(--av-accent);
+}
+
+.tag {
+  display: inline-block;
+  margin-left: 0.5em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.tag-best {
+  background: var(--av-danger-soft);
+  color: #fca5a5;
+}
+
+.tag-worst {
+  background: var(--av-accent-soft);
+  color: #4ade80;
+}
+
+.disclaimer {
+  margin-top: var(--av-space-3);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--av-fg-muted);
+}
+
+.forecast-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--av-space-3);
+}
+
+.forecast-card {
+  background: var(--av-surface-alt);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-md);
+  padding: var(--av-space-3);
+  text-align: center;
+  transition: transform var(--av-duration) var(--av-ease-out), border-color var(--av-duration) var(--av-ease-out);
+}
+
+.forecast-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--av-accent);
+}
+
+.forecast-card h3 {
+  margin: 0 0 var(--av-space-2);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--av-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.forecast-price {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--av-fg);
+}
+
+.forecast-price-secondary {
+  font-size: 0.85rem;
+  color: var(--av-fg-muted);
+  margin-top: 2px;
+}
+
+.forecast-date {
+  font-size: 0.75rem;
+  color: var(--av-fg-muted);
+  margin-top: var(--av-space-2);
+}
+
+.forecast-model {
+  font-size: 0.68rem;
+  color: var(--av-fg-muted);
+  margin-top: var(--av-space-1);
+}
+
+/* ==========================================================================
+   Helper classes
+   ========================================================================== */
+
+/*
+ * Hide visually and from screen readers
+ */
+
+.hidden,
+[hidden] {
+  display: none !important;
+}
+
+/*
+ * Hide only visually, but have it available for screen readers:
+ * https://snook.ca/archives/html_and_css/hiding-content-for-accessibility
+ *
+ * 1. For long content, line feeds are not interpreted as spaces and small width
+ *    causes content to wrap 1 word per line:
+ *    https://medium.com/@jessebeach/beware-smushed-off-screen-accessible-text-5952a4c2cbfe
+ */
+
+.visually-hidden {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+  /* 1 */
+}
+
+/*
+ * Extends the .visually-hidden class to allow the element
+ * to be focusable when navigated to via the keyboard:
+ * https://www.drupal.org/node/897638
+ */
+
+.visually-hidden.focusable:active,
+.visually-hidden.focusable:focus {
+  clip: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  position: static;
+  white-space: inherit;
+  width: auto;
+}
+
+/*
+ * Hide visually and from screen readers, but maintain layout
+ */
+
+.invisible {
+  visibility: hidden;
+}
+
+/*
+ * Clearfix: contain floats
+ *
+ * The use of `table` rather than `block` is only necessary if using
+ * `::before` to contain the top-margins of child elements.
+ */
+
+.clearfix::before,
+.clearfix::after {
+  content: "";
+  display: table;
+}
+
+.clearfix::after {
+  clear: both;
+}
+
+/* ==========================================================================
+   EXAMPLE Media Queries for Responsive Design.
+   These examples override the primary ('mobile first') styles.
+   Modify as content requires.
+   ========================================================================== */
+
+@media only screen and (min-width: 35em) {
+  /* Style adjustments for viewports that meet the condition */
+}
+
+@media print,
+  (-webkit-min-device-pixel-ratio: 1.25),
+  (min-resolution: 1.25dppx),
+  (min-resolution: 120dpi) {
+  /* Style adjustments for high resolution devices */
+}
+
+/* ==========================================================================
+   Print styles.
+   Inlined to avoid the additional HTTP request:
+   https://www.phpied.com/delay-loading-your-print-css/
+   ========================================================================== */
+
+@media print {
+  *,
+  *::before,
+  *::after {
+    background: #fff !important;
+    color: #000 !important;
+    /* Black prints faster */
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  a,
+  a:visited {
+    text-decoration: underline;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+  }
+
+  abbr[title]::after {
+    content: " (" attr(title) ")";
+  }
+
+  /*
+   * Don't show links that are fragment identifiers,
+   * or use the `javascript:` pseudo protocol
+   */
+  a[href^="#"]::after,
+  a[href^="javascript:"]::after {
+    content: "";
+  }
+
+  pre {
+    white-space: pre-wrap !important;
+  }
+
+  pre,
+  blockquote {
+    border: 1px solid #999;
+    page-break-inside: avoid;
+  }
+
+  tr,
+  img {
+    page-break-inside: avoid;
+  }
+
+  p,
+  h2,
+  h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+}
+
