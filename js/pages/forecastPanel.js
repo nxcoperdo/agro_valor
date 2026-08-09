@@ -1,4 +1,5 @@
 import { api } from '../services/api.js';
+import { paywall } from '../ui/shell.js';
 import { formatUsd, formatCop, copPerLbToCarga, usdPerLbToCarga } from '../utils/currency.js';
 
 const LABELS = { '1d': 'Mañana', '7d': 'En una semana', '30d': 'En un mes' };
@@ -50,6 +51,13 @@ export async function renderForecastPanel(container) {
 
     cardsEl.classList.add('av-fade-in');
   } catch (err) {
+    if (err.upgradeRequired) {
+      container.innerHTML = paywall(
+        'Proyección del precio',
+        'Estima cómo puede moverse el precio del café mañana, en una semana y en un mes, para decidir si vender ahora o esperar.'
+      );
+      return;
+    }
     cardsEl.innerHTML = `<p class="panel-error">No se pudo cargar la proyección: ${err.message}</p>`;
   }
 }

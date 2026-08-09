@@ -1,12 +1,13 @@
 import { api } from '../services/api.js';
+import { setCachedUser } from '../services/auth.js';
 
 export function renderLogin(root) {
   root.innerHTML = `
     <div class="login-screen">
       <form class="login-card" id="login-form" novalidate>
-        <div class="brand-plate">
+        <a class="brand-plate" href="#/">
           <img src="img/logo-full.png" alt="AgroValor — Mercados que mueven el campo" />
-        </div>
+        </a>
         <p class="login-subtitle">Precio del café en tiempo real, comparación de cooperativas y proyección de mercado</p>
         <label for="username">Usuario</label>
         <input type="text" id="username" name="username" autocomplete="username" required />
@@ -14,6 +15,7 @@ export function renderLogin(root) {
         <input type="password" id="password" name="password" autocomplete="current-password" required />
         <button type="submit">Ingresar</button>
         <p class="login-error" id="login-error" role="alert" aria-live="polite" hidden></p>
+        <p class="form-footer">¿No tienes cuenta? <a href="#/registro">Crear una gratis</a></p>
       </form>
     </div>
   `;
@@ -28,11 +30,9 @@ export function renderLogin(root) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Ingresando…';
 
-    const username = form.username.value.trim();
-    const password = form.password.value;
-
     try {
-      await api.login(username, password);
+      const { user } = await api.login(form.username.value.trim(), form.password.value);
+      setCachedUser(user);
       window.location.hash = '#/dashboard';
     } catch (err) {
       errorEl.textContent = err.message || 'No se pudo iniciar sesión';

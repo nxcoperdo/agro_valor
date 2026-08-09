@@ -1,26 +1,65 @@
-import { requireAuth } from './services/auth.js';
-import { renderLogin } from './pages/login.js';
-import { renderDashboard } from './pages/dashboard.js';
+import { refreshUser, getCachedUser } from './services/auth.js';
+import { renderShell } from './ui/shell.js';
 
-const routes = {
-  '#/login': { render: renderLogin, protected: false },
-  '#/dashboard': { render: renderDashboard, protected: true },
+import { renderLanding } from './pages/landing.js';
+import { renderLogin } from './pages/login.js';
+import { renderSignup } from './pages/signup.js';
+import { renderDashboard } from './pages/dashboard.js';
+import { renderCalculator } from './pages/calculator.js';
+import { renderAlerts } from './pages/alerts.js';
+import { renderSales } from './pages/sales.js';
+import { renderReport } from './pages/report.js';
+import { renderAccount } from './pages/account.js';
+
+/**
+ * `shell: true` = pantalla con sesión, se dibuja dentro del marco de navegación.
+ * `guestOnly` = si ya hay sesión, no tiene sentido mostrarla (login/registro).
+ */
+const ROUTES = {
+  '#/': { render: renderLanding },
+  '#/login': { render: renderLogin, guestOnly: true },
+  '#/registro': { render: renderSignup, guestOnly: true },
+  '#/dashboard': { render: renderDashboard, shell: true },
+  '#/calculadora': { render: renderCalculator, shell: true },
+  '#/alertas': { render: renderAlerts, shell: true },
+  '#/ventas': { render: renderSales, shell: true },
+  '#/reportar': { render: renderReport, shell: true },
+  '#/cuenta': { render: renderAccount, shell: true },
 };
+
+const DEFAULT_ROUTE = '#/';
+
+function resolve(hash) {
+  return ROUTES[hash] ? hash : DEFAULT_ROUTE;
+}
 
 async function handleRoute() {
   const root = document.getElementById('app');
-  const hash = window.location.hash || '#/dashboard';
-  const route = routes[hash] || routes['#/dashboard'];
+  const hash = resolve(window.location.hash || DEFAULT_ROUTE);
+  const route = ROUTES[hash];
 
-  if (route.protected) {
-    const user = await requireAuth();
-    if (!user) {
-      window.location.hash = '#/login';
-      return;
-    }
+  // Solo se consulta la sesión si hace falta para decidir, para no pedirla en cada clic.
+  const needsSession = route.shell || route.guestOnly;
+  const user = needsSession ? getCachedUser() || (await refreshUser()) : getCachedUser();
+
+  if (route.shell && !user) {
+    window.location.hash = '#/login';
+    return;
   }
 
-  route.render(root);
+  if (route.guestOnly && user) {
+    window.location.hash = '#/dashboard';
+    return;
+  }
+
+  window.scrollTo(0, 0);
+
+  if (route.shell) {
+    const content = renderShell(root, hash);
+    await route.render(content);
+  } else {
+    await route.render(root);
+  }
 }
 
 export function startRouter() {
