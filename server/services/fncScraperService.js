@@ -56,7 +56,8 @@ async function refresh() {
     logger.info(`Precio interno de referencia FNC actualizado: ${extracted.price} COP/carga`);
     return saved;
   } catch (err) {
-    logger.warn(`fncScraperService: no se pudo actualizar el precio FNC (${err.message}). Se conserva el último valor conocido.`);
+    const cause = err.cause ? ` — causa: ${err.cause.code || err.cause.message || err.cause}` : '';
+    logger.warn(`fncScraperService: no se pudo actualizar el precio FNC (${err.message}${cause}). Se conserva el último valor conocido.`);
     return fncReferenceRepository.latest();
   }
 }

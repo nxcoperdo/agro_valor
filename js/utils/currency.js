@@ -6,6 +6,10 @@ export function copPerLbToCarga(copPerLb) {
   return copPerLb * LB_PER_CARGA;
 }
 
+export function usdPerLbToCarga(usdPerLb) {
+  return usdPerLb * LB_PER_CARGA;
+}
+
 export function formatUsd(value) {
   return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }

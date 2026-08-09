@@ -1,12 +1,12 @@
 import { Chart } from 'chart.js/auto';
 import { api } from '../services/api.js';
-import { formatUsd, formatCop, copPerLbToCarga } from '../utils/currency.js';
+import { formatUsd, formatCop, copPerLbToCarga, usdPerLbToCarga } from '../utils/currency.js';
 
 export async function renderPriceChart(container) {
   container.innerHTML = `
     <div class="panel">
       <div class="panel-header">
-        <h2>Precio del café (futuros)</h2>
+        <h2>Precio del café (carga de 125kg)</h2>
         <span id="price-badge" class="badge skeleton" style="width: 120px; height: 20px;"></span>
       </div>
       <div class="price-current"><span class="skeleton" style="width: 160px; height: 2.25rem;"></span></div>
@@ -24,8 +24,8 @@ export async function renderPriceChart(container) {
     const [current, history] = await Promise.all([api.currentPrice(), api.priceHistory(30)]);
 
     currentEl.innerHTML = `
-      <span class="tabular-nums">US$ ${formatUsd(current.price / 100)}/lb</span>
-      ${current.copPerLb != null ? `<span class="price-secondary tabular-nums">≈ ${formatCop(copPerLbToCarga(current.copPerLb))}/carga (125kg)</span>` : ''}
+      <span class="tabular-nums">US$ ${formatUsd(usdPerLbToCarga(current.price / 100))}</span>
+      ${current.copPerLb != null ? `<span class="price-secondary tabular-nums">≈ ${formatCop(copPerLbToCarga(current.copPerLb))}</span>` : ''}
     `;
 
     if (current.source === 'real') {
@@ -38,7 +38,7 @@ export async function renderPriceChart(container) {
 
     if (current.exchangeRate) {
       const fxLabel = current.exchangeRate.source === 'real' ? 'tasa real' : 'tasa simulada';
-      metaEl.textContent = `Cotización internacional (NY ICE), convertida a carga de 125kg para comparar con las cooperativas. 1 USD ≈ ${formatCop(current.exchangeRate.rate)} (${fxLabel})`;
+      metaEl.textContent = `Cotización internacional del café (NY ICE). 1 USD ≈ ${formatCop(current.exchangeRate.rate)} (${fxLabel})`;
     }
 
     // eslint-disable-next-line no-new
@@ -48,8 +48,8 @@ export async function renderPriceChart(container) {
         labels: history.map((h) => new Date(h.fetched_at).toLocaleDateString()),
         datasets: [
           {
-            label: 'Precio (¢/lb)',
-            data: history.map((h) => h.price),
+            label: 'Precio (US$/carga)',
+            data: history.map((h) => usdPerLbToCarga(h.price / 100)),
             borderColor: '#38bdf8',
             backgroundColor: 'rgba(56,189,248,0.14)',
             pointRadius: 0,

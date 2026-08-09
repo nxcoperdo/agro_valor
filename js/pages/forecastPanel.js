@@ -1,5 +1,5 @@
 import { api } from '../services/api.js';
-import { formatUsd, formatCop, copPerLbToCarga } from '../utils/currency.js';
+import { formatUsd, formatCop, copPerLbToCarga, usdPerLbToCarga } from '../utils/currency.js';
 
 const LABELS = { '1d': 'Mañana', '7d': 'En una semana', '30d': 'En un mes' };
 
@@ -7,7 +7,7 @@ export async function renderForecastPanel(container) {
   container.innerHTML = `
     <div class="panel">
       <div class="panel-header">
-        <h2>Proyección del precio</h2>
+        <h2>Proyección del precio (carga de 125kg)</h2>
       </div>
       <div class="forecast-cards" id="forecast-cards">
         ${['a', 'b', 'c']
@@ -39,8 +39,8 @@ export async function renderForecastPanel(container) {
         (f) => `
           <div class="forecast-card">
             <h3>${LABELS[f.horizon] || f.horizon}</h3>
-            <div class="forecast-price tabular-nums">US$ ${formatUsd(f.predictedPrice / 100)}/lb</div>
-            ${f.copPerLb != null ? `<div class="forecast-price-secondary tabular-nums">≈ ${formatCop(copPerLbToCarga(f.copPerLb))}/carga</div>` : ''}
+            <div class="forecast-price tabular-nums">US$ ${formatUsd(usdPerLbToCarga(f.predictedPrice / 100))}</div>
+            ${f.copPerLb != null ? `<div class="forecast-price-secondary tabular-nums">≈ ${formatCop(copPerLbToCarga(f.copPerLb))}</div>` : ''}
             <div class="forecast-date">${f.predictedForDate}</div>
             <div class="forecast-model">Modelo: ${f.modelParams.method || 'holt'}</div>
           </div>
