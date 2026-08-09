@@ -47,6 +47,8 @@ export async function renderForecastPanel(container) {
         `
       )
       .join('');
+
+    cardsEl.classList.add('av-fade-in');
   } catch (err) {
     cardsEl.innerHTML = `<p class="panel-error">No se pudo cargar la proyección: ${err.message}</p>`;
   }

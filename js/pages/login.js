@@ -37,6 +37,9 @@ export function renderLogin(root) {
     } catch (err) {
       errorEl.textContent = err.message || 'No se pudo iniciar sesión';
       errorEl.hidden = false;
+      errorEl.classList.remove('av-fade-in');
+      void errorEl.offsetWidth;
+      errorEl.classList.add('av-fade-in');
       submitBtn.disabled = false;
       submitBtn.textContent = 'Ingresar';
     }

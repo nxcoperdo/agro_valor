@@ -103,13 +103,18 @@ textarea {
   --av-accent: #d4a017;
   --av-accent-strong: #b8860b;
   --av-accent-soft: rgba(212, 160, 23, 0.16);
-  --av-warning: #d4a017;
-  --av-warning-soft: rgba(212, 160, 23, 0.16);
+  --av-warning: var(--av-accent);
+  --av-warning-soft: var(--av-accent-soft);
+  --av-warning-fg: #e6b325;
   --av-danger: #ef4444;
   --av-danger-soft: rgba(239, 68, 68, 0.14);
+  --av-danger-fg: #fca5a5;
   --av-positive: #7cb342;
   --av-positive-soft: rgba(124, 179, 66, 0.16);
+  --av-positive-fg: #9ccc65;
   --av-chart-line: #d4a017;
+  --av-border-hover: #475569;
+  --av-on-accent: #052e16;
 
   --av-radius-sm: 8px;
   --av-radius-md: 12px;
@@ -289,10 +294,7 @@ a {
   align-items: center;
   justify-content: center;
   padding: var(--av-space-3);
-  background:
-    radial-gradient(circle at 15% 15%, rgba(34, 197, 94, 0.08), transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(56, 189, 248, 0.06), transparent 45%),
-    var(--av-bg);
+  background: var(--av-bg);
 }
 
 .login-card {
@@ -302,7 +304,6 @@ a {
   padding: var(--av-space-5);
   width: 100%;
   max-width: 380px;
-  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5);
   animation: av-fade-up 420ms var(--av-ease-out) both;
 }
 
@@ -346,7 +347,7 @@ a {
 }
 
 .login-card input:hover {
-  border-color: #475569;
+  border-color: var(--av-border-hover);
 }
 
 .login-card input:focus-visible {
@@ -361,7 +362,7 @@ a {
   border: none;
   border-radius: var(--av-radius-sm);
   background: var(--av-accent);
-  color: #052e16;
+  color: var(--av-on-accent);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -377,7 +378,7 @@ a {
 }
 
 .login-error {
-  color: #fca5a5;
+  color: var(--av-danger-fg);
   background: var(--av-danger-soft);
   border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: var(--av-radius-sm);
@@ -423,12 +424,16 @@ a {
   background: transparent;
   color: var(--av-fg);
   cursor: pointer;
-  transition: background var(--av-duration) var(--av-ease-out), border-color var(--av-duration) var(--av-ease-out);
+  transition: background var(--av-duration) var(--av-ease-out), border-color var(--av-duration) var(--av-ease-out), transform var(--av-duration) var(--av-ease-out);
 }
 
 .dashboard-user button:hover {
   background: var(--av-surface-alt);
-  border-color: #475569;
+  border-color: var(--av-border-hover);
+}
+
+.dashboard-user button:active {
+  transform: scale(0.97);
 }
 
 .dashboard-grid {
@@ -461,7 +466,7 @@ a {
 }
 
 .panel:hover {
-  border-color: #475569;
+  border-color: var(--av-border-hover);
 }
 
 .panel-header {
@@ -480,7 +485,7 @@ a {
 }
 
 .panel-error {
-  color: #fca5a5;
+  color: var(--av-danger-fg);
   font-size: 0.9rem;
 }
 
@@ -512,7 +517,7 @@ a {
   align-items: center;
   gap: 0.35em;
   padding: 0.3rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--av-radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
@@ -529,17 +534,17 @@ a {
 
 .badge-real {
   background: var(--av-positive-soft);
-  color: #9ccc65;
+  color: var(--av-positive-fg);
 }
 
 .badge-simulated {
   background: var(--av-warning-soft);
-  color: #e6b325;
+  color: var(--av-warning-fg);
 }
 
 .badge-stale {
   background: var(--av-danger-soft);
-  color: #fca5a5;
+  color: var(--av-danger-fg);
 }
 
 .table-scroll {
@@ -603,19 +608,19 @@ a {
   display: inline-block;
   margin-left: 0.5em;
   padding: 0.15rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--av-radius-sm);
   font-size: 0.68rem;
   font-weight: 600;
 }
 
 .tag-best {
   background: var(--av-danger-soft);
-  color: #fca5a5;
+  color: var(--av-danger-fg);
 }
 
 .tag-worst {
   background: var(--av-positive-soft);
-  color: #9ccc65;
+  color: var(--av-positive-fg);
 }
 
 .disclaimer {

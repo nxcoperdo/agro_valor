@@ -41,6 +41,10 @@ export async function renderPriceChart(container) {
       metaEl.textContent = `Cotización internacional del café (NY ICE). 1 USD ≈ ${formatCop(current.exchangeRate.rate)} (${fxLabel})`;
     }
 
+    badge.classList.add('av-fade-in');
+    currentEl.classList.add('av-fade-in');
+    metaEl.classList.add('av-fade-in');
+
     // eslint-disable-next-line no-new
     new Chart(canvas.getContext('2d'), {
       type: 'line',

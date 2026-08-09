@@ -74,6 +74,9 @@ export async function renderCooperativesTable(container) {
         `
       )
       .join('');
+
+    statusEl.classList.add('av-fade-in');
+    tbody.classList.add('av-fade-in');
   } catch (err) {
     statusEl.innerHTML = `<p class="panel-error">No se pudo cargar la comparación: ${err.message}</p>`;
   }
