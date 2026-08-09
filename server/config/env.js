@@ -29,6 +29,15 @@ const env = {
 
   fncSourceUrl: process.env.FNC_SOURCE_URL || 'https://federaciondecafeteros.org/estadisticas-cafeteras/',
   fncFallbackCopCarga: process.env.FNC_FALLBACK_COP_CARGA ? parseFloat(process.env.FNC_FALLBACK_COP_CARGA) : null,
+
+  // Se delega el envío al proyecto de WhatsApp que ya corre en el mismo servidor.
+  whatsappApiUrl: process.env.WHATSAPP_API_URL || '',
+  whatsappApiToken: process.env.WHATSAPP_API_TOKEN || '',
+
+  dailyDigestCron: process.env.DAILY_DIGEST_CRON || '0 6 * * *',
+  weeklyDigestCron: process.env.WEEKLY_DIGEST_CRON || '0 6 * * 1',
+
+  allowPublicSignup: process.env.ALLOW_PUBLIC_SIGNUP !== 'false',
 };
 
 if (isProd && env.jwtSecret === 'reemplaza-esto-por-una-cadena-larga-y-aleatoria') {

@@ -52,3 +52,57 @@ CREATE TABLE IF NOT EXISTS forecast_cache (
   generated_at TEXT NOT NULL DEFAULT (datetime('now')),
   model_params TEXT
 );
+
+/* Alertas configuradas por el usuario (se entregan por WhatsApp). */
+CREATE TABLE IF NOT EXISTS alerts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK(type IN ('above', 'below', 'daily', 'weekly')),
+  threshold_cop_carga REAL,
+  active INTEGER NOT NULL DEFAULT 1,
+  last_triggered_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id);
+
+CREATE TABLE IF NOT EXISTS alert_deliveries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  alert_id INTEGER REFERENCES alerts(id) ON DELETE SET NULL,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  phone TEXT NOT NULL,
+  message TEXT NOT NULL,
+  status TEXT NOT NULL CHECK(status IN ('sent', 'failed', 'queued')),
+  error TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_alert_deliveries_created ON alert_deliveries(created_at);
+
+/* Precios reportados por los propios usuarios: la fuente real por cooperativa. */
+CREATE TABLE IF NOT EXISTS price_reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  cooperative_id INTEGER REFERENCES cooperatives(id) ON DELETE CASCADE,
+  municipality TEXT,
+  price_cop_carga REAL NOT NULL,
+  factor REAL,
+  humidity REAL,
+  reported_for_date TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_price_reports_coop_date ON price_reports(cooperative_id, reported_for_date);
+
+/* Registro de ventas del usuario, para su historial y para medir si vendió bien. */
+CREATE TABLE IF NOT EXISTS sales (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  cooperative_id INTEGER REFERENCES cooperatives(id) ON DELETE SET NULL,
+  cooperative_name TEXT,
+  cargas REAL NOT NULL,
+  price_cop_carga REAL NOT NULL,
+  factor REAL,
+  humidity REAL,
+  sold_on TEXT NOT NULL,
+  notes TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_sales_user_date ON sales(user_id, sold_on);

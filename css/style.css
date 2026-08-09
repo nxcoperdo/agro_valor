@@ -396,6 +396,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--av-space-2);
   padding: var(--av-space-3) var(--av-space-4);
   background: rgba(11, 61, 46, 0.88);
   backdrop-filter: blur(10px);

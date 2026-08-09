@@ -4,14 +4,19 @@ const coffeePriceService = require('../services/coffeePriceService');
 const exchangeRateService = require('../services/exchangeRateService');
 const fncScraperService = require('../services/fncScraperService');
 const forecastService = require('../services/forecastService');
+const alertService = require('../services/alertService');
 const logger = require('../utils/logger');
 
-async function runOnStartup() {
+async function refreshMarketData() {
   try {
     await Promise.all([coffeePriceService.refreshPrice(), exchangeRateService.refreshRate()]);
   } catch (err) {
-    logger.error('Error refrescando precio de café / tasa de cambio al arrancar:', err);
+    logger.error('Error refrescando precio de café / tasa de cambio:', err);
   }
+}
+
+async function runOnStartup() {
+  await refreshMarketData();
 
   try {
     await fncScraperService.refresh();
@@ -27,13 +32,17 @@ async function runOnStartup() {
 }
 
 function start() {
-  cron.schedule(env.priceRefreshCron, () => {
-    coffeePriceService.refreshPrice().catch((err) => logger.error('Cron precio café:', err));
-    exchangeRateService.refreshRate().catch((err) => logger.error('Cron tasa de cambio:', err));
+  cron.schedule(env.priceRefreshCron, async () => {
+    await refreshMarketData();
+    // Las alertas de umbral se evalúan con el precio recién actualizado.
+    alertService.evaluateThresholdAlerts().catch((err) => logger.error('Cron alertas de umbral:', err));
   });
 
   cron.schedule(env.fncReferenceCron, () => {
-    fncScraperService.refresh().catch((err) => logger.error('Cron FNC:', err));
+    fncScraperService
+      .refresh()
+      .then(() => alertService.evaluateThresholdAlerts())
+      .catch((err) => logger.error('Cron FNC:', err));
   });
 
   cron.schedule(env.forecastRefreshCron, () => {
@@ -42,6 +51,14 @@ function start() {
     } catch (err) {
       logger.error('Cron proyección:', err);
     }
+  });
+
+  cron.schedule(env.dailyDigestCron, () => {
+    alertService.sendDigests('daily').catch((err) => logger.error('Cron resumen diario:', err));
+  });
+
+  cron.schedule(env.weeklyDigestCron, () => {
+    alertService.sendDigests('weekly').catch((err) => logger.error('Cron resumen semanal:', err));
   });
 
   logger.info('Jobs programados iniciados.');

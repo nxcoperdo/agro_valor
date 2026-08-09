@@ -14,4 +14,8 @@ function findAllActive() {
   return db.prepare('SELECT * FROM cooperatives WHERE active = 1 ORDER BY name ASC').all();
 }
 
-module.exports = { seedFromConfig, findAllActive };
+function findById(id) {
+  return db.prepare('SELECT * FROM cooperatives WHERE id = ?').get(id);
+}
+
+module.exports = { seedFromConfig, findAllActive, findById };

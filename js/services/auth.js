@@ -2,23 +2,30 @@ import { api } from './api.js';
 
 let cachedUser = null;
 
-export async function requireAuth() {
+export async function refreshUser() {
   try {
     const { user } = await api.me();
     cachedUser = user;
-    return user;
   } catch (err) {
     cachedUser = null;
-    return null;
   }
+  return cachedUser;
 }
 
 export function getCachedUser() {
   return cachedUser;
 }
 
+export function isPro() {
+  return Boolean(cachedUser && cachedUser.isPro);
+}
+
+export function setCachedUser(user) {
+  cachedUser = user;
+}
+
 export async function logout() {
   await api.logout().catch(() => {});
   cachedUser = null;
-  window.location.hash = '#/login';
+  window.location.hash = '#/';
 }
