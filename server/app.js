@@ -48,6 +48,13 @@ function createApp() {
 
   const distPath = path.join(__dirname, '..', 'dist');
   if (fs.existsSync(distPath)) {
+    // El service worker nunca debe quedarse pegado en la caché del navegador, o el
+    // usuario se queda con una versión vieja de la app y no recibe las correcciones.
+    app.get('/sw.js', (req, res, next) => {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      next();
+    });
+
     app.use(express.static(distPath));
   }
 

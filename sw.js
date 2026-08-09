@@ -23,12 +23,25 @@ const SHELL_ASSETS = [
   './img/icon-512.png',
 ];
 
+async function precacheShell() {
+  const cache = await caches.open(SHELL_CACHE);
+
+  // addAll falla entero si un solo archivo falla; se agregan de a uno para ser tolerantes.
+  const results = await Promise.allSettled(SHELL_ASSETS.map((asset) => cache.add(asset)));
+  const failed = results
+    .map((r, i) => (r.status === 'rejected' ? `${SHELL_ASSETS[i]} (${r.reason})` : null))
+    .filter(Boolean);
+
+  if (failed.length) {
+    console.warn('[AgroValor SW] No se pudieron guardar:', failed);
+  }
+  console.log(`[AgroValor SW] Shell guardado: ${results.length - failed.length}/${results.length}`);
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches
-      .open(SHELL_CACHE)
-      // addAll falla entero si un archivo falla; se agregan de a uno para ser tolerantes.
-      .then((cache) => Promise.allSettled(SHELL_ASSETS.map((asset) => cache.add(asset))))
+    precacheShell()
+      .catch((err) => console.warn('[AgroValor SW] Falló el precacheo:', err))
       .then(() => self.skipWaiting())
   );
 });
