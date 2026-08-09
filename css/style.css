@@ -917,6 +917,19 @@ a {
   color: var(--av-fg-muted);
 }
 
+.hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--av-space-3);
+  justify-content: center;
+}
+
+.hero-install-note {
+  margin: var(--av-space-3) 0 0;
+  font-size: 0.82rem;
+  color: var(--av-fg-muted);
+}
+
 .value-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -956,7 +969,7 @@ a {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--av-space-3);
-  align-items: end;
+  align-items: start;
 }
 
 .calc-form .field {

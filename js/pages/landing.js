@@ -1,5 +1,31 @@
 import { api } from '../services/api.js';
 import { formatCop } from '../utils/currency.js';
+import { canInstall, promptInstall, onInstallAvailabilityChange, isStandalone } from '../services/pwa.js';
+
+/** El navegador solo deja instalar cuando él lo decide, así que el botón aparece y desaparece solo. */
+function setupInstallButton(root) {
+  const btn = root.querySelector('#install-btn');
+  const note = root.querySelector('#install-note');
+  if (!btn) return;
+
+  const sync = (available) => {
+    const show = available && !isStandalone();
+    btn.hidden = !show;
+    note.hidden = !show;
+  };
+
+  sync(canInstall());
+  const unsubscribe = onInstallAvailabilityChange(sync);
+
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    await promptInstall();
+    btn.disabled = false;
+  });
+
+  // Al salir de la landing el nodo se destruye; se suelta el listener para no acumularlos.
+  window.addEventListener('hashchange', unsubscribe, { once: true });
+}
 
 function priceRow(coop) {
   const source =
@@ -41,7 +67,13 @@ export async function renderLanding(root) {
           <span class="skeleton" style="width: 260px; height: 3rem;"></span>
         </div>
         <p class="hero-meta" id="hero-meta"></p>
-        <a class="btn-primary btn-lg" href="#/registro">Empieza gratis</a>
+        <div class="hero-cta">
+          <a class="btn-primary btn-lg" href="#/registro">Empieza gratis</a>
+          <button type="button" class="btn-ghost btn-lg" id="install-btn" hidden>Instalar la app</button>
+        </div>
+        <p class="hero-install-note" id="install-note" hidden>
+          Instálala en tu celular y ábrela aunque estés sin señal.
+        </p>
       </section>
 
       <section class="panel landing-panel">
@@ -90,6 +122,8 @@ export async function renderLanding(root) {
   const metaEl = root.querySelector('#hero-meta');
   const tbody = root.querySelector('#landing-coops');
   const disclaimerEl = root.querySelector('#landing-disclaimer');
+
+  setupInstallButton(root);
 
   try {
     const market = await api.market();

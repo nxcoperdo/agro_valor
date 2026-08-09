@@ -1,12 +1,48 @@
 {
-  "short_name": "AgroValor",
   "name": "AgroValor — Mercados que mueven el campo",
-  "icons": [{
-    "src": "icon.png",
-    "type": "image/png",
-    "sizes": "192x192"
-  }],
-  "start_url": "/?utm_source=homescreen",
-  "background_color": "#0b3d2e",
-  "theme_color": "#0b3d2e"
+  "short_name": "AgroValor",
+  "description": "Precio del café en tiempo real, comparación de cooperativas y proyección de precios.",
+  "lang": "es-CO",
+  "dir": "ltr",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#081d16",
+  "theme_color": "#0b3d2e",
+  "categories": ["finance", "business", "productivity"],
+  "icons": [
+    {
+      "src": "img/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "img/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "img/icon-maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Calculadora de precio",
+      "short_name": "Calculadora",
+      "url": "./#/calculadora",
+      "icons": [{ "src": "img/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Reportar un precio",
+      "short_name": "Reportar",
+      "url": "./#/reportar",
+      "icons": [{ "src": "img/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }
