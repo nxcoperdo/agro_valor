@@ -24,7 +24,7 @@ export async function renderAccount(container) {
     const [profile, planInfo] = await Promise.all([api.profile(), api.plan()]);
 
     const expiry = profile.expiresAt
-      ? new Date(`${profile.expiresAt}Z`).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
+      ? new Date(profile.expiresAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
       : null;
 
     container.innerHTML = `

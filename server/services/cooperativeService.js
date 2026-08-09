@@ -3,6 +3,7 @@ const fncScraperService = require('./fncScraperService');
 const exchangeRateService = require('./exchangeRateService');
 const priceReportService = require('./priceReportService');
 const { copPerCargaToUsdPerLb } = require('../utils/currency');
+const { toIso, toEpoch } = require('../utils/datetime');
 
 const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
@@ -30,7 +31,7 @@ function getComparison() {
     };
   }
 
-  const isStale = Date.now() - new Date(`${fncReference.scraped_at}Z`).getTime() > STALE_AFTER_MS;
+  const isStale = Date.now() - toEpoch(fncReference.scraped_at) > STALE_AFTER_MS;
 
   const ranked = cooperatives
     .map((c) => {
@@ -69,12 +70,12 @@ function getComparison() {
     fncReference: {
       priceCopCarga: fncReference.price_cop_carga,
       priceUsdPerLb: exchangeRate ? copPerCargaToUsdPerLb(fncReference.price_cop_carga, exchangeRate.rate) : null,
-      scrapedAt: fncReference.scraped_at,
+      scrapedAt: toIso(fncReference.scraped_at),
       sourceUrl: fncReference.source_url,
       isStale,
     },
     exchangeRate: exchangeRate
-      ? { rate: exchangeRate.rate, source: exchangeRate.source, fetchedAt: exchangeRate.fetched_at }
+      ? { rate: exchangeRate.rate, source: exchangeRate.source, fetchedAt: toIso(exchangeRate.fetched_at) }
       : null,
     cooperatives: ranked,
     reportedCount: ranked.filter((c) => c.priceSource === 'reported').length,

@@ -3,6 +3,7 @@ const coffeePriceService = require('./coffeePriceService');
 const exchangeRateService = require('./exchangeRateService');
 const fncScraperService = require('./fncScraperService');
 const { centsToUsdPerLb, exportParityCopPerCarga, cargaToExcelsoLb, BASE_FACTOR, CARGA_KG } = require('../utils/currency');
+const { toIso } = require('../utils/datetime');
 
 /**
  * Arma la foto del mercado separando dos cosas que NO son lo mismo y que antes se
@@ -36,8 +37,8 @@ function getMarketSummary() {
         source: price.source,
         provider: price.provider,
         granularity: coffeePriceService.granularityFor(price.provider),
-        quotedAt: price.quoted_at,
-        fetchedAt: price.fetched_at,
+        quotedAt: toIso(price.quoted_at),
+        fetchedAt: toIso(price.fetched_at),
         contract: meta ? meta.contract : null,
         exchange: meta ? meta.exchange : null,
         previousClose: meta ? meta.previousClose : null,
@@ -71,7 +72,7 @@ function getMarketSummary() {
     internal: fnc
       ? {
           copPerCarga: fnc.price_cop_carga,
-          scrapedAt: fnc.scraped_at,
+          scrapedAt: toIso(fnc.scraped_at),
           sourceUrl: fnc.source_url,
           cargaKg: CARGA_KG,
           label: 'Precio interno de referencia (FNC)',
@@ -80,7 +81,7 @@ function getMarketSummary() {
     international,
     exportParity,
     exchangeRate: exchangeRate
-      ? { rate: exchangeRate.rate, source: exchangeRate.source, fetchedAt: exchangeRate.fetched_at }
+      ? { rate: exchangeRate.rate, source: exchangeRate.source, fetchedAt: toIso(exchangeRate.fetched_at) }
       : null,
   };
 }

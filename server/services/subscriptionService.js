@@ -1,4 +1,5 @@
 const userRepository = require('../repositories/userRepository');
+const { toIso, toEpoch } = require('../utils/datetime');
 const logger = require('../utils/logger');
 
 const PLANS = {
@@ -28,7 +29,7 @@ function isPro(user) {
   if (user.role === 'admin') return true;
   if (user.plan !== 'pro') return false;
   if (!user.plan_expires_at) return true;
-  return new Date(`${user.plan_expires_at}Z`).getTime() > Date.now();
+  return toEpoch(user.plan_expires_at) > Date.now();
 }
 
 function describe(user) {
@@ -36,7 +37,7 @@ function describe(user) {
   return {
     plan: pro ? 'pro' : 'free',
     isPro: pro,
-    expiresAt: user ? user.plan_expires_at : null,
+    expiresAt: user ? toIso(user.plan_expires_at) : null,
     limits: pro ? PLANS.pro : PLANS.free,
   };
 }
@@ -48,7 +49,7 @@ function activatePro(userId, months = 1) {
   }
 
   // Si todavía tiene tiempo vigente, se le suma; si no, arranca desde hoy.
-  const currentExpiry = user.plan_expires_at ? new Date(`${user.plan_expires_at}Z`).getTime() : 0;
+  const currentExpiry = user.plan_expires_at ? toEpoch(user.plan_expires_at) : 0;
   const startFrom = Math.max(currentExpiry, Date.now());
   const expiresAt = new Date(startFrom + months * 30 * 24 * 60 * 60 * 1000)
     .toISOString()

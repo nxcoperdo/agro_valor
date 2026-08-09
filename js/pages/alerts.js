@@ -13,7 +13,7 @@ const TYPE_LABELS = {
 function alertRow(alert) {
   const detail = alert.thresholdCopCarga ? formatCop(alert.thresholdCopCarga) : 'Cada semana por la mañana';
   const last = alert.lastTriggeredAt
-    ? `Último aviso: ${new Date(`${alert.lastTriggeredAt}Z`).toLocaleString('es-CO')}`
+    ? `Último aviso: ${new Date(alert.lastTriggeredAt).toLocaleString('es-CO')}`
     : 'Todavía no se ha disparado';
 
   return `

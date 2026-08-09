@@ -1,6 +1,7 @@
 const express = require('express');
 const coffeePriceService = require('../services/coffeePriceService');
 const marketSummaryService = require('../services/marketSummaryService');
+const { toIso } = require('../utils/datetime');
 
 const router = express.Router();
 
@@ -23,8 +24,8 @@ router.get('/history', (req, res) => {
       centsPerLb: row.price,
       usdPerLb: row.price / 100,
       source: row.source,
-      quotedAt: row.quoted_at,
-      fetchedAt: row.fetched_at,
+      quotedAt: toIso(row.quoted_at),
+      fetchedAt: toIso(row.fetched_at),
     }))
   );
 });

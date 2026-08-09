@@ -5,6 +5,7 @@ const exchangeRateService = require('./exchangeRateService');
 const coffeePriceService = require('./coffeePriceService');
 const whatsappService = require('./whatsappService');
 const subscriptionService = require('./subscriptionService');
+const { toEpoch } = require('../utils/datetime');
 const logger = require('../utils/logger');
 
 /** Tiempo mínimo entre dos avisos de la misma alerta, para no volverse spam. */
@@ -129,7 +130,7 @@ function isEligible(alert) {
 
 function inCooldown(alert) {
   if (!alert.last_triggered_at) return false;
-  return Date.now() - new Date(`${alert.last_triggered_at}Z`).getTime() < COOLDOWN_MS;
+  return Date.now() - toEpoch(alert.last_triggered_at) < COOLDOWN_MS;
 }
 
 /** Revisa las alertas de umbral contra el precio actual. La corre el cron de precios. */

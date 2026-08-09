@@ -7,6 +7,14 @@ const forecastService = require('../services/forecastService');
 const alertService = require('../services/alertService');
 const logger = require('../utils/logger');
 
+/**
+ * Todos los horarios se interpretan en la zona horaria de la aplicación
+ * (Colombia por defecto). Sin esto, un cron como "0 6 * * *" se dispararía a las
+ * 6 de la mañana del reloj del servidor: si el VPS está en UTC, al caficultor le
+ * llegaría el resumen a la 1 de la madrugada.
+ */
+const CRON_OPTIONS = { timezone: env.timezone };
+
 async function refreshMarketData() {
   try {
     await Promise.all([coffeePriceService.refreshPrice(), exchangeRateService.refreshRate()]);
@@ -32,36 +40,56 @@ async function runOnStartup() {
 }
 
 function start() {
-  cron.schedule(env.priceRefreshCron, async () => {
-    await refreshMarketData();
-    // Las alertas de umbral se evalúan con el precio recién actualizado.
-    alertService.evaluateThresholdAlerts().catch((err) => logger.error('Cron alertas de umbral:', err));
-  });
+  cron.schedule(
+    env.priceRefreshCron,
+    async () => {
+      await refreshMarketData();
+      // Las alertas de umbral se evalúan con el precio recién actualizado.
+      alertService.evaluateThresholdAlerts().catch((err) => logger.error('Cron alertas de umbral:', err));
+    },
+    CRON_OPTIONS
+  );
 
-  cron.schedule(env.fncReferenceCron, () => {
-    fncScraperService
-      .refresh()
-      .then(() => alertService.evaluateThresholdAlerts())
-      .catch((err) => logger.error('Cron FNC:', err));
-  });
+  cron.schedule(
+    env.fncReferenceCron,
+    () => {
+      fncScraperService
+        .refresh()
+        .then(() => alertService.evaluateThresholdAlerts())
+        .catch((err) => logger.error('Cron FNC:', err));
+    },
+    CRON_OPTIONS
+  );
 
-  cron.schedule(env.forecastRefreshCron, () => {
-    try {
-      forecastService.recomputeAndCache();
-    } catch (err) {
-      logger.error('Cron proyección:', err);
-    }
-  });
+  cron.schedule(
+    env.forecastRefreshCron,
+    () => {
+      try {
+        forecastService.recomputeAndCache();
+      } catch (err) {
+        logger.error('Cron proyección:', err);
+      }
+    },
+    CRON_OPTIONS
+  );
 
-  cron.schedule(env.dailyDigestCron, () => {
-    alertService.sendDigests('daily').catch((err) => logger.error('Cron resumen diario:', err));
-  });
+  cron.schedule(
+    env.dailyDigestCron,
+    () => {
+      alertService.sendDigests('daily').catch((err) => logger.error('Cron resumen diario:', err));
+    },
+    CRON_OPTIONS
+  );
 
-  cron.schedule(env.weeklyDigestCron, () => {
-    alertService.sendDigests('weekly').catch((err) => logger.error('Cron resumen semanal:', err));
-  });
+  cron.schedule(
+    env.weeklyDigestCron,
+    () => {
+      alertService.sendDigests('weekly').catch((err) => logger.error('Cron resumen semanal:', err));
+    },
+    CRON_OPTIONS
+  );
 
-  logger.info('Jobs programados iniciados.');
+  logger.info(`Jobs programados iniciados (zona horaria: ${env.timezone}).`);
 }
 
 module.exports = { start, runOnStartup };

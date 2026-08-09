@@ -3,6 +3,7 @@ const alertRepository = require('../repositories/alertRepository');
 const alertService = require('../services/alertService');
 const subscriptionService = require('../services/subscriptionService');
 const whatsappService = require('../services/whatsappService');
+const { toIso } = require('../utils/datetime');
 const { testMessageRateLimit } = require('../middleware/rateLimit');
 
 const router = express.Router();
@@ -15,15 +16,21 @@ function serialize(alert) {
     type: alert.type,
     thresholdCopCarga: alert.threshold_cop_carga,
     active: Boolean(alert.active),
-    lastTriggeredAt: alert.last_triggered_at,
-    createdAt: alert.created_at,
+    lastTriggeredAt: toIso(alert.last_triggered_at),
+    createdAt: toIso(alert.created_at),
   };
 }
 
 router.get('/', (req, res) => {
   res.json({
     alerts: alertRepository.findByUser(req.user.id).map(serialize),
-    deliveries: alertRepository.recentDeliveries(req.user.id, 10),
+    deliveries: alertRepository.recentDeliveries(req.user.id, 10).map((d) => ({
+      id: d.id,
+      status: d.status,
+      message: d.message,
+      error: d.error,
+      createdAt: toIso(d.created_at),
+    })),
     whatsappConfigured: whatsappService.isConfigured(),
     phone: req.fullUser.phone,
   });

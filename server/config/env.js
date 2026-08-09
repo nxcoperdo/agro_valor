@@ -38,6 +38,9 @@ const env = {
 
   dailyDigestCron: process.env.DAILY_DIGEST_CRON || '0 6 * * *',
   weeklyDigestCron: process.env.WEEKLY_DIGEST_CRON || '0 6 * * 1',
+  // Los horarios de los jobs se interpretan en esta zona, sin depender de cómo esté
+  // configurado el reloj del servidor: "las 6 de la mañana" son las 6 en Colombia.
+  timezone: process.env.TZ_APP || 'America/Bogota',
 
   allowPublicSignup: process.env.ALLOW_PUBLIC_SIGNUP !== 'false',
 };
