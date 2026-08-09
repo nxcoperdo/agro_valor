@@ -7,7 +7,8 @@
  * interfaz la muestra: el usuario ve si el precio es de hoy o de ayer.
  */
 
-const VERSION = 'v1';
+// Subir esta versión invalida las cachés viejas en el próximo despliegue.
+const VERSION = 'v2';
 const SHELL_CACHE = `agrovalor-shell-${VERSION}`;
 const DATA_CACHE = `agrovalor-data-${VERSION}`;
 
@@ -90,16 +91,33 @@ async function networkFirst(request) {
   }
 }
 
-async function cacheFirst(request) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
+/**
+ * Servir de caché al instante y, en paralelo, traer la versión nueva para la próxima vez.
+ *
+ * Los archivos no llevan hash en el nombre (`js/app.js` siempre se llama igual), así que
+ * una estrategia de "solo caché" dejaría al usuario pegado para siempre en una versión
+ * vieja. Así la app abre rápido y sin señal, pero igual se actualiza sola.
+ */
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(SHELL_CACHE);
+  const cached = await cache.match(request);
 
-  const response = await fetch(request);
-  if (response.ok && new URL(request.url).origin === self.location.origin) {
-    const cache = await caches.open(SHELL_CACHE);
-    cache.put(request, response.clone());
+  const network = fetch(request)
+    .then((response) => {
+      if (response.ok) cache.put(request, response.clone());
+      return response;
+    })
+    .catch(() => null);
+
+  if (cached) {
+    // No se espera a la red: se actualiza en segundo plano.
+    return cached;
   }
-  return response;
+
+  const response = await network;
+  if (response) return response;
+
+  throw new Error('Sin conexión y sin copia guardada');
 }
 
 self.addEventListener('fetch', (event) => {
@@ -123,5 +141,5 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(cacheFirst(request));
+  event.respondWith(staleWhileRevalidate(request));
 });

@@ -1,10 +1,24 @@
 const coffeePriceRepository = require('../repositories/coffeePriceRepository');
+const yahooFinanceProvider = require('./providers/yahooFinanceProvider');
 const twelveDataProvider = require('./providers/twelveDataProvider');
 const alphaVantageProvider = require('./providers/alphaVantageProvider');
 const simulatedProvider = require('./providers/simulatedProvider');
 const logger = require('../utils/logger');
 
-const REAL_PROVIDERS = [twelveDataProvider, alphaVantageProvider];
+/**
+ * Orden deliberado: primero la fuente con el dato más fresco.
+ *  - yahoo: cotización del contrato de café en ICE, diferida unos minutos.
+ *  - twelvedata: intradía, pero los futuros de commodities no vienen en el plan gratuito.
+ *  - alphavantage: solo promedio MENSUAL, sirve de último respaldo real.
+ */
+const REAL_PROVIDERS = [yahooFinanceProvider, twelveDataProvider, alphaVantageProvider];
+
+/** Con qué frecuencia se mueve realmente el dato de cada fuente. Se muestra al usuario. */
+const GRANULARITY = {
+  yahoo: 'intradiario',
+  twelvedata: 'intradiario',
+  alphavantage: 'mensual',
+};
 
 async function refreshPrice() {
   for (const provider of REAL_PROVIDERS) {
@@ -13,7 +27,7 @@ async function refreshPrice() {
     try {
       const result = await provider.fetchLatestPrice();
       const saved = coffeePriceRepository.insert({ ...result, source: 'real' });
-      logger.info(`Precio de café real obtenido vía ${provider.name}: ${result.price}`);
+      logger.info(`Precio de café real obtenido vía ${provider.name}: ${result.price} centavos/lb`);
       return saved;
     } catch (err) {
       logger.warn(`Proveedor ${provider.name} falló: ${err.message}`);
@@ -35,4 +49,8 @@ function getHistory(days = 30) {
   return coffeePriceRepository.history(days);
 }
 
-module.exports = { refreshPrice, getCurrentPrice, getHistory };
+function granularityFor(provider) {
+  return GRANULARITY[provider] || null;
+}
+
+module.exports = { refreshPrice, getCurrentPrice, getHistory, granularityFor };

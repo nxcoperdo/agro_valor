@@ -2,9 +2,9 @@ const alertRepository = require('../repositories/alertRepository');
 const cooperativeService = require('./cooperativeService');
 const forecastService = require('./forecastService');
 const exchangeRateService = require('./exchangeRateService');
+const coffeePriceService = require('./coffeePriceService');
 const whatsappService = require('./whatsappService');
 const subscriptionService = require('./subscriptionService');
-const { copPerLbToCarga } = require('../utils/currency');
 const logger = require('../utils/logger');
 
 /** Tiempo mínimo entre dos avisos de la misma alerta, para no volverse spam. */
@@ -22,12 +22,14 @@ function buildMarketSnapshot() {
 
   const best = comparison.cooperatives[0] || null;
   const exchangeRate = exchangeRateService.getCurrentRate();
+  const currentPrice = coffeePriceService.getCurrentPrice();
 
   return {
     referencePrice: comparison.fncReference.priceCopCarga,
     isStale: comparison.fncReference.isStale,
     best,
     exchangeRate: exchangeRate ? exchangeRate.rate : null,
+    currentCents: currentPrice ? currentPrice.price : null,
   };
 }
 
@@ -72,16 +74,26 @@ function buildDigestMessage(snapshot, { includeForecast }) {
 
   if (includeForecast) {
     const forecasts = forecastService.getForecast();
-    const rate = snapshot.exchangeRate;
 
-    if (forecasts.length && rate) {
-      lines.push('', '*Proyección:*');
+    if (forecasts.length && snapshot.currentCents) {
+      lines.push('', '*Proyección del mercado internacional:*');
       const labels = { '1d': 'Mañana', '7d': 'En una semana', '30d': 'En un mes' };
+
       forecasts.forEach((f) => {
-        const copPerCarga = copPerLbToCarga((f.predictedPrice / 100) * rate);
-        lines.push(`• ${labels[f.horizon] || f.horizon}: ${formatCop(copPerCarga)}`);
+        const changePct = ((f.predictedPrice - snapshot.currentCents) / snapshot.currentCents) * 100;
+        const implied = snapshot.referencePrice * (1 + changePct / 100);
+        const arrow = changePct >= 0 ? '▲' : '▼';
+        lines.push(
+          `• ${labels[f.horizon] || f.horizon}: ${arrow} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(1)}%` +
+            ` → ${formatCop(implied)} por carga`
+        );
       });
-      lines.push('', '_Es una estimación estadística, no una garantía de precio._');
+
+      lines.push(
+        '',
+        '_Supone que el precio interno se mueve igual que el mercado internacional._',
+        '_Es una estimación, no una garantía de precio de compra._'
+      );
     }
   }
 

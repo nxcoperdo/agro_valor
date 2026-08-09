@@ -1,6 +1,6 @@
 import { api } from '../services/api.js';
 import { paywall } from '../ui/shell.js';
-import { formatUsd, formatCop, copPerLbToCarga, usdPerLbToCarga } from '../utils/currency.js';
+import { formatCop } from '../utils/currency.js';
 
 const LABELS = { '1d': 'Mañana', '7d': 'En una semana', '30d': 'En un mes' };
 
@@ -8,7 +8,7 @@ export async function renderForecastPanel(container) {
   container.innerHTML = `
     <div class="panel">
       <div class="panel-header">
-        <h2>Proyección del precio (carga de 125kg)</h2>
+        <h2>Proyección del precio</h2>
       </div>
       <div class="forecast-cards" id="forecast-cards">
         ${['a', 'b', 'c']
@@ -22,33 +22,48 @@ export async function renderForecastPanel(container) {
           )
           .join('')}
       </div>
+      <p class="disclaimer" id="forecast-note"></p>
     </div>
   `;
 
   const cardsEl = container.querySelector('#forecast-cards');
+  const noteEl = container.querySelector('#forecast-note');
 
   try {
-    const { forecasts } = await api.forecast();
+    const { forecasts, note } = await api.forecast();
 
     if (!forecasts.length) {
-      cardsEl.innerHTML = '<p class="panel-error">Aún no hay suficiente historial de precios para proyectar.</p>';
+      cardsEl.innerHTML =
+        '<p class="empty-state">Aún no hay suficiente historial de precios para proyectar. Se necesitan al menos dos días de datos.</p>';
       return;
     }
 
     cardsEl.innerHTML = forecasts
-      .map(
-        (f) => `
+      .map((f) => {
+        const up = f.changePct != null && f.changePct >= 0;
+        return `
           <div class="forecast-card">
             <h3>${LABELS[f.horizon] || f.horizon}</h3>
-            <div class="forecast-price tabular-nums">US$ ${formatUsd(usdPerLbToCarga(f.predictedPrice / 100))}</div>
-            ${f.copPerLb != null ? `<div class="forecast-price-secondary tabular-nums">≈ ${formatCop(copPerLbToCarga(f.copPerLb))}</div>` : ''}
-            <div class="forecast-date">${f.predictedForDate}</div>
-            <div class="forecast-model">Modelo: ${f.modelParams.method || 'holt'}</div>
+            ${
+              f.changePct != null
+                ? `<div class="forecast-change ${up ? 'delta-up' : 'delta-down'} tabular-nums">
+                     ${up ? '▲' : '▼'} ${up ? '+' : ''}${f.changePct.toFixed(1)}%
+                   </div>`
+                : ''
+            }
+            ${
+              f.impliedInternalCopPerCarga != null
+                ? `<div class="forecast-price tabular-nums">${formatCop(f.impliedInternalCopPerCarga)}</div>
+                   <div class="forecast-price-secondary">por carga, si el interno se mueve igual</div>`
+                : ''
+            }
+            <div class="forecast-date">US$ ${f.usdPerLb.toFixed(2)}/lb · ${f.predictedForDate}</div>
           </div>
-        `
-      )
+        `;
+      })
       .join('');
 
+    noteEl.textContent = note;
     cardsEl.classList.add('av-fade-in');
   } catch (err) {
     if (err.upgradeRequired) {

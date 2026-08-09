@@ -1,9 +1,7 @@
 const express = require('express');
-const coffeePriceService = require('../services/coffeePriceService');
-const exchangeRateService = require('../services/exchangeRateService');
+const marketSummaryService = require('../services/marketSummaryService');
 const cooperativeService = require('../services/cooperativeService');
 const subscriptionService = require('../services/subscriptionService');
-const { centsToUsdPerLb, usdPerLbToCop, LB_PER_CARGA } = require('../utils/currency');
 
 const router = express.Router();
 
@@ -13,26 +11,11 @@ const router = express.Router();
  * personalizado, que es lo que sostiene la suscripción.
  */
 router.get('/market', (req, res) => {
-  const price = coffeePriceService.getCurrentPrice();
-  const exchangeRate = exchangeRateService.getCurrentRate();
+  const summary = marketSummaryService.getMarketSummary();
   const comparison = cooperativeService.getComparison();
 
-  const usdPerLb = price ? centsToUsdPerLb(price.price) : null;
-  const copPerLb = usdPerLb != null && exchangeRate ? usdPerLbToCop(usdPerLb, exchangeRate.rate) : null;
-
   res.json({
-    coffee: price
-      ? {
-          usdPerCarga: usdPerLb * LB_PER_CARGA,
-          copPerCarga: copPerLb != null ? copPerLb * LB_PER_CARGA : null,
-          source: price.source,
-          provider: price.provider,
-          fetchedAt: price.fetched_at,
-        }
-      : null,
-    exchangeRate: exchangeRate
-      ? { rate: exchangeRate.rate, source: exchangeRate.source, fetchedAt: exchangeRate.fetched_at }
-      : null,
+    ...summary,
     fncReference: comparison.fncReference,
     cooperatives: comparison.cooperatives,
     reportedCount: comparison.reportedCount,

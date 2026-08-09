@@ -1,11 +1,19 @@
 const db = require('../db/connection');
 
-function insert({ price, currency = 'USD', unit = 'cents_per_lb', source, provider = null }) {
+function insert({
+  price,
+  currency = 'USD',
+  unit = 'cents_per_lb',
+  source,
+  provider = null,
+  quotedAt = null,
+  meta = null,
+}) {
   const info = db
     .prepare(
-      'INSERT INTO coffee_prices (price, currency, unit, source, provider) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO coffee_prices (price, currency, unit, source, provider, quoted_at, meta) VALUES (?, ?, ?, ?, ?, ?, ?)'
     )
-    .run(price, currency, unit, source, provider);
+    .run(price, currency, unit, source, provider, quotedAt, meta ? JSON.stringify(meta) : null);
   return db.prepare('SELECT * FROM coffee_prices WHERE id = ?').get(info.lastInsertRowid);
 }
 

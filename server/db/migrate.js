@@ -13,6 +13,9 @@ const ADDED_COLUMNS = [
   ['users', 'default_humidity', 'REAL'],
   ['users', 'transport_cost_cop_carga', 'REAL'],
   ['cooperatives', 'municipality', 'TEXT'],
+  // Hora del dato en la bolsa, distinta de cuándo lo consultamos nosotros.
+  ['coffee_prices', 'quoted_at', 'TEXT'],
+  ['coffee_prices', 'meta', 'TEXT'],
 ];
 
 function columnExists(table, column) {

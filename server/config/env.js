@@ -22,6 +22,8 @@ const env = {
 
   coffeeBasePriceCents: parseFloat(process.env.COFFEE_BASE_PRICE_CENTS || '380'),
   exchangeRateFallbackCop: parseFloat(process.env.EXCHANGE_RATE_FALLBACK_COP || '4000'),
+  // Los suaves colombianos se cotizan por encima del contrato "C" de Nueva York.
+  colombiaPremiumUsdPerLb: parseFloat(process.env.COLOMBIA_PREMIUM_USD_PER_LB || '0.40'),
 
   priceRefreshCron: process.env.PRICE_REFRESH_CRON || '*/30 * * * *',
   fncReferenceCron: process.env.FNC_REFERENCE_CRON || '0 8,14 * * 1-5',
