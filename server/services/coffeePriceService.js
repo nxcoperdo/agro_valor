@@ -20,12 +20,35 @@ const GRANULARITY = {
   alphavantage: 'mensual',
 };
 
+/**
+ * Fuera del horario de la bolsa —y entre operación y operación— el proveedor devuelve
+ * exactamente la misma cotización. Guardar una fila idéntica cada pocos minutos
+ * inflaría la base y ensuciaría la serie del modelo, así que solo se registra cuando
+ * el dato realmente cambió; si no, se actualiza la hora de consulta.
+ */
+function isSameQuote(previous, result) {
+  if (!previous || previous.source !== 'real') return false;
+  if (previous.provider !== result.provider) return false;
+
+  if (result.quotedAt && previous.quoted_at) {
+    return new Date(previous.quoted_at).getTime() === new Date(result.quotedAt).getTime();
+  }
+
+  return previous.price === result.price;
+}
+
 async function refreshPrice() {
   for (const provider of REAL_PROVIDERS) {
     if (!provider.isConfigured()) continue;
 
     try {
       const result = await provider.fetchLatestPrice();
+      const previous = coffeePriceRepository.latest();
+
+      if (isSameQuote(previous, result)) {
+        return coffeePriceRepository.touch(previous.id);
+      }
+
       const saved = coffeePriceRepository.insert({ ...result, source: 'real' });
       logger.info(`Precio de café real obtenido vía ${provider.name}: ${result.price} centavos/lb`);
       return saved;

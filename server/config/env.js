@@ -25,7 +25,7 @@ const env = {
   // Los suaves colombianos se cotizan por encima del contrato "C" de Nueva York.
   colombiaPremiumUsdPerLb: parseFloat(process.env.COLOMBIA_PREMIUM_USD_PER_LB || '0.40'),
 
-  priceRefreshCron: process.env.PRICE_REFRESH_CRON || '*/30 * * * *',
+  priceRefreshCron: process.env.PRICE_REFRESH_CRON || '*/5 * * * *',
   fncReferenceCron: process.env.FNC_REFERENCE_CRON || '0 8,14 * * 1-5',
   forecastRefreshCron: process.env.FORECAST_REFRESH_CRON || '0 15 * * *',
 

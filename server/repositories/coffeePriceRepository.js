@@ -21,6 +21,12 @@ function latest() {
   return db.prepare('SELECT * FROM coffee_prices ORDER BY fetched_at DESC, id DESC LIMIT 1').get();
 }
 
+/** Refresca la marca de tiempo de consulta sin crear una fila nueva. */
+function touch(id) {
+  db.prepare("UPDATE coffee_prices SET fetched_at = datetime('now') WHERE id = ?").run(id);
+  return db.prepare('SELECT * FROM coffee_prices WHERE id = ?').get(id);
+}
+
 function history(days = 30) {
   return db
     .prepare(
@@ -48,4 +54,4 @@ function dailySeries(days = 120) {
     .all(`-${days} days`, `-${days} days`);
 }
 
-module.exports = { insert, latest, history, dailySeries };
+module.exports = { insert, latest, touch, history, dailySeries };
