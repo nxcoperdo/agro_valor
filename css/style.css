@@ -85,21 +85,31 @@ textarea {
    ========================================================================== */
 
 :root {
-  --av-bg: #020617;
-  --av-surface: #0f172a;
-  --av-surface-alt: #1e293b;
-  --av-muted-bg: #1a1e2f;
-  --av-border: #334155;
-  --av-fg: #f8fafc;
-  --av-fg-muted: #94a3b8;
-  --av-accent: #22c55e;
-  --av-accent-strong: #16a34a;
-  --av-accent-soft: rgba(34, 197, 94, 0.14);
-  --av-warning: #f59e0b;
-  --av-warning-soft: rgba(245, 158, 11, 0.14);
+  /* Paleta de marca AgroValor */
+  --av-brand-dark: #0b3d2e;
+  --av-brand-green: #2e7d32;
+  --av-brand-light-green: #7cb342;
+  --av-brand-gold: #d4a017;
+  --av-brand-cream: #f2e9db;
+  --av-brand-ink: #1e1e1e;
+
+  --av-bg: #081d16;
+  --av-surface: #0b3d2e;
+  --av-surface-alt: #123526;
+  --av-muted-bg: #10291f;
+  --av-border: #2f5c47;
+  --av-fg: #f2e9db;
+  --av-fg-muted: #a9c2b3;
+  --av-accent: #d4a017;
+  --av-accent-strong: #b8860b;
+  --av-accent-soft: rgba(212, 160, 23, 0.16);
+  --av-warning: #d4a017;
+  --av-warning-soft: rgba(212, 160, 23, 0.16);
   --av-danger: #ef4444;
   --av-danger-soft: rgba(239, 68, 68, 0.14);
-  --av-chart-line: #38bdf8;
+  --av-positive: #7cb342;
+  --av-positive-soft: rgba(124, 179, 66, 0.16);
+  --av-chart-line: #d4a017;
 
   --av-radius-sm: 8px;
   --av-radius-md: 12px;
@@ -138,7 +148,7 @@ textarea {
 body {
   background: var(--av-bg);
   color: var(--av-fg);
-  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -147,6 +157,13 @@ body {
 button,
 input {
   font-family: inherit;
+}
+
+h1,
+h2,
+h3,
+.brand-word {
+  font-family: "Poppins", "Montserrat", system-ui, sans-serif;
 }
 
 a {
@@ -222,6 +239,48 @@ a {
   height: 18px;
 }
 
+.brand-icon-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.brand-word {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.brand-word .brand-agro {
+  color: var(--av-fg);
+}
+
+.brand-word .brand-valor {
+  color: var(--av-brand-gold);
+}
+
+.brand-plate {
+  display: inline-flex;
+  background: #f7f7f7;
+  border-radius: var(--av-radius-md);
+  padding: var(--av-space-3) var(--av-space-4);
+}
+
+.brand-plate img {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+}
+
+.brand-tagline {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--av-fg-muted);
+}
+
 /* Login */
 
 .login-screen {
@@ -247,7 +306,8 @@ a {
   animation: av-fade-up 420ms var(--av-ease-out) both;
 }
 
-.login-card .brand {
+.login-card .brand,
+.login-card .brand-plate {
   margin-bottom: var(--av-space-4);
 }
 
@@ -336,7 +396,7 @@ a {
   align-items: center;
   justify-content: space-between;
   padding: var(--av-space-3) var(--av-space-4);
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(11, 61, 46, 0.88);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--av-border);
 }
@@ -468,13 +528,13 @@ a {
 }
 
 .badge-real {
-  background: var(--av-accent-soft);
-  color: #4ade80;
+  background: var(--av-positive-soft);
+  color: #9ccc65;
 }
 
 .badge-simulated {
   background: var(--av-warning-soft);
-  color: #fbbf24;
+  color: #e6b325;
 }
 
 .badge-stale {
@@ -536,7 +596,7 @@ a {
 }
 
 .row-lowest td:first-child {
-  box-shadow: inset 3px 0 0 var(--av-accent);
+  box-shadow: inset 3px 0 0 var(--av-positive);
 }
 
 .tag {
@@ -554,8 +614,8 @@ a {
 }
 
 .tag-worst {
-  background: var(--av-accent-soft);
-  color: #4ade80;
+  background: var(--av-positive-soft);
+  color: #9ccc65;
 }
 
 .disclaimer {

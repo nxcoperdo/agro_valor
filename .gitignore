@@ -4,6 +4,9 @@
 node_modules
 dist
 .cache
+.agents
+.claude
+skills-lock.json
 .env
 data/*.sqlite
 data/*.sqlite-journal

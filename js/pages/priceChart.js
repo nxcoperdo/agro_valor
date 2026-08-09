@@ -50,8 +50,8 @@ export async function renderPriceChart(container) {
           {
             label: 'Precio (US$/carga)',
             data: history.map((h) => usdPerLbToCarga(h.price / 100)),
-            borderColor: '#38bdf8',
-            backgroundColor: 'rgba(56,189,248,0.14)',
+            borderColor: '#d4a017',
+            backgroundColor: 'rgba(212,160,23,0.16)',
             pointRadius: 0,
             borderWidth: 2,
             tension: 0.3,
@@ -65,17 +65,17 @@ export async function renderPriceChart(container) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#1e293b',
-            borderColor: '#334155',
+            backgroundColor: '#123526',
+            borderColor: '#2f5c47',
             borderWidth: 1,
-            titleColor: '#f8fafc',
-            bodyColor: '#f8fafc',
+            titleColor: '#f2e9db',
+            bodyColor: '#f2e9db',
             padding: 10,
           },
         },
         scales: {
-          x: { grid: { color: 'rgba(51,65,85,0.4)' }, ticks: { color: '#94a3b8' } },
-          y: { beginAtZero: false, grid: { color: 'rgba(51,65,85,0.4)' }, ticks: { color: '#94a3b8' } },
+          x: { grid: { color: 'rgba(47,92,71,0.5)' }, ticks: { color: '#a9c2b3' } },
+          y: { beginAtZero: false, grid: { color: 'rgba(47,92,71,0.5)' }, ticks: { color: '#a9c2b3' } },
         },
       },
     });
