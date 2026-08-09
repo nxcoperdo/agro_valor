@@ -27,7 +27,8 @@ const env = {
   fncReferenceCron: process.env.FNC_REFERENCE_CRON || '0 8,14 * * 1-5',
   forecastRefreshCron: process.env.FORECAST_REFRESH_CRON || '0 15 * * *',
 
-  fncSourceUrl: process.env.FNC_SOURCE_URL || 'https://federaciondecafeteros.org/wp/estadisticas-cafeteras/',
+  fncSourceUrl: process.env.FNC_SOURCE_URL || 'https://federaciondecafeteros.org/estadisticas-cafeteras/',
+  fncFallbackCopCarga: process.env.FNC_FALLBACK_COP_CARGA ? parseFloat(process.env.FNC_FALLBACK_COP_CARGA) : null,
 };
 
 if (isProd && env.jwtSecret === 'reemplaza-esto-por-una-cadena-larga-y-aleatoria') {
