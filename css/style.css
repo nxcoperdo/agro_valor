@@ -632,57 +632,137 @@ a {
   color: var(--av-fg-muted);
 }
 
-.forecast-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--av-space-3);
+/* Proyección: tabs día/semana/mes + vistas tipo calendario ------------- */
+
+.cal-tabs {
+  display: flex;
+  gap: var(--av-space-2);
+  margin-bottom: var(--av-space-3);
 }
 
-.forecast-card {
+.cal-tab-btn {
+  flex: 1;
+  padding: var(--av-space-2) var(--av-space-3);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-sm);
+  background: transparent;
+  color: var(--av-fg-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--av-duration) var(--av-ease-out), color var(--av-duration) var(--av-ease-out),
+    border-color var(--av-duration) var(--av-ease-out);
+}
+
+.cal-tab-btn:hover {
+  border-color: var(--av-accent);
+  color: var(--av-fg);
+}
+
+.cal-tab-btn.active {
+  background: var(--av-accent-soft);
+  border-color: var(--av-accent);
+  color: var(--av-accent);
+}
+
+.cal-grid {
+  display: grid;
+  gap: var(--av-space-2);
+}
+
+.cal-cell {
   background: var(--av-surface-alt);
   border: 1px solid var(--av-border);
-  border-radius: var(--av-radius-md);
-  padding: var(--av-space-3);
+  border-radius: var(--av-radius-sm);
   text-align: center;
   transition: transform var(--av-duration) var(--av-ease-out), border-color var(--av-duration) var(--av-ease-out);
 }
 
-.forecast-card:hover {
+.cal-cell:hover {
   transform: translateY(-2px);
   border-color: var(--av-accent);
 }
 
-.forecast-card h3 {
-  margin: 0 0 var(--av-space-2);
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--av-fg-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+/* Vista día: grilla de calendario, 7 columnas fijas */
+.cal-grid-day {
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--av-space-1);
 }
 
-.forecast-price {
-  font-size: 1.3rem;
-  font-weight: 700;
+.cal-weekday-header {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--av-fg-muted);
+  text-align: center;
+  padding-bottom: var(--av-space-1);
+}
+
+.cal-day-cell {
+  padding: var(--av-space-1) 2px var(--av-space-2);
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.cal-day-cell.cal-blank {
+  background: transparent;
+  border-color: transparent;
+}
+
+.cal-day-num {
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--av-fg);
 }
 
-.forecast-price-secondary {
-  font-size: 0.85rem;
+.cal-day-price {
+  font-size: 0.62rem;
   color: var(--av-fg-muted);
-  margin-top: 2px;
 }
 
-.forecast-date {
-  font-size: 0.75rem;
-  color: var(--av-fg-muted);
-  margin-top: var(--av-space-2);
+/* Vistas semana y mes: tarjetas más grandes con rango de fechas */
+.cal-grid-week {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
 }
 
-.forecast-model {
+.cal-grid-month {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.cal-week-cell,
+.cal-month-cell {
+  padding: var(--av-space-3);
+}
+
+.cal-cell-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--av-fg);
+  text-transform: capitalize;
+}
+
+.cal-cell-range {
   font-size: 0.68rem;
   color: var(--av-fg-muted);
+  margin: 2px 0 var(--av-space-1);
+}
+
+.cal-cell-price {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--av-fg);
   margin-top: var(--av-space-1);
+}
+
+.cal-change {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 /* Botones -------------------------------------------------------------- */
@@ -1393,12 +1473,6 @@ a {
   font-size: 0.75rem;
   color: var(--av-fg-muted);
   text-align: center;
-}
-
-.forecast-change {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: var(--av-space-1);
 }
 
 /* ==========================================================================

@@ -18,6 +18,7 @@
     "start": "node server/index.js",
     "seed": "node server/db/seed.js",
     "set-password": "node server/db/setPassword.js",
+    "fnc:scrape-and-push": "node scripts/fnc-scrape-and-push.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {

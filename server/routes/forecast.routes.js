@@ -18,11 +18,11 @@ router.get('/', (req, res) => {
   const currentCents = summary.international ? summary.international.centsPerLb : null;
   const internalNow = summary.internal ? summary.internal.copPerCarga : null;
 
-  const enriched = forecasts.map((f) => {
+  const enrich = (f) => {
     const changePct = currentCents ? ((f.predictedPrice - currentCents) / currentCents) * 100 : null;
 
     return {
-      horizon: f.horizon,
+      step: f.step,
       predictedForDate: f.predictedForDate,
       usdPerLb: f.predictedPrice / 100,
       centsPerLb: f.predictedPrice,
@@ -31,10 +31,12 @@ router.get('/', (req, res) => {
         changePct != null && internalNow != null ? internalNow * (1 + changePct / 100) : null,
       modelParams: f.modelParams,
     };
-  });
+  };
 
   res.json({
-    forecasts: enriched,
+    daily: forecasts.filter((f) => f.granularity === 'day').map(enrich),
+    weekly: forecasts.filter((f) => f.granularity === 'week').map(enrich),
+    monthly: forecasts.filter((f) => f.granularity === 'month').map(enrich),
     currentUsdPerLb: currentCents != null ? currentCents / 100 : null,
     internalNowCopPerCarga: internalNow,
     note:

@@ -77,12 +77,57 @@ function fitHoltWinters(series, alpha, beta, gamma) {
   return { level, trend, season };
 }
 
+/**
+ * Amortigua la tendencia en vez de extrapolarla lineal y sin freno (método de Gardner:
+ * suma phi + phi² + ... + phiʰ en vez de sumar el mismo trend h veces). Con solo unos
+ * pocos días de historia el trend estimado puede ser grande, y a 6 meses (180 días) un
+ * trend lineal sin amortiguar puede hacer que el precio proyectado se desplome a casi
+ * cero — un número absurdo para un commodity, no una proyección real.
+ */
+const TREND_DAMPING = 0.98;
+
+function dampedTrendSum(trend, horizonDays) {
+  const phi = TREND_DAMPING;
+  const sum = (phi * (1 - phi ** horizonDays)) / (1 - phi);
+  return trend * sum;
+}
+
 function forecastAt(model, horizonDays, hasSeasonality) {
+  const trendComponent = dampedTrendSum(model.trend, horizonDays);
   if (hasSeasonality) {
     const s = model.season[(horizonDays - 1) % SEASON_LENGTH];
-    return model.level + horizonDays * model.trend + s;
+    return model.level + trendComponent + s;
   }
-  return model.level + horizonDays * model.trend;
+  return model.level + trendComponent;
+}
+
+/** Vista "calendario": 14 días, 8 semanas y 6 meses hacia adelante. */
+const DAILY_STEPS = 14;
+const WEEKLY_STEPS = 8;
+const MONTHLY_STEPS = 6;
+const DAYS_PER_MONTH = 30;
+
+function buildHorizons() {
+  const horizons = [];
+  for (let step = 1; step <= DAILY_STEPS; step += 1) {
+    horizons.push({ granularity: 'day', step, days: step });
+  }
+  for (let step = 1; step <= WEEKLY_STEPS; step += 1) {
+    horizons.push({ granularity: 'week', step, days: step * SEASON_LENGTH });
+  }
+  for (let step = 1; step <= MONTHLY_STEPS; step += 1) {
+    horizons.push({ granularity: 'month', step, days: step * DAYS_PER_MONTH });
+  }
+  return horizons;
+}
+
+// Red de seguridad además del amortiguado: pase lo que pase con el ajuste del modelo
+// (ej. muy poca historia todavía), nunca se muestra un precio proyectado que implique
+// un movimiento de mercado mayor a esto respecto al último precio real conocido.
+const MAX_FORECAST_MOVE_PCT = 0.5;
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function computeForecast() {
@@ -109,19 +154,18 @@ function computeForecast() {
   }
 
   const now = new Date();
-  const horizons = [
-    { horizon: '1d', days: 1 },
-    { horizon: '7d', days: 7 },
-    { horizon: '30d', days: 30 },
-  ];
+  const lastObserved = series[series.length - 1];
+  const minPrice = lastObserved * (1 - MAX_FORECAST_MOVE_PCT);
+  const maxPrice = lastObserved * (1 + MAX_FORECAST_MOVE_PCT);
 
-  return horizons.map(({ horizon, days }) => {
+  return buildHorizons().map(({ granularity, step, days }) => {
     const predictedForDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000)
       .toISOString()
       .slice(0, 10);
     return {
-      horizon,
-      predictedPrice: Math.max(predictFn(days), 0.01),
+      granularity,
+      step,
+      predictedPrice: Math.max(clamp(predictFn(days), minPrice, maxPrice), 0.01),
       predictedForDate,
       modelParams,
     };
@@ -141,7 +185,8 @@ function recomputeAndCache() {
 
 function normalizeRow(row) {
   return {
-    horizon: row.horizon,
+    granularity: row.granularity,
+    step: row.step,
     predictedPrice: row.predicted_price,
     predictedForDate: row.predicted_for_date,
     generatedAt: row.generated_at,

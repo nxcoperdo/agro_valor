@@ -15,6 +15,7 @@ const calculatorRoutes = require('./routes/calculator.routes');
 const reportsRoutes = require('./routes/reports.routes');
 const salesRoutes = require('./routes/sales.routes');
 const adminRoutes = require('./routes/admin.routes');
+const internalRoutes = require('./routes/internal.routes');
 
 const authMiddleware = require('./middleware/authMiddleware');
 const { loadUser, requirePro, requireAdmin } = require('./middleware/requirePlan');
@@ -31,6 +32,9 @@ function createApp() {
   // Abierto: la vitrina pública del producto.
   app.use('/api/auth', authRoutes);
   app.use('/api/public', publicRoutes);
+
+  // Sin cookie de sesión: lo llama el workflow de GitHub Actions, protegido por token propio.
+  app.use('/api/internal', internalRoutes);
 
   // Requiere cuenta (plan gratis incluido).
   app.use('/api/prices', authMiddleware, pricesRoutes);

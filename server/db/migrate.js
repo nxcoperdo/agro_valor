@@ -25,7 +25,18 @@ function columnExists(table, column) {
     .some((c) => c.name === column);
 }
 
+function tableExists(table) {
+  return Boolean(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(table));
+}
+
 function migrate() {
+  // forecast_cache es pura caché (se vacía y reescribe completa en cada recálculo), así que
+  // si viene del esquema viejo (columna "horizon" en vez de "granularity"/"step") se puede
+  // tirar sin perder nada real: el próximo refresh la vuelve a poblar con el formato nuevo.
+  if (tableExists('forecast_cache') && !columnExists('forecast_cache', 'granularity')) {
+    db.exec('DROP TABLE forecast_cache');
+  }
+
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   db.exec(schema);
 

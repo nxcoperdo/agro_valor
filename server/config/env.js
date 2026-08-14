@@ -31,6 +31,9 @@ const env = {
 
   fncSourceUrl: process.env.FNC_SOURCE_URL || 'https://federaciondecafeteros.org/estadisticas-cafeteras/',
   fncFallbackCopCarga: process.env.FNC_FALLBACK_COP_CARGA ? parseFloat(process.env.FNC_FALLBACK_COP_CARGA) : null,
+  // Token compartido con el workflow de GitHub Actions que scrapea la FNC desde afuera
+  // del VPS y empuja el precio al endpoint POST /api/internal/fnc-price.
+  fncIngestToken: process.env.FNC_INGEST_TOKEN || '',
 
   // Se delega el envío al proyecto de WhatsApp que ya corre en el mismo servidor.
   whatsappApiUrl: process.env.WHATSAPP_API_URL || '',

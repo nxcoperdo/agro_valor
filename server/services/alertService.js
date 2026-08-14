@@ -75,17 +75,23 @@ function buildDigestMessage(snapshot, { includeForecast }) {
 
   if (includeForecast) {
     const forecasts = forecastService.getForecast();
+    // El digest es un mensaje corto: solo el primer paso de cada granularidad
+    // (mañana, la semana que viene, el mes que viene), no las 28 filas completas.
+    const highlights = [
+      { row: forecasts.find((f) => f.granularity === 'day' && f.step === 1), label: 'Mañana' },
+      { row: forecasts.find((f) => f.granularity === 'week' && f.step === 1), label: 'En una semana' },
+      { row: forecasts.find((f) => f.granularity === 'month' && f.step === 1), label: 'En un mes' },
+    ].filter((h) => h.row);
 
-    if (forecasts.length && snapshot.currentCents) {
+    if (highlights.length && snapshot.currentCents) {
       lines.push('', '*Proyección del mercado internacional:*');
-      const labels = { '1d': 'Mañana', '7d': 'En una semana', '30d': 'En un mes' };
 
-      forecasts.forEach((f) => {
-        const changePct = ((f.predictedPrice - snapshot.currentCents) / snapshot.currentCents) * 100;
+      highlights.forEach(({ row, label }) => {
+        const changePct = ((row.predictedPrice - snapshot.currentCents) / snapshot.currentCents) * 100;
         const implied = snapshot.referencePrice * (1 + changePct / 100);
         const arrow = changePct >= 0 ? '▲' : '▼';
         lines.push(
-          `• ${labels[f.horizon] || f.horizon}: ${arrow} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(1)}%` +
+          `• ${label}: ${arrow} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(1)}%` +
             ` → ${formatCop(implied)} por carga`
         );
       });

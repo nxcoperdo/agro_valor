@@ -1,0 +1,29 @@
+name: Sincronizar precio FNC
+
+# El VPS no puede conectarse a federaciondecafeteros.org (le bloquean el rango de IPs
+# del proveedor), pero los runners de GitHub sí. Este workflow scrapea el precio
+# interno de referencia desde acá afuera y lo empuja al VPS por un endpoint protegido,
+# para no tener que actualizarlo a mano.
+on:
+  schedule:
+    # 8:00 y 14:00 hora Colombia (UTC-5) en días hábiles = 13:00 y 19:00 UTC.
+    - cron: '0 13 * * 1-5'
+    - cron: '0 19 * * 1-5'
+  workflow_dispatch: {}
+
+jobs:
+  scrape-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - run: npm run fnc:scrape-and-push
+        env:
+          VPS_BASE_URL: ${{ secrets.VPS_BASE_URL }}
+          FNC_INGEST_TOKEN: ${{ secrets.FNC_INGEST_TOKEN }}

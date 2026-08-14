@@ -100,7 +100,7 @@ export async function renderLanding(root) {
         </article>
         <article class="value-card">
           <h3>Proyección del precio</h3>
-          <p>Estimación de cómo puede moverse el precio mañana, en una semana y en un mes.</p>
+          <p>Calendario día a día, semana a semana y mes a mes de cómo puede moverse el precio.</p>
         </article>
         <article class="value-card">
           <h3>Precios reales del campo</h3>

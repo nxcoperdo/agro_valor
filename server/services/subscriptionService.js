@@ -17,7 +17,7 @@ const PLANS = {
       'Alertas por WhatsApp cuando el precio te convenga',
       'Calculadora de precio neto con tu factor y humedad',
       'Comparación de cuánto te queda en cada cooperativa',
-      'Proyección a 1 día, 1 semana y 1 mes',
+      'Proyección en calendario: día a día, semana a semana y mes a mes',
       'Historial de tus ventas',
     ],
   },

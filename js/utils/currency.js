@@ -19,3 +19,15 @@ export function formatCop(value) {
     value
   );
 }
+
+/** Versión compacta ("$2.15M") para espacios chicos como celdas de calendario. */
+export function formatCopShort(value) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  if (Math.abs(value) >= 1_000_000) {
+    return `$${(value / 1_000_000).toFixed(2)}M`;
+  }
+  if (Math.abs(value) >= 1_000) {
+    return `$${Math.round(value / 1000)}K`;
+  }
+  return formatCop(value);
+}

@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS cooperatives (
 
 CREATE TABLE IF NOT EXISTS forecast_cache (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  horizon TEXT NOT NULL CHECK(horizon IN ('1d', '7d', '30d')),
+  granularity TEXT NOT NULL CHECK(granularity IN ('day', 'week', 'month')),
+  step INTEGER NOT NULL,
   predicted_price REAL NOT NULL,
   predicted_for_date TEXT NOT NULL,
   generated_at TEXT NOT NULL DEFAULT (datetime('now')),
