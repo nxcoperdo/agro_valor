@@ -129,11 +129,13 @@ textarea {
 
   --av-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --av-duration: 200ms;
+  --av-duration-lg: 320ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
     --av-duration: 0ms;
+    --av-duration-lg: 0ms;
   }
 
   *,
@@ -173,6 +175,14 @@ h3,
 
 a {
   color: var(--av-accent);
+}
+
+/* Los estados `:active` propios sustituyen al destello gris del navegador. */
+a,
+button,
+[role="button"],
+[role="tab"] {
+  -webkit-tap-highlight-color: transparent;
 }
 
 :focus-visible {
@@ -294,6 +304,8 @@ a {
   align-items: center;
   justify-content: center;
   padding: var(--av-space-3);
+  padding-top: max(var(--av-space-3), env(safe-area-inset-top));
+  padding-bottom: max(var(--av-space-3), env(safe-area-inset-bottom));
   background: var(--av-bg);
 }
 
@@ -389,18 +401,25 @@ a {
 
 /* Dashboard */
 
-.dashboard-header {
+.app-topbar {
   position: sticky;
   top: 0;
   z-index: 10;
+  padding-top: env(safe-area-inset-top);
+  background: rgba(11, 61, 46, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dashboard-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--av-space-2);
   padding: var(--av-space-3) var(--av-space-4);
-  background: rgba(11, 61, 46, 0.88);
-  backdrop-filter: blur(10px);
+  padding-left: max(var(--av-space-4), env(safe-area-inset-left));
+  padding-right: max(var(--av-space-4), env(safe-area-inset-right));
   border-bottom: 1px solid var(--av-border);
 }
 
@@ -553,6 +572,8 @@ a {
   overflow-x: auto;
   margin: 0 calc(var(--av-space-4) * -1);
   padding: 0 var(--av-space-4);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
 }
 
 .coop-table {
@@ -584,7 +605,13 @@ a {
   transition: background var(--av-duration) var(--av-ease-out);
 }
 
-.coop-table tbody tr:hover {
+@media (hover: hover) {
+  .coop-table tbody tr:hover {
+    background: var(--av-surface-alt);
+  }
+}
+
+.coop-table tbody tr:active {
   background: var(--av-surface-alt);
 }
 
@@ -596,6 +623,105 @@ a {
   display: block;
   font-size: 0.78rem;
   color: var(--av-fg-muted);
+}
+
+/*
+ * En móvil la tabla se reconstruye como tarjetas apiladas: cada cooperativa es
+ * una ficha con sus datos etiquetados. Así se ve todo sin deslizar de lado, que
+ * era lo que obligaba a hacer zoom para leer las últimas columnas.
+ */
+@media (max-width: 600px) {
+  .table-scroll {
+    overflow-x: visible;
+    margin: 0;
+    padding: 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .coop-table {
+    display: block;
+    min-width: 0;
+    font-size: 1rem;
+  }
+
+  .coop-table thead {
+    display: none;
+  }
+
+  .coop-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--av-space-2);
+  }
+
+  .coop-table tbody tr {
+    display: block;
+    padding: var(--av-space-3);
+    background: var(--av-surface-alt);
+    border: 1px solid var(--av-border);
+    border-radius: var(--av-radius-md);
+  }
+
+  /*
+   * Columna, no fila: un valor puede traer dos líneas (COP y su equivalente en
+   * USD), y con `justify-content: space-between` esas dos líneas cuentan como
+   * elementos flex aparte, así que la segunda se va empujada fuera de la tarjeta.
+   * Apilando etiqueta y valor no hay ambigüedad de cuántos hijos hay.
+   */
+  .coop-table td {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: var(--av-space-2) 0;
+    border-bottom: none;
+    text-align: left;
+  }
+
+  .coop-table td::before {
+    content: attr(data-label);
+    color: var(--av-fg-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* El nombre encabeza la ficha; el puesto va como dato menor junto a él. */
+  .coop-table td.cell-name {
+    display: block;
+    padding-bottom: var(--av-space-2);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .coop-table td.cell-name::before {
+    content: none;
+  }
+
+  .coop-table td.cell-rank {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--av-space-1);
+    padding: 0;
+    font-size: 0.72rem;
+    color: var(--av-fg-muted);
+  }
+
+  /* El realce de fila pasa del borde de una celda al de la ficha completa. */
+  .row-highest td:first-child,
+  .row-lowest td:first-child {
+    box-shadow: none;
+  }
+
+  .coop-table tbody tr.row-highest {
+    box-shadow: inset 3px 0 0 var(--av-danger);
+  }
+
+  .coop-table tbody tr.row-lowest {
+    box-shadow: inset 3px 0 0 var(--av-positive);
+  }
 }
 
 .row-highest td:first-child {
@@ -654,9 +780,15 @@ a {
     border-color var(--av-duration) var(--av-ease-out);
 }
 
-.cal-tab-btn:hover {
-  border-color: var(--av-accent);
-  color: var(--av-fg);
+@media (hover: hover) {
+  .cal-tab-btn:hover {
+    border-color: var(--av-accent);
+    color: var(--av-fg);
+  }
+}
+
+.cal-tab-btn:active {
+  transform: scale(0.97);
 }
 
 .cal-tab-btn.active {
@@ -678,8 +810,15 @@ a {
   transition: transform var(--av-duration) var(--av-ease-out), border-color var(--av-duration) var(--av-ease-out);
 }
 
-.cal-cell:hover {
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .cal-cell:hover {
+    transform: translateY(-2px);
+    border-color: var(--av-accent);
+  }
+}
+
+.cal-cell:active {
+  transform: scale(0.97);
   border-color: var(--av-accent);
 }
 
@@ -763,6 +902,75 @@ a {
   display: inline-block;
   font-size: 0.7rem;
   font-weight: 700;
+}
+
+.cal-day-weekday {
+  display: none;
+}
+
+/*
+ * En móvil una grilla de 7 columnas con fecha, variación y precio no cabe: obliga
+ * a deslizar y a hacer zoom. Se convierte en una lista de filas, que cabe entera
+ * y se lee de corrido. El día de la semana se muestra aquí porque ya no hay
+ * encabezados de columna que den ese contexto.
+ */
+@media (max-width: 600px) {
+  .cal-grid-day {
+    grid-template-columns: 1fr;
+    gap: var(--av-space-1);
+  }
+
+  .cal-weekday-header,
+  .cal-day-cell.cal-blank {
+    display: none;
+  }
+
+  .cal-day-cell {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--av-space-3);
+    min-height: 44px;
+    padding: var(--av-space-2) var(--av-space-3);
+    text-align: left;
+  }
+
+  .cal-day-num {
+    display: flex;
+    align-items: baseline;
+    gap: var(--av-space-2);
+    font-size: 0.9rem;
+  }
+
+  .cal-day-weekday {
+    display: inline;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--av-fg-muted);
+  }
+
+  .cal-day-price {
+    font-size: 0.85rem;
+    color: var(--av-fg);
+    margin-left: auto;
+  }
+}
+
+/* Teléfonos angostos: se recupera algo de ancho útil recortando el relleno. */
+@media (max-width: 380px) {
+  .app-main {
+    padding: var(--av-space-3);
+  }
+
+  .dashboard-header {
+    padding: var(--av-space-2) var(--av-space-3);
+  }
+
+  .panel {
+    padding: var(--av-space-3);
+  }
 }
 
 /* Botones -------------------------------------------------------------- */
@@ -854,9 +1062,8 @@ a {
   border-bottom: 1px solid var(--av-border);
   overflow-x: auto;
   scrollbar-width: none;
-  position: sticky;
-  top: 68px;
-  z-index: 9;
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
 }
 
 .app-nav::-webkit-scrollbar {
@@ -874,8 +1081,14 @@ a {
   transition: color var(--av-duration) var(--av-ease-out), border-color var(--av-duration) var(--av-ease-out);
 }
 
-.app-nav-link:hover {
-  color: var(--av-fg);
+@media (hover: hover) {
+  .app-nav-link:hover {
+    color: var(--av-fg);
+  }
+}
+
+.app-nav-link:active {
+  transform: scale(0.97);
 }
 
 .app-nav-link.is-active {
@@ -883,10 +1096,167 @@ a {
   border-bottom-color: var(--av-accent);
 }
 
+/* Menú móvil: botón hamburguesa + panel lateral --------------------------- */
+
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-sm);
+  background: transparent;
+  color: var(--av-fg);
+  cursor: pointer;
+  transition: background var(--av-duration) var(--av-ease-out), transform var(--av-duration) var(--av-ease-out);
+}
+
+.nav-toggle:active {
+  transform: scale(0.97);
+}
+
+.nav-toggle-bars,
+.nav-toggle-bars::before,
+.nav-toggle-bars::after {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  transition: transform var(--av-duration) var(--av-ease-out), background var(--av-duration) var(--av-ease-out);
+}
+
+.nav-toggle-bars {
+  position: relative;
+}
+
+.nav-toggle-bars::before,
+.nav-toggle-bars::after {
+  content: "";
+  position: absolute;
+  left: 0;
+}
+
+.nav-toggle-bars::before {
+  top: -6px;
+}
+
+.nav-toggle-bars::after {
+  top: 6px;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bars {
+  background: transparent;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bars::before {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bars::after {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.nav-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  background: rgba(8, 29, 22, 0.6);
+  opacity: 0;
+  transition: opacity var(--av-duration-lg) var(--av-ease-out);
+}
+
+.nav-scrim.is-visible {
+  opacity: 1;
+}
+
+.app-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  width: min(80vw, 320px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--av-space-1);
+  padding: var(--av-space-4) var(--av-space-3);
+  padding-top: calc(var(--av-space-4) + env(safe-area-inset-top));
+  padding-right: calc(var(--av-space-3) + env(safe-area-inset-right));
+  padding-bottom: calc(var(--av-space-4) + env(safe-area-inset-bottom));
+  background: rgba(11, 61, 46, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-left: 1px solid var(--av-border);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform var(--av-duration-lg) var(--av-ease-out);
+}
+
+.app-drawer.is-open {
+  transform: translateX(0);
+}
+
+.app-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--av-space-2);
+  margin-bottom: var(--av-space-3);
+}
+
+.app-drawer-link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--av-space-3);
+  border-radius: var(--av-radius-sm);
+  color: var(--av-fg-muted);
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background var(--av-duration) var(--av-ease-out), color var(--av-duration) var(--av-ease-out),
+    transform var(--av-duration) var(--av-ease-out);
+}
+
+.app-drawer-link:active {
+  transform: scale(0.97);
+  background: var(--av-surface-alt);
+}
+
+.app-drawer-link.is-active {
+  color: var(--av-accent);
+  background: var(--av-accent-soft);
+}
+
+body.nav-locked {
+  overflow: hidden;
+}
+
+@media (max-width: 767.98px) {
+  .app-nav {
+    display: none;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+  }
+}
+
+@media (min-width: 768px) {
+  .app-drawer,
+  .nav-scrim {
+    display: none;
+  }
+}
+
 .app-main {
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--av-space-4);
+  padding-bottom: calc(var(--av-space-4) + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: var(--av-space-4);
@@ -901,6 +1271,22 @@ a {
 .app-main .dashboard-grid {
   padding: 0;
   gap: var(--av-space-4);
+}
+
+/*
+ * Los hijos de un contenedor flex/grid traen `min-width: auto`, así que un panel
+ * con contenido ancho (la tabla de 560px, una línea de precio larga) se niega a
+ * encogerse y desborda la pantalla en móvil. Con `min-width: 0` sí se ajustan y
+ * el scroll horizontal queda contenido dentro de `.table-scroll`, como toca.
+ */
+.app-main > *,
+.dashboard-grid > *,
+.landing > * {
+  min-width: 0;
+}
+
+.panel canvas {
+  max-width: 100%;
 }
 
 .plan-chip {
@@ -1550,23 +1936,6 @@ a {
 
 .clearfix::after {
   clear: both;
-}
-
-/* ==========================================================================
-   EXAMPLE Media Queries for Responsive Design.
-   These examples override the primary ('mobile first') styles.
-   Modify as content requires.
-   ========================================================================== */
-
-@media only screen and (min-width: 35em) {
-  /* Style adjustments for viewports that meet the condition */
-}
-
-@media print,
-  (-webkit-min-device-pixel-ratio: 1.25),
-  (min-resolution: 1.25dppx),
-  (min-resolution: 120dpi) {
-  /* Style adjustments for high resolution devices */
 }
 
 /* ==========================================================================

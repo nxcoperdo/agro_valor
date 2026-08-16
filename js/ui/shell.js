@@ -9,6 +9,68 @@ const NAV_ITEMS = [
   { hash: '#/cuenta', label: 'Mi cuenta' },
 ];
 
+function navLinks(activeHash, linkClass) {
+  return NAV_ITEMS.map(
+    (item) => `
+      <a href="${item.hash}" class="${linkClass} ${item.hash === activeHash ? 'is-active' : ''}"
+         ${item.hash === activeHash ? 'aria-current="page"' : ''}>${item.label}</a>
+    `
+  ).join('');
+}
+
+/**
+ * En móvil la navegación vive en un panel lateral. El cierre espera a que termine
+ * la transición antes de marcarlo `inert`, para no cortar la animación de salida.
+ */
+function setupDrawer(root) {
+  const toggle = root.querySelector('#nav-toggle');
+  const drawer = root.querySelector('#app-drawer');
+  const scrim = root.querySelector('#nav-scrim');
+  const closeBtn = root.querySelector('#drawer-close');
+
+  function openDrawer() {
+    drawer.removeAttribute('inert');
+    drawer.classList.add('is-open');
+    scrim.hidden = false;
+    requestAnimationFrame(() => scrim.classList.add('is-visible'));
+    toggle.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('nav-locked');
+    closeBtn.focus();
+  }
+
+  function closeDrawer() {
+    if (!drawer.classList.contains('is-open')) return;
+    drawer.classList.remove('is-open');
+    scrim.classList.remove('is-visible');
+    toggle.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('nav-locked');
+    toggle.focus();
+
+    drawer.addEventListener(
+      'transitionend',
+      () => {
+        if (!drawer.classList.contains('is-open')) {
+          drawer.setAttribute('inert', '');
+          scrim.hidden = true;
+        }
+      },
+      { once: true }
+    );
+  }
+
+  toggle.addEventListener('click', openDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  scrim.addEventListener('click', closeDrawer);
+  drawer.addEventListener('click', (e) => {
+    if (e.target.closest('a')) closeDrawer();
+  });
+  // El foco entra al panel al abrirlo, así que basta escuchar aquí; el marco se
+  // vuelve a dibujar en cada navegación y un listener en `document` se acumularía.
+  drawer.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+  });
+}
+
 /**
  * Marco común de las pantallas con sesión: encabezado, navegación y contenedor.
  * Devuelve el elemento donde cada página pinta su contenido.
@@ -19,25 +81,36 @@ export function renderShell(root, activeHash) {
 
   root.innerHTML = `
     <div class="app-shell">
-      <header class="dashboard-header">
-        <a class="brand" href="#/dashboard">
-          <img class="brand-icon-img" src="img/logo-icon.png" alt="" width="32" height="32" />
-          <span class="brand-word"><span class="brand-agro">Agro</span><span class="brand-valor">Valor</span></span>
-        </a>
-        <div class="dashboard-user">
-          <span class="plan-chip ${isPro ? 'plan-chip-pro' : ''}">${isPro ? 'Pro' : 'Gratis'}</span>
-          <span class="user-name">${user ? user.username : ''}</span>
-          <button id="logout-btn" type="button">Salir</button>
-        </div>
-      </header>
+      <div class="app-topbar">
+        <header class="dashboard-header">
+          <a class="brand" href="#/dashboard">
+            <img class="brand-icon-img" src="img/logo-icon.png" alt="" width="32" height="32" />
+            <span class="brand-word"><span class="brand-agro">Agro</span><span class="brand-valor">Valor</span></span>
+          </a>
+          <div class="dashboard-user">
+            <span class="plan-chip ${isPro ? 'plan-chip-pro' : ''}">${isPro ? 'Pro' : 'Gratis'}</span>
+            <span class="user-name">${user ? user.username : ''}</span>
+            <button id="logout-btn" type="button">Salir</button>
+            <button id="nav-toggle" type="button" class="nav-toggle" aria-label="Abrir menú"
+              aria-expanded="false" aria-controls="app-drawer">
+              <span class="nav-toggle-bars" aria-hidden="true"></span>
+            </button>
+          </div>
+        </header>
 
-      <nav class="app-nav" aria-label="Secciones">
-        ${NAV_ITEMS.map(
-          (item) => `
-            <a href="${item.hash}" class="app-nav-link ${item.hash === activeHash ? 'is-active' : ''}"
-               ${item.hash === activeHash ? 'aria-current="page"' : ''}>${item.label}</a>
-          `
-        ).join('')}
+        <nav class="app-nav" aria-label="Secciones">
+          ${navLinks(activeHash, 'app-nav-link')}
+        </nav>
+      </div>
+
+      <div class="nav-scrim" id="nav-scrim" hidden></div>
+
+      <nav class="app-drawer" id="app-drawer" aria-label="Secciones" inert>
+        <div class="app-drawer-header">
+          <span class="brand-word"><span class="brand-agro">Agro</span><span class="brand-valor">Valor</span></span>
+          <button type="button" class="nav-toggle" id="drawer-close" aria-label="Cerrar menú">✕</button>
+        </div>
+        ${navLinks(activeHash, 'app-drawer-link')}
       </nav>
 
       <main class="app-main" id="page-content"></main>
@@ -45,6 +118,7 @@ export function renderShell(root, activeHash) {
   `;
 
   root.querySelector('#logout-btn').addEventListener('click', logout);
+  setupDrawer(root);
 
   return root.querySelector('#page-content');
 }

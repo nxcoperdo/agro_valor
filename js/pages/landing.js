@@ -35,10 +35,10 @@ function priceRow(coop) {
 
   return `
     <tr class="${coop.isHighestBuyer ? 'row-highest' : ''}">
-      <td>${coop.rank}</td>
-      <td>${coop.name} ${source}</td>
-      <td>${coop.region || '—'}</td>
-      <td class="tabular-nums">${formatCop(coop.estimatedPriceCopCarga)}</td>
+      <td data-label="#" class="cell-rank">${coop.rank}</td>
+      <td data-label="Cooperativa" class="cell-name">${coop.name} ${source}</td>
+      <td data-label="Región">${coop.region || '—'}</td>
+      <td data-label="Precio por carga" class="tabular-nums">${formatCop(coop.estimatedPriceCopCarga)}</td>
     </tr>
   `;
 }

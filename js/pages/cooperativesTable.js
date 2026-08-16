@@ -60,16 +60,16 @@ export async function renderCooperativesTable(container) {
       .map(
         (c) => `
           <tr class="${c.isHighestBuyer ? 'row-highest' : ''} ${c.isLowestBuyer ? 'row-lowest' : ''}">
-            <td>${c.rank}</td>
-            <td>${c.name} ${c.isHighestBuyer ? '<span class="tag tag-best">Paga más</span>' : ''}${
-          c.isLowestBuyer ? '<span class="tag tag-worst">Paga menos</span>' : ''
-        }</td>
-            <td>${c.region || '—'}</td>
-            <td class="tabular-nums">
+            <td data-label="#" class="cell-rank">${c.rank}</td>
+            <td data-label="Cooperativa" class="cell-name">${c.name} ${
+          c.isHighestBuyer ? '<span class="tag tag-best">Paga más</span>' : ''
+        }${c.isLowestBuyer ? '<span class="tag tag-worst">Paga menos</span>' : ''}</td>
+            <td data-label="Región">${c.region || '—'}</td>
+            <td data-label="Precio por carga" class="tabular-nums">
               <span class="cop">${formatCop(c.estimatedPriceCopCarga)}</span>
               ${c.estimatedPriceUsdPerLb != null ? `<span class="usd">${formatUsdPerCarga(c.estimatedPriceUsdPerLb)}</span>` : ''}
             </td>
-            <td class="tabular-nums">${(c.differentialPct * 100).toFixed(1)}%</td>
+            <td data-label="Diferencial" class="tabular-nums">${(c.differentialPct * 100).toFixed(1)}%</td>
           </tr>
         `
       )

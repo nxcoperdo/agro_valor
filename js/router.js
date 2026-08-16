@@ -54,11 +54,14 @@ async function handleRoute() {
 
   window.scrollTo(0, 0);
 
+  // Cada página pinta un elemento raíz nuevo, así que la animación se reinicia sola.
   if (route.shell) {
     const content = renderShell(root, hash);
     await route.render(content);
+    content.firstElementChild?.classList.add('av-fade-in');
   } else {
     await route.render(root);
+    root.firstElementChild?.classList.add('av-fade-in');
   }
 }
 

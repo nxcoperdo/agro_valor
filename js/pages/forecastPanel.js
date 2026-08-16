@@ -45,9 +45,13 @@ function renderDayView(daily) {
   const cells = daily
     .map((f) => {
       const date = parseCalendarDate(f.predictedForDate);
+      // El día de la semana solo se ve en móvil, donde la grilla se vuelve lista.
+      const weekday = WEEKDAY_HEADERS[(date.getDay() + 6) % 7];
       return `
         <div class="cal-cell cal-day-cell">
-          <div class="cal-day-num tabular-nums">${dayNumFmt.format(date)}</div>
+          <div class="cal-day-num tabular-nums">
+            <span class="cal-day-weekday">${weekday}</span>${dayNumFmt.format(date)}
+          </div>
           ${changeBadge(f.changePct)}
           <div class="cal-day-price tabular-nums">${
             f.impliedInternalCopPerCarga != null ? formatCopShort(f.impliedInternalCopPerCarga) : '—'
@@ -119,7 +123,7 @@ export async function renderForecastPanel(container) {
         <h2>Proyección del precio</h2>
       </div>
       <div class="cal-tabs" id="forecast-tabs" role="tablist"></div>
-      <div id="forecast-body">
+      <div id="forecast-body" aria-live="polite">
         <span class="skeleton" style="width: 100%; height: 180px; display: block; border-radius: var(--av-radius-md);"></span>
       </div>
       <p class="disclaimer" id="forecast-note"></p>
@@ -151,6 +155,11 @@ export async function renderForecastPanel(container) {
         `
       ).join('');
       bodyEl.innerHTML = RENDERERS[activeTab](views[activeTab]);
+
+      // bodyEl es el mismo nodo siempre: hay que quitar la clase y forzar un
+      // reflow para que la animación se vuelva a reproducir en cada cambio.
+      bodyEl.classList.remove('av-fade-in');
+      void bodyEl.offsetWidth;
       bodyEl.classList.add('av-fade-in');
     }
 
@@ -160,6 +169,37 @@ export async function renderForecastPanel(container) {
       activeTab = btn.dataset.tab;
       renderActiveTab();
     });
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const SWIPE_THRESHOLD = 50;
+
+    bodyEl.addEventListener(
+      'touchstart',
+      (e) => {
+        touchStartX = e.changedTouches[0].clientX;
+        touchStartY = e.changedTouches[0].clientY;
+      },
+      { passive: true }
+    );
+
+    bodyEl.addEventListener(
+      'touchend',
+      (e) => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        // Solo cuenta como gesto si es claramente horizontal, para no robarle el scroll.
+        if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return;
+
+        const idx = TABS.findIndex((t) => t.key === activeTab);
+        const nextIdx = dx < 0 ? idx + 1 : idx - 1;
+        if (nextIdx < 0 || nextIdx >= TABS.length) return;
+
+        activeTab = TABS[nextIdx].key;
+        renderActiveTab();
+      },
+      { passive: true }
+    );
 
     renderActiveTab();
     noteEl.textContent = note;
