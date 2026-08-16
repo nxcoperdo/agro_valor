@@ -7,8 +7,11 @@ name: Sincronizar precio FNC
 on:
   schedule:
     # 8:00 y 14:00 hora Colombia (UTC-5) en días hábiles = 13:00 y 19:00 UTC.
-    - cron: '0 13 * * 1-5'
-    - cron: '0 19 * * 1-5'
+    # Se corre unos minutos después de la hora en punto: GitHub documenta que los
+    # cron programados exactamente en :00 son los que más se retrasan o se
+    # descartan por la carga alta de todo Actions justo en ese instante.
+    - cron: '7 13 * * 1-5'
+    - cron: '7 19 * * 1-5'
   workflow_dispatch: {}
 
 jobs:
