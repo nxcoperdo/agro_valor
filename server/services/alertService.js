@@ -5,8 +5,16 @@ const exchangeRateService = require('./exchangeRateService');
 const coffeePriceService = require('./coffeePriceService');
 const whatsappService = require('./whatsappService');
 const subscriptionService = require('./subscriptionService');
+const env = require('../config/env');
 const { toEpoch } = require('../utils/datetime');
 const logger = require('../utils/logger');
+
+/**
+ * Sin dato de cooperativas / pronóstico para alguna variable de la plantilla: Meta
+ * exige un número fijo de variables por plantilla, así que no se puede omitir el
+ * bloque como hacía el texto libre — se rellena con este texto en su lugar.
+ */
+const NO_DATA = 'Sin datos suficientes por ahora.';
 
 /** Tiempo mínimo entre dos avisos de la misma alerta, para no volverse spam. */
 const COOLDOWN_MS = 12 * 60 * 60 * 1000;
@@ -34,87 +42,103 @@ function buildMarketSnapshot() {
   };
 }
 
+function bestPriceLine(best) {
+  if (!best) return NO_DATA;
+  return (
+    `Mejor precio ahora: ${best.name} — ${formatCop(best.estimatedPriceCopCarga)}` +
+    (best.priceSource === 'reported' ? ' (reportado por caficultores)' : ' (estimado)')
+  );
+}
+
+/**
+ * Plantilla "agrovalor_alerta_precio": el precio cruzó la meta que puso el usuario.
+ * 4 variables fijas — ver server/config/env.js para el nombre real de la plantilla.
+ */
 function buildThresholdMessage(alert, snapshot) {
   const direction = alert.type === 'above' ? 'subió por encima de' : 'bajó por debajo de';
-  const lines = [
-    '☕ *AgroValor*',
-    '',
-    `El precio del café ${direction} tu meta de ${formatCop(alert.threshold_cop_carga)}.`,
-    '',
-    `Precio interno de referencia hoy: *${formatCop(snapshot.referencePrice)}* por carga de 125 kg.`,
-  ];
+  const params = [direction, formatCop(alert.threshold_cop_carga), formatCop(snapshot.referencePrice), bestPriceLine(snapshot.best)];
 
-  if (snapshot.best) {
-    lines.push(
-      '',
-      `Mejor precio ahora: ${snapshot.best.name} — ${formatCop(snapshot.best.estimatedPriceCopCarga)}` +
-        (snapshot.best.priceSource === 'reported' ? ' (reportado por caficultores)' : ' (estimado)')
-    );
-  }
+  const text = [
+    '☕ AgroValor',
+    '',
+    `El precio del café ${params[0]} tu meta de ${params[1]}.`,
+    '',
+    `Precio interno de referencia hoy: ${params[2]} por carga de 125 kg.`,
+    '',
+    params[3],
+  ].join('\n');
 
-  return lines.join('\n');
+  return { text, templateName: env.whatsappTemplateAlert, params };
 }
 
-function buildDigestMessage(snapshot, { includeForecast }) {
-  const lines = [
-    '☕ *AgroValor* — resumen del mercado',
+/**
+ * Plantilla "agrovalor_resumen_mercado": resumen diario/semanal con pronóstico.
+ * 5 variables fijas — mañana/semana/mes siempre van, con NO_DATA si falta el dato.
+ */
+function buildDigestMessage(snapshot) {
+  const referenceLine = snapshot.isStale
+    ? `${formatCop(snapshot.referencePrice)} (último dato disponible; la fuente no se ha actualizado hoy)`
+    : formatCop(snapshot.referencePrice);
+
+  const forecasts = forecastService.getForecast();
+  // El digest es un mensaje corto: solo el primer paso de cada granularidad
+  // (mañana, la semana que viene, el mes que viene), no las 28 filas completas.
+  const highlightLine = (granularity) => {
+    const row = forecasts.find((f) => f.granularity === granularity && f.step === 1);
+    if (!row || !snapshot.currentCents) return NO_DATA;
+
+    const changePct = ((row.predictedPrice - snapshot.currentCents) / snapshot.currentCents) * 100;
+    const implied = snapshot.referencePrice * (1 + changePct / 100);
+    const arrow = changePct >= 0 ? '▲' : '▼';
+    return `${arrow} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(1)}% → ${formatCop(implied)} por carga`;
+  };
+
+  const params = [referenceLine, bestPriceLine(snapshot.best), highlightLine('day'), highlightLine('week'), highlightLine('month')];
+
+  const text = [
+    '☕ AgroValor — resumen del mercado',
     '',
-    `Precio interno de referencia: *${formatCop(snapshot.referencePrice)}* por carga de 125 kg.`,
-  ];
+    `Precio interno de referencia: ${params[0]} por carga de 125 kg.`,
+    '',
+    params[1],
+    '',
+    'Proyección del mercado internacional:',
+    `• Mañana: ${params[2]}`,
+    `• En una semana: ${params[3]}`,
+    `• En un mes: ${params[4]}`,
+    '',
+    'Es una estimación, no una garantía de precio de compra.',
+  ].join('\n');
 
-  if (snapshot.isStale) {
-    lines.push('_(último dato disponible; la fuente no se ha actualizado hoy)_');
-  }
-
-  if (snapshot.best) {
-    lines.push(
-      '',
-      `Quien mejor está pagando: ${snapshot.best.name} — ${formatCop(snapshot.best.estimatedPriceCopCarga)}`
-    );
-  }
-
-  if (includeForecast) {
-    const forecasts = forecastService.getForecast();
-    // El digest es un mensaje corto: solo el primer paso de cada granularidad
-    // (mañana, la semana que viene, el mes que viene), no las 28 filas completas.
-    const highlights = [
-      { row: forecasts.find((f) => f.granularity === 'day' && f.step === 1), label: 'Mañana' },
-      { row: forecasts.find((f) => f.granularity === 'week' && f.step === 1), label: 'En una semana' },
-      { row: forecasts.find((f) => f.granularity === 'month' && f.step === 1), label: 'En un mes' },
-    ].filter((h) => h.row);
-
-    if (highlights.length && snapshot.currentCents) {
-      lines.push('', '*Proyección del mercado internacional:*');
-
-      highlights.forEach(({ row, label }) => {
-        const changePct = ((row.predictedPrice - snapshot.currentCents) / snapshot.currentCents) * 100;
-        const implied = snapshot.referencePrice * (1 + changePct / 100);
-        const arrow = changePct >= 0 ? '▲' : '▼';
-        lines.push(
-          `• ${label}: ${arrow} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(1)}%` +
-            ` → ${formatCop(implied)} por carga`
-        );
-      });
-
-      lines.push(
-        '',
-        '_Supone que el precio interno se mueve igual que el mercado internacional._',
-        '_Es una estimación, no una garantía de precio de compra._'
-      );
-    }
-  }
-
-  return lines.join('\n');
+  return { text, templateName: env.whatsappTemplateDigest, params };
 }
 
-async function deliver(alert, message) {
-  const result = await whatsappService.sendMessage(alert.phone, message);
+/**
+ * Plantilla "agrovalor_bienvenida": confirma que el número quedó conectado.
+ * 2 variables fijas.
+ */
+function buildWelcomeMessage(snapshot) {
+  const params = [snapshot ? formatCop(snapshot.referencePrice) : 'no disponible en este momento', bestPriceLine(snapshot && snapshot.best)];
+
+  const text = [
+    '☕ AgroValor',
+    '',
+    'Tu número quedó conectado. Aquí te llegarán tus alertas de precio.',
+    `Precio interno de referencia hoy: ${params[0]} por carga de 125 kg.`,
+    params[1],
+  ].join('\n');
+
+  return { text, templateName: env.whatsappTemplateWelcome, params };
+}
+
+async function deliver(alert, built) {
+  const result = await whatsappService.sendTemplateMessage(alert.phone, built.templateName, built.params);
 
   alertRepository.logDelivery({
     alertId: alert.id,
     userId: alert.user_id,
     phone: alert.phone,
-    message,
+    message: built.text,
     status: result.status,
     error: result.error || null,
   });
@@ -171,12 +195,12 @@ async function sendDigests(type) {
   if (!snapshot) return { evaluated: 0, sent: 0 };
 
   const alerts = alertRepository.findActiveByTypes([type]);
-  const message = buildDigestMessage(snapshot, { includeForecast: true });
+  const built = buildDigestMessage(snapshot);
   let sent = 0;
 
   for (const alert of alerts) {
     if (!isEligible(alert)) continue;
-    const result = await deliver(alert, message);
+    const result = await deliver(alert, built);
     if (result.status === 'sent') sent += 1;
   }
 
@@ -187,16 +211,14 @@ async function sendDigests(type) {
 /** Mensaje de prueba, para que el usuario confirme que su número quedó bien. */
 async function sendTestMessage(user) {
   const snapshot = buildMarketSnapshot();
-  const message = snapshot
-    ? buildDigestMessage(snapshot, { includeForecast: false })
-    : '☕ *AgroValor*\n\nTu número quedó conectado. Aquí te llegarán tus alertas de precio.';
+  const built = buildWelcomeMessage(snapshot);
 
-  const result = await whatsappService.sendMessage(user.phone, message);
+  const result = await whatsappService.sendTemplateMessage(user.phone, built.templateName, built.params);
 
   alertRepository.logDelivery({
     userId: user.id,
     phone: user.phone,
-    message,
+    message: built.text,
     status: result.status,
     error: result.error || null,
   });

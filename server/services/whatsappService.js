@@ -3,14 +3,14 @@ const fetchWithTimeout = require('../utils/fetchWithTimeout');
 const logger = require('../utils/logger');
 
 /**
- * Envío de mensajes por WhatsApp delegado al proyecto de envío masivo que ya corre
- * en el mismo servidor. AgroValor no habla con WhatsApp directamente: le hace un
- * POST al otro servicio, así que una sola sesión de WhatsApp sirve para ambos.
+ * Envío de mensajes por WhatsApp vía Meta WhatsApp Business Cloud API
+ * (https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages).
  *
- * Contrato esperado en WHATSAPP_API_URL:
- *   POST { "to": "573001234567", "message": "texto" }
- *   Respuesta 2xx = enviado. Si se configura WHATSAPP_API_TOKEN se manda como
- *   cabecera Authorization: Bearer <token>.
+ * Las alertas de AgroValor las inicia el servidor, no el usuario, así que quedan
+ * fuera de la ventana de 24 horas de "conversación abierta" en la que Meta permite
+ * texto libre — solo se pueden mandar como *plantillas* ya aprobadas por Meta, con
+ * un puñado de variables numeradas ({{1}}, {{2}}...). Por eso no hay un `sendMessage`
+ * de texto libre: todo pasa por `sendTemplateMessage`.
  *
  * Si no está configurado, los mensajes se registran como "queued" y no se pierde
  * nada: el resto de la aplicación sigue funcionando igual.
@@ -32,13 +32,16 @@ function normalizePhone(raw) {
 }
 
 function isConfigured() {
-  return Boolean(env.whatsappApiUrl);
+  return Boolean(env.whatsappPhoneNumberId && env.whatsappAccessToken);
 }
 
 /**
+ * @param {string} phone
+ * @param {string} templateName Nombre exacto de la plantilla aprobada en Meta.
+ * @param {string[]} params Valores para las variables {{1}}, {{2}}... del cuerpo, en orden.
  * @returns {Promise<{status: 'sent'|'queued'|'failed', error?: string}>}
  */
-async function sendMessage(phone, message) {
+async function sendTemplateMessage(phone, templateName, params = []) {
   const to = normalizePhone(phone);
 
   if (!to) {
@@ -46,35 +49,53 @@ async function sendMessage(phone, message) {
   }
 
   if (!isConfigured()) {
-    logger.warn(`WhatsApp no configurado (falta WHATSAPP_API_URL). Mensaje en cola para ${to}: ${message.slice(0, 80)}…`);
+    logger.warn(
+      `WhatsApp no configurado (falta WHATSAPP_PHONE_NUMBER_ID/WHATSAPP_ACCESS_TOKEN). Plantilla "${templateName}" en cola para ${to}.`
+    );
     return { status: 'queued', error: 'Servicio de WhatsApp no configurado' };
   }
 
+  const url = `https://graph.facebook.com/${env.whatsappApiVersion}/${env.whatsappPhoneNumberId}/messages`;
+
   try {
     const res = await fetchWithTimeout(
-      env.whatsappApiUrl,
+      url,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(env.whatsappApiToken ? { Authorization: `Bearer ${env.whatsappApiToken}` } : {}),
+          Authorization: `Bearer ${env.whatsappAccessToken}`,
         },
-        body: JSON.stringify({ to, message }),
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to,
+          type: 'template',
+          template: {
+            name: templateName,
+            language: { code: env.whatsappTemplateLang },
+            components: [
+              {
+                type: 'body',
+                parameters: params.map((value) => ({ type: 'text', text: String(value) })),
+              },
+            ],
+          },
+        }),
       },
       12000
     );
 
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      throw new Error(`HTTP ${res.status} ${body.slice(0, 120)}`);
+      throw new Error(`HTTP ${res.status} ${body.slice(0, 200)}`);
     }
 
     return { status: 'sent' };
   } catch (err) {
     const cause = err.cause ? ` — ${err.cause.code || err.cause.message}` : '';
-    logger.warn(`WhatsApp: no se pudo enviar a ${to} (${err.message}${cause})`);
+    logger.warn(`WhatsApp: no se pudo enviar plantilla "${templateName}" a ${to} (${err.message}${cause})`);
     return { status: 'failed', error: `${err.message}${cause}` };
   }
 }
 
-module.exports = { sendMessage, normalizePhone, isConfigured };
+module.exports = { sendTemplateMessage, normalizePhone, isConfigured };

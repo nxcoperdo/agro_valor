@@ -16,11 +16,18 @@ const FNC_SOURCE_URL = process.env.FNC_SOURCE_URL || 'https://federaciondecafete
 const VPS_BASE_URL = process.env.VPS_BASE_URL;
 const FNC_INGEST_TOKEN = process.env.FNC_INGEST_TOKEN;
 
-async function fetchWithTimeout(url, options, timeoutMs) {
+async function fetchWithTimeout(url, options, timeoutMs, label) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error(`${label}: timeout tras ${timeoutMs} ms al conectar con ${url}`);
+    }
+    // undici mete la causa real (DNS, conexión rechazada, TLS) en err.cause
+    const reason = err.cause ? `${err.cause.code || ''} ${err.cause.message || err.cause}`.trim() : err.message;
+    throw new Error(`${label}: no se pudo conectar con ${url} — ${reason}`);
   } finally {
     clearTimeout(timer);
   }
@@ -41,7 +48,8 @@ async function main() {
         'Accept-Language': 'es-CO,es;q=0.9',
       },
     },
-    15000
+    15000,
+    'FNC'
   );
   if (!res.ok) throw new Error(`HTTP ${res.status} al pedir ${FNC_SOURCE_URL}`);
 
@@ -65,7 +73,8 @@ async function main() {
         rawLabel: extracted.rawLabel,
       }),
     },
-    15000
+    15000,
+    'VPS'
   );
 
   const body = await pushRes.json().catch(() => ({}));

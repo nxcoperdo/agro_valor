@@ -35,9 +35,16 @@ const env = {
   // del VPS y empuja el precio al endpoint POST /api/internal/fnc-price.
   fncIngestToken: process.env.FNC_INGEST_TOKEN || '',
 
-  // Se delega el envío al proyecto de WhatsApp que ya corre en el mismo servidor.
-  whatsappApiUrl: process.env.WHATSAPP_API_URL || '',
-  whatsappApiToken: process.env.WHATSAPP_API_TOKEN || '',
+  // Meta WhatsApp Business Cloud API (https://developers.facebook.com/docs/whatsapp/cloud-api).
+  // Los mensajes proactivos (no iniciados por el usuario) solo pueden ser plantillas
+  // ya aprobadas por Meta, no texto libre — por eso hay un nombre de plantilla por caso.
+  whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+  whatsappAccessToken: process.env.WHATSAPP_ACCESS_TOKEN || '',
+  whatsappApiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
+  whatsappTemplateLang: process.env.WHATSAPP_TEMPLATE_LANG || 'es',
+  whatsappTemplateAlert: process.env.WHATSAPP_TEMPLATE_ALERT || 'agrovalor_alerta_precio',
+  whatsappTemplateDigest: process.env.WHATSAPP_TEMPLATE_DIGEST || 'agrovalor_resumen_mercado',
+  whatsappTemplateWelcome: process.env.WHATSAPP_TEMPLATE_WELCOME || 'agrovalor_bienvenida',
 
   dailyDigestCron: process.env.DAILY_DIGEST_CRON || '0 6 * * *',
   weeklyDigestCron: process.env.WEEKLY_DIGEST_CRON || '0 6 * * 1',
