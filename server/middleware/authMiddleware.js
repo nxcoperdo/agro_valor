@@ -1,7 +1,10 @@
 const { verifyToken, COOKIE_NAME } = require('../services/authService');
 
 function authMiddleware(req, res, next) {
-  const token = req.cookies && req.cookies[COOKIE_NAME];
+  // La web manda la cookie; la app móvil manda el mismo JWT en el encabezado Authorization.
+  const header = req.headers.authorization || '';
+  const bearer = header.startsWith('Bearer ') ? header.slice(7).trim() : null;
+  const token = bearer || (req.cookies && req.cookies[COOKIE_NAME]);
   if (!token) {
     return res.status(401).json({ error: 'No autenticado' });
   }

@@ -1,0 +1,140 @@
+import 'package:flutter/material.dart';
+
+import '../api/api_client.dart';
+import '../theme.dart';
+
+/// Carga datos con pull-to-refresh y maneja los estados de carga y error de forma uniforme.
+class AsyncView<T> extends StatefulWidget {
+  const AsyncView({super.key, required this.load, required this.builder, this.onUpgradeRequired});
+
+  final Future<T> Function() load;
+  final Widget Function(BuildContext context, T data) builder;
+  final WidgetBuilder? onUpgradeRequired;
+
+  @override
+  State<AsyncView<T>> createState() => _AsyncViewState<T>();
+}
+
+class _AsyncViewState<T> extends State<AsyncView<T>> {
+  late Future<T> _future = widget.load();
+
+  Future<void> _reload() async {
+    final next = widget.load();
+    setState(() => _future = next);
+    try {
+      await next;
+    } catch (_) {
+      // El error lo pinta el FutureBuilder; aquí solo se espera para cerrar el indicador.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: _reload,
+      color: AvColors.accent,
+      child: FutureBuilder<T>(
+        future: _future,
+        builder: (context, snap) {
+          if (snap.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            final err = snap.error;
+            if (err is ApiError && err.upgradeRequired && widget.onUpgradeRequired != null) {
+              return widget.onUpgradeRequired!(context);
+            }
+            return _Scrollable(child: ErrorMessage(message: '$err', onRetry: _reload));
+          }
+          return widget.builder(context, snap.data as T);
+        },
+      ),
+    );
+  }
+}
+
+class _Scrollable extends StatelessWidget {
+  const _Scrollable({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    // Debe ser desplazable para que el gesto de refrescar funcione también en el error.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(child: child),
+        ),
+      ),
+    );
+  }
+}
+
+class ErrorMessage extends StatelessWidget {
+  const ErrorMessage({super.key, required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.cloud_off_rounded, size: 40, color: AvColors.fgMuted),
+          const SizedBox(height: 12),
+          Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AvColors.fgMuted)),
+          const SizedBox(height: 12),
+          TextButton(onPressed: onRetry, child: const Text('Reintentar')),
+        ],
+      ),
+    );
+  }
+}
+
+class SectionCard extends StatelessWidget {
+  const SectionCard({super.key, required this.child, this.padding = const EdgeInsets.all(20)});
+
+  final Widget child;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) => Card(child: Padding(padding: padding, child: child));
+}
+
+class Pill extends StatelessWidget {
+  const Pill({super.key, required this.label, this.color = AvColors.positive});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+class Muted extends StatelessWidget {
+  const Muted(this.text, {super.key, this.size = 13});
+
+  final String text;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) =>
+      Text(text, style: TextStyle(color: AvColors.fgMuted, fontSize: size, height: 1.4));
+}
+
+const tabular = [FontFeature.tabularFigures()];

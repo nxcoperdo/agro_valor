@@ -20,6 +20,14 @@ const cookieOptions = {
 
 const MIN_PASSWORD_LENGTH = 8;
 
+/**
+ * La app móvil no maneja cookies, así que recibe el token en el cuerpo. A la web no
+ * se le entrega: allá vive solo en la cookie httpOnly, fuera del alcance de JS.
+ */
+function tokenForClient(req, token) {
+  return req.get('X-Client') === 'mobile' ? { token } : {};
+}
+
 function publicUser(user) {
   return {
     id: user.id,
@@ -68,7 +76,7 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
 
     const result = authService.login(normalizedUsername, String(password));
     res.cookie(authService.COOKIE_NAME, result.token, cookieOptions);
-    res.status(201).json({ user: publicUser(user) });
+    res.status(201).json({ user: publicUser(user), ...tokenForClient(req, result.token) });
   } catch (err) {
     next(err);
   }
@@ -86,7 +94,7 @@ router.post('/login', loginRateLimit, (req, res) => {
   }
 
   res.cookie(authService.COOKIE_NAME, result.token, cookieOptions);
-  res.json({ user: publicUser(userRepository.findById(result.user.id)) });
+  res.json({ user: publicUser(userRepository.findById(result.user.id)), ...tokenForClient(req, result.token) });
 });
 
 router.post('/logout', (req, res) => {
