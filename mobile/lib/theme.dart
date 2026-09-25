@@ -1,18 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-/// Los mismos colores de la web (css/style.css), para que la app se sienta del mismo producto.
+/// Paleta del diseño de la sección de precio, compartida con la web (clase .pv en css/style.css).
 class AvColors {
-  static const bg = Color(0xFF081D16);
-  static const surface = Color(0xFF0B3D2E);
-  static const surfaceAlt = Color(0xFF123526);
-  static const border = Color(0xFF2F5C47);
-  static const fg = Color(0xFFF2E9DB);
-  static const fgMuted = Color(0xFFA9C2B3);
-  static const accent = Color(0xFFD4A017);
-  static const onAccent = Color(0xFF052E16);
-  static const positive = Color(0xFF9CCC65);
-  static const danger = Color(0xFFFCA5A5);
+  static const bg = Color(0xFF0A1F10);
+  static const surface = Color(0xFF112718);
+  static const surfaceAlt = Color(0xFF163020);
+  static const border = Color(0x14FFFFFF);
+  static const fg = Color(0xFFE8F5E9);
+  static const fgMuted = Color(0x8CE8F5E9);
+  static const fgFaint = Color(0x61E8F5E9);
+  static const accent = Color(0xFFF0B429);
+  static const onAccent = Color(0xFF0A1F10);
+  static const positive = Color(0xFF4ADE80);
+  static const danger = Color(0xFFF87171);
+  static const ma = Color(0xFFFACC15);
+  static const tooltip = Color(0xFF0D2016);
 }
+
+/// Cifras en DM Mono con dígitos de ancho fijo, como en el diseño.
+TextStyle mono({double size = 14, FontWeight weight = FontWeight.w500, Color color = AvColors.fg, double? spacing}) =>
+    GoogleFonts.dmMono(
+      fontSize: size,
+      fontWeight: weight,
+      color: color,
+      letterSpacing: spacing,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
 
 ThemeData buildTheme() {
   final scheme = ColorScheme.fromSeed(
@@ -34,10 +48,13 @@ ThemeData buildTheme() {
     borderSide: const BorderSide(color: AvColors.border),
   );
 
+  final base = ThemeData(useMaterial3: true, brightness: Brightness.dark);
+
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
     scaffoldBackgroundColor: AvColors.bg,
+    textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(bodyColor: AvColors.fg, displayColor: AvColors.fg),
     appBarTheme: const AppBarTheme(
       backgroundColor: AvColors.bg,
       foregroundColor: AvColors.fg,
@@ -54,11 +71,7 @@ ThemeData buildTheme() {
         side: const BorderSide(color: AvColors.border),
       ),
     ),
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AvColors.surface,
-      indicatorColor: AvColors.accent.withValues(alpha: 0.2),
-      labelTextStyle: WidgetStateProperty.all(const TextStyle(fontSize: 12, color: AvColors.fg)),
-    ),
+    dividerColor: AvColors.border,
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AvColors.surfaceAlt,
