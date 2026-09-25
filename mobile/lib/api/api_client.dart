@@ -70,6 +70,26 @@ class ApiClient {
   Future<Json> cooperatives() async => await _request('GET', '/cooperatives') as Json;
   Future<Json> plans() async => await _request('GET', '/public/plans') as Json;
 
+  // Cuenta
+  Future<Json> profile() async => await _request('GET', '/account/profile') as Json;
+  Future<Json> updateProfile(Json payload) async => await _request('PUT', '/account/profile', payload) as Json;
+
+  // Reportes de precio (gratis: alimentan el dato de todos)
+  Future<Json> reportPrice(Json payload) async => await _request('POST', '/reports', payload) as Json;
+  Future<Json> myReports() async => await _request('GET', '/reports/mine') as Json;
+
   // Pro
   Future<Json> forecast() async => await _request('GET', '/forecast') as Json;
+  Future<Json> calculate(Json payload) async => await _request('POST', '/calculator', payload) as Json;
+
+  Future<Json> alerts() async => await _request('GET', '/alerts') as Json;
+  Future<Json> createAlert(Json payload) async => await _request('POST', '/alerts', payload) as Json;
+  Future<Json> setAlertActive(int id, bool active) async =>
+      await _request('PATCH', '/alerts/$id', {'active': active}) as Json;
+  Future<void> deleteAlert(int id) => _request('DELETE', '/alerts/$id');
+  Future<Json> testAlert() async => await _request('POST', '/alerts/test') as Json;
+
+  Future<Json> sales() async => await _request('GET', '/sales') as Json;
+  Future<Json> createSale(Json payload) async => await _request('POST', '/sales', payload) as Json;
+  Future<void> deleteSale(int id) => _request('DELETE', '/sales/$id');
 }

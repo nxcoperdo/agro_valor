@@ -138,3 +138,56 @@ class Muted extends StatelessWidget {
 }
 
 const tabular = [FontFeature.tabularFigures()];
+
+/// Pantalla para funciones Pro cuando el usuario tiene el plan gratis.
+class ProUpsell extends StatelessWidget {
+  const ProUpsell({super.key, required this.title, required this.body, this.icon = Icons.lock_rounded});
+
+  final String title;
+  final String body;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 32),
+        Center(
+          child: Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AvColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(icon, size: 36, color: AvColors.accent),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        Text(body, textAlign: TextAlign.center, style: const TextStyle(color: AvColors.fgMuted, fontSize: 15, height: 1.4)),
+        const SizedBox(height: 20),
+        const Center(child: Pill(label: 'Función de AgroValor Pro', color: AvColors.accent)),
+      ],
+    );
+  }
+}
+
+/// Encabezado pequeño en mayúsculas para separar bloques dentro de una pantalla.
+class SectionLabel extends StatelessWidget {
+  const SectionLabel(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+        child: Text(
+          text.toUpperCase(),
+          style: const TextStyle(fontSize: 11, color: AvColors.fgMuted, letterSpacing: 1.1, fontWeight: FontWeight.w600),
+        ),
+      );
+}

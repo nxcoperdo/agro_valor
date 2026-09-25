@@ -39,3 +39,6 @@ String timeAgo(String? iso) {
   if (diff.inHours < 24) return 'hace ${diff.inHours} h';
   return 'hace ${diff.inDays} d';
 }
+
+/// Fecha como la espera el API ("2026-09-25").
+String isoDay(DateTime d) => DateFormat('yyyy-MM-dd').format(d);

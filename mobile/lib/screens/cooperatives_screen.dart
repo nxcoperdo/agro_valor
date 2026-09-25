@@ -5,6 +5,7 @@ import '../format.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'report_screen.dart';
 
 class CooperativesScreen extends StatelessWidget {
   const CooperativesScreen({super.key, required this.session});
@@ -31,6 +32,8 @@ class CooperativesScreen extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
+            _ReportPrompt(session: session),
+            const SizedBox(height: 12),
             if (fnc != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12, left: 4),
@@ -115,6 +118,42 @@ class _CoopTile extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Invitación a reportar: los reportes son lo que vuelve "Reportado" un precio estimado.
+class _ReportPrompt extends StatelessWidget {
+  const _ReportPrompt({required this.session});
+
+  final Session session;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ReportScreen(session: session))),
+        child: const Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.campaign_rounded, color: AvColors.accent),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('¿Vendiste hoy?', style: TextStyle(fontWeight: FontWeight.w700)),
+                    Muted('Reporta cuánto te pagaron y ayuda a que los precios sean reales', size: 12),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
+            ],
+          ),
         ),
       ),
     );

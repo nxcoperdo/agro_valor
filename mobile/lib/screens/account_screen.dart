@@ -4,6 +4,10 @@ import '../format.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'alerts_screen.dart';
+import 'profile_screen.dart';
+import 'report_screen.dart';
+import 'sales_screen.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key, required this.session});
@@ -76,6 +80,40 @@ class AccountScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 12),
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    _MenuTile(
+                      icon: Icons.badge_rounded,
+                      title: 'Mis datos',
+                      subtitle: 'WhatsApp, municipio y datos de tu café',
+                      open: () => ProfileScreen(session: session),
+                    ),
+                    _MenuTile(
+                      icon: Icons.notifications_active_rounded,
+                      title: 'Alertas por WhatsApp',
+                      subtitle: 'Avisos cuando el precio te convenga',
+                      pro: !session.isPro,
+                      open: () => AlertsScreen(session: session),
+                    ),
+                    _MenuTile(
+                      icon: Icons.receipt_long_rounded,
+                      title: 'Mis ventas',
+                      subtitle: 'Historial frente al precio de referencia',
+                      pro: !session.isPro,
+                      open: () => SalesScreen(session: session),
+                    ),
+                    _MenuTile(
+                      icon: Icons.campaign_rounded,
+                      title: 'Reportar precio',
+                      subtitle: 'Cuéntanos cuánto te pagó una cooperativa',
+                      open: () => ReportScreen(session: session),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 24),
               OutlinedButton.icon(
                 onPressed: session.logout,
@@ -91,6 +129,29 @@ class AccountScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  const _MenuTile({required this.icon, required this.title, required this.subtitle, required this.open, this.pro = false});
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Widget Function() open;
+  final bool pro;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: AvColors.accent),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle, style: const TextStyle(color: AvColors.fgMuted, fontSize: 12)),
+      trailing: pro
+          ? const Pill(label: 'Pro', color: AvColors.accent)
+          : const Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => open())),
     );
   }
 }

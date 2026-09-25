@@ -16,10 +16,20 @@ class ForecastScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: session,
       builder: (context, _) {
-        if (!session.isPro) return const ProUpsell();
+        if (!session.isPro) {
+          return const ProUpsell(
+            title: 'Proyección de precio',
+            body: 'Ve hacia dónde podría moverse el precio: día a día, semana a semana y mes a mes, en pesos por carga.',
+            icon: Icons.calendar_month_rounded,
+          );
+        }
         return AsyncView<Json>(
           load: session.api.forecast,
-          onUpgradeRequired: (_) => const ProUpsell(),
+          onUpgradeRequired: (_) => const ProUpsell(
+            title: 'Proyección de precio',
+            body: 'Tu plan Pro venció. Renuévalo para seguir viendo la proyección.',
+            icon: Icons.calendar_month_rounded,
+          ),
           builder: (context, data) => _ForecastTabs(data: data),
         );
       },
@@ -112,33 +122,6 @@ class _ForecastList extends StatelessWidget {
             ),
           ),
         if (note != null) ...[const SizedBox(height: 8), Muted(note!, size: 12)],
-      ],
-    );
-  }
-}
-
-class ProUpsell extends StatelessWidget {
-  const ProUpsell({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: const [
-        SizedBox(height: 32),
-        Icon(Icons.lock_rounded, size: 48, color: AvColors.accent),
-        SizedBox(height: 16),
-        Text(
-          'Proyección de precio',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-        ),
-        SizedBox(height: 8),
-        Muted(
-          'Con AgroValor Pro ves hacia dónde podría moverse el precio: día a día, semana a semana '
-          'y mes a mes, en pesos por carga.',
-          size: 15,
-        ),
       ],
     );
   }
