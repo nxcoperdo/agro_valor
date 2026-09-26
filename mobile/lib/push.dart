@@ -16,10 +16,12 @@ final messengerKey = GlobalKey<ScaffoldMessengerState>();
 /// Si la app se compiló sin google-services.json, Firebase no arranca y todo esto queda
 /// apagado sin romper nada: las alertas siguen llegando por WhatsApp.
 class PushNotifications {
-  PushNotifications(this.api, {required this.available});
+  PushNotifications(this.api);
 
   final ApiClient api;
-  final bool available;
+
+  /// Falso hasta que Firebase termine de iniciar (se hace en paralelo al abrir la app) o si no está configurado.
+  bool available = false;
 
   String? _token;
   StreamSubscription<String>? _refreshSub;

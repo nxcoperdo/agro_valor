@@ -8,9 +8,9 @@ import 'push.dart';
 
 /// Guarda el token en el almacenamiento cifrado del teléfono para no pedir login cada vez.
 class Session extends ChangeNotifier {
-  Session({bool pushAvailable = false}) {
+  Session() {
     api.onUnauthorized = () => logout(tellServer: false);
-    push = PushNotifications(api, available: pushAvailable);
+    push = PushNotifications(api);
   }
 
   static const _tokenKey = 'av_token';
@@ -23,6 +23,13 @@ class Session extends ChangeNotifier {
 
   bool get isLoggedIn => user != null;
   bool get isPro => user?['isPro'] == true;
+
+  /// Firebase se inicia en paralelo con la intro para no demorar la primera pantalla.
+  /// Si la sesión ya se restauró antes de que termine, aquí se registra el teléfono.
+  Future<void> startPush() async {
+    push.available = await PushNotifications.init();
+    if (push.available && isLoggedIn) await push.register();
+  }
 
   Future<void> restore() async {
     try {

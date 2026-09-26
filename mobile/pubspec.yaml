@@ -60,6 +60,7 @@ flutter:
 
   assets:
     - assets/branding/intro.mp4
+    - assets/branding/intro_poster.jpg
     - assets/branding/logo.png
 
 # Ícono y pantalla de arranque: `dart run flutter_launcher_icons` y `dart run flutter_native_splash:create`

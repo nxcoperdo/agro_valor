@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -11,9 +13,10 @@ import 'theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es');
-  final pushAvailable = await PushNotifications.init();
-  final session = Session(pushAvailable: pushAvailable)..restore();
+  // Nada de esperas antes de runApp: cada una alarga el splash gris.
+  final session = Session()..restore();
   runApp(AgroValorApp(session: session));
+  unawaited(session.startPush());
 }
 
 class AgroValorApp extends StatefulWidget {

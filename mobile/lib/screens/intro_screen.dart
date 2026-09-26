@@ -9,6 +9,11 @@ const introBackground = Color(0xFFE1E1E1);
 /// El video es horizontal y el logo ocupa hasta ~45% de su ancho: se amplía para que el logo
 /// llene casi todo el ancho de un teléfono vertical, recortando los lados vacíos.
 const _zoom = 1.9;
+const _aspect = 16 / 9;
+
+/// Primer cuadro del video como imagen: se ve apenas arranca Flutter, mientras el reproductor
+/// se prepara (lo más lento del arranque). El video empieza en ese mismo cuadro, así que el cambio no se nota.
+const _poster = 'assets/branding/intro_poster.jpg';
 
 // El archivo ya viene recortado (sin los 0,4 s vacíos del inicio), a 1,5× y sin audio.
 // Se hizo en el archivo y no con seekTo/setPlaybackSpeed porque saltar antes de reproducir
@@ -74,7 +79,6 @@ class _IntroScreenState extends State<IntroScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ready = _ready;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _finish,
@@ -82,32 +86,31 @@ class _IntroScreenState extends State<IntroScreen> {
         color: introBackground,
         child: LayoutBuilder(
           builder: (context, box) {
-            final aspect = ready ? _controller.value.aspectRatio : 16 / 9;
             // En tablets o en horizontal no se amplía más de lo que cabe en alto.
-            final width = (box.maxWidth * _zoom).clamp(box.maxWidth, box.maxHeight * aspect);
+            final width = (box.maxWidth * _zoom).clamp(box.maxWidth, box.maxHeight * _aspect);
             return ClipRect(
               child: OverflowBox(
                 maxWidth: double.infinity,
                 maxHeight: double.infinity,
-                child: AnimatedOpacity(
-                  opacity: ready ? 1 : 0,
-                  duration: const Duration(milliseconds: 200),
-                  child: SizedBox(
-                    width: width,
-                    height: width / aspect,
-                    child: ready
-                        // Difumina arriba y abajo para que el video se funda con el fondo.
-                        ? ShaderMask(
-                            blendMode: BlendMode.dstIn,
-                            shaderCallback: (rect) => const LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Colors.transparent, Colors.black, Colors.black, Colors.transparent],
-                              stops: [0, 0.18, 0.82, 1],
-                            ).createShader(rect),
-                            child: VideoPlayer(_controller),
-                          )
-                        : null,
+                child: SizedBox(
+                  width: width,
+                  height: width / _aspect,
+                  // Difumina arriba y abajo para que el video se funda con el fondo.
+                  child: ShaderMask(
+                    blendMode: BlendMode.dstIn,
+                    shaderCallback: (rect) => const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black, Colors.black, Colors.transparent],
+                      stops: [0, 0.18, 0.82, 1],
+                    ).createShader(rect),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.asset(_poster, fit: BoxFit.fill, gaplessPlayback: true),
+                        if (_ready) VideoPlayer(_controller),
+                      ],
+                    ),
                   ),
                 ),
               ),
