@@ -10,6 +10,8 @@ const env = {
 
   jwtSecret: process.env.JWT_SECRET || 'reemplaza-esto-por-una-cadena-larga-y-aleatoria',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
+  // Con "Recordarme" en la web, y siempre en la app: nadie quiere volver a escribir la clave en el celular.
+  jwtRememberExpiresIn: process.env.JWT_REMEMBER_EXPIRES_IN || '30d',
   cookieSecure: process.env.COOKIE_SECURE === 'true',
 
   adminUsername: process.env.ADMIN_USERNAME || 'admin',
@@ -45,6 +47,11 @@ const env = {
   whatsappTemplateAlert: process.env.WHATSAPP_TEMPLATE_ALERT || 'agrovalor_alerta_precio',
   whatsappTemplateDigest: process.env.WHATSAPP_TEMPLATE_DIGEST || 'agrovalor_resumen_mercado',
   whatsappTemplateWelcome: process.env.WHATSAPP_TEMPLATE_WELCOME || 'agrovalor_bienvenida',
+
+  // Notificaciones push a la app (Firebase Cloud Messaging): ruta al JSON de la cuenta de servicio.
+  firebaseServiceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH
+    ? path.resolve(process.cwd(), process.env.FIREBASE_SERVICE_ACCOUNT_PATH)
+    : '',
 
   dailyDigestCron: process.env.DAILY_DIGEST_CRON || '0 6 * * *',
   weeklyDigestCron: process.env.WEEKLY_DIGEST_CRON || '0 6 * * 1',

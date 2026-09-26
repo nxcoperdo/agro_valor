@@ -4,6 +4,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Sin google-services.json la app compila igual; solo quedan desactivadas las notificaciones push.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "co.agrovalor.agro_valor"
     compileSdk = flutter.compileSdkVersion

@@ -88,13 +88,13 @@ class AccountScreen extends StatelessWidget {
                     _MenuTile(
                       icon: Icons.badge_rounded,
                       title: 'Mis datos',
-                      subtitle: 'WhatsApp, municipio y datos de tu café',
+                      subtitle: 'WhatsApp, notificaciones y datos de tu café',
                       open: () => ProfileScreen(session: session),
                     ),
                     _MenuTile(
                       icon: Icons.notifications_active_rounded,
-                      title: 'Alertas por WhatsApp',
-                      subtitle: 'Avisos cuando el precio te convenga',
+                      title: 'Alertas de precio',
+                      subtitle: 'Notificación y WhatsApp cuando el precio te convenga',
                       pro: !session.isPro,
                       open: () => AlertsScreen(session: session),
                     ),

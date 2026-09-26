@@ -25,17 +25,25 @@ function setActive(id, userId, active) {
     .run(active ? 1 : 0, id, userId).changes;
 }
 
-/** Alertas activas de un tipo, junto con el teléfono y plan del dueño. */
+/**
+ * Alertas activas de un tipo, con los datos del dueño necesarios para entregarlas.
+ * Solo trae las que tienen al menos un canal por donde llegar: WhatsApp con número
+ * guardado o la app con un teléfono registrado.
+ */
 function findActiveByTypes(types) {
   const placeholders = types.map(() => '?').join(',');
   return db
     .prepare(
-      `SELECT a.*, u.phone, u.username, u.plan, u.plan_expires_at
+      `SELECT a.*, u.phone, u.username, u.plan, u.plan_expires_at, u.notify_whatsapp, u.notify_push,
+              (SELECT COUNT(*) FROM push_devices d WHERE d.user_id = u.id) AS device_count
        FROM alerts a
        JOIN users u ON u.id = a.user_id
        WHERE a.active = 1
          AND a.type IN (${placeholders})
-         AND u.phone IS NOT NULL AND u.phone <> ''`
+         AND (
+           (u.notify_whatsapp = 1 AND u.phone IS NOT NULL AND u.phone <> '')
+           OR (u.notify_push = 1 AND EXISTS (SELECT 1 FROM push_devices d WHERE d.user_id = u.id))
+         )`
     )
     .all(...types);
 }
@@ -44,10 +52,10 @@ function markTriggered(id) {
   db.prepare("UPDATE alerts SET last_triggered_at = datetime('now') WHERE id = ?").run(id);
 }
 
-function logDelivery({ alertId = null, userId, phone, message, status, error = null }) {
+function logDelivery({ alertId = null, userId, phone, message, status, error = null, channel = 'whatsapp' }) {
   db.prepare(
-    'INSERT INTO alert_deliveries (alert_id, user_id, phone, message, status, error) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(alertId, userId, phone, message, status, error);
+    'INSERT INTO alert_deliveries (alert_id, user_id, phone, message, status, error, channel) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(alertId, userId, phone, message, status, error, channel);
 }
 
 function recentDeliveries(userId, limit = 20) {

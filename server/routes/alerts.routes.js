@@ -3,12 +3,26 @@ const alertRepository = require('../repositories/alertRepository');
 const alertService = require('../services/alertService');
 const subscriptionService = require('../services/subscriptionService');
 const whatsappService = require('../services/whatsappService');
+const pushService = require('../services/pushService');
+const pushDeviceRepository = require('../repositories/pushDeviceRepository');
 const { toIso } = require('../utils/datetime');
 const { testMessageRateLimit } = require('../middleware/rateLimit');
 
 const router = express.Router();
 
 const VALID_TYPES = ['above', 'below', 'daily', 'weekly'];
+
+const NO_CHANNEL_ERROR =
+  'No tienes por dónde recibir alertas: guarda tu número de WhatsApp o activa las notificaciones en la app';
+
+function channelInput(req) {
+  return {
+    userId: req.user.id,
+    phone: req.fullUser.phone,
+    notifyWhatsapp: req.fullUser.notify_whatsapp !== 0,
+    notifyPush: req.fullUser.notify_push !== 0,
+  };
+}
 
 function serialize(alert) {
   return {
@@ -29,10 +43,15 @@ router.get('/', (req, res) => {
       status: d.status,
       message: d.message,
       error: d.error,
+      channel: d.channel,
       createdAt: toIso(d.created_at),
     })),
     whatsappConfigured: whatsappService.isConfigured(),
+    pushConfigured: pushService.isConfigured(),
     phone: req.fullUser.phone,
+    deviceCount: pushDeviceRepository.countForUser(req.user.id),
+    notifyWhatsapp: req.fullUser.notify_whatsapp !== 0,
+    notifyPush: req.fullUser.notify_push !== 0,
   });
 });
 
@@ -44,10 +63,8 @@ router.post('/', (req, res, next) => {
       return res.status(400).json({ error: 'Tipo de alerta inválido' });
     }
 
-    if (!req.fullUser.phone) {
-      return res.status(400).json({
-        error: 'Primero guarda tu número de WhatsApp en tu perfil para poder recibir alertas',
-      });
+    if (alertService.channelsFor(channelInput(req)).length === 0) {
+      return res.status(400).json({ error: NO_CHANNEL_ERROR });
     }
 
     let threshold = null;
@@ -91,22 +108,26 @@ router.delete('/:id', (req, res) => {
 
 router.post('/test', testMessageRateLimit, async (req, res, next) => {
   try {
-    if (!req.fullUser.phone) {
-      return res.status(400).json({ error: 'Primero guarda tu número de WhatsApp en tu perfil' });
+    if (alertService.channelsFor(channelInput(req)).length === 0) {
+      return res.status(400).json({ error: NO_CHANNEL_ERROR });
     }
 
-    const result = await alertService.sendTestMessage(req.fullUser);
+    const { status, results } = await alertService.sendTestMessage(req.fullUser);
+    const names = { whatsapp: 'WhatsApp', push: 'notificación en la app' };
+    const describe = (r) =>
+      r.status === 'queued' ? `${names[r.channel]}: todavía no está conectado en el servidor` : `${names[r.channel]}: ${r.error}`;
 
-    if (result.status === 'sent') {
-      return res.json({ ok: true, message: 'Te enviamos un mensaje de prueba por WhatsApp' });
+    if (status === 'sent') {
+      const sentBy = results.filter((r) => r.status === 'sent').map((r) => names[r.channel]);
+      const failed = results.filter((r) => r.status !== 'sent').map(describe);
+      return res.json({
+        ok: true,
+        message: `Te enviamos un mensaje de prueba por ${sentBy.join(' y ')}${failed.length ? `. No llegó por ${failed.join('; ')}` : ''}`,
+        results,
+      });
     }
 
-    res.status(502).json({
-      error:
-        result.status === 'queued'
-          ? 'El envío de WhatsApp todavía no está conectado en el servidor'
-          : `No se pudo enviar: ${result.error}`,
-    });
+    res.status(502).json({ error: `No se pudo enviar. ${results.map(describe).join('. ')}`, results });
   } catch (err) {
     next(err);
   }

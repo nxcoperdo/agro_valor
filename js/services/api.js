@@ -32,7 +32,8 @@ export const api = {
 
   // Sesión
   signup: (payload) => request('/auth/signup', { method: 'POST', ...body(payload) }),
-  login: (username, password) => request('/auth/login', { method: 'POST', ...body({ username, password }) }),
+  login: (username, password, remember = false) =>
+    request('/auth/login', { method: 'POST', ...body({ username, password, remember }) }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),
 

@@ -4,6 +4,8 @@ const forecastService = require('./forecastService');
 const exchangeRateService = require('./exchangeRateService');
 const coffeePriceService = require('./coffeePriceService');
 const whatsappService = require('./whatsappService');
+const pushService = require('./pushService');
+const pushDeviceRepository = require('../repositories/pushDeviceRepository');
 const subscriptionService = require('./subscriptionService');
 const env = require('../config/env');
 const { toEpoch } = require('../utils/datetime');
@@ -68,7 +70,12 @@ function buildThresholdMessage(alert, snapshot) {
     params[3],
   ].join('\n');
 
-  return { text, templateName: env.whatsappTemplateAlert, params };
+  const push = {
+    title: `☕ El café ${alert.type === 'above' ? 'subió' : 'bajó'} de ${params[1]}`,
+    body: `Referencia hoy: ${params[2]} por carga. ${params[3]}`,
+  };
+
+  return { text, templateName: env.whatsappTemplateAlert, params, push };
 }
 
 /**
@@ -110,7 +117,12 @@ function buildDigestMessage(snapshot) {
     'Es una estimación, no una garantía de precio de compra.',
   ].join('\n');
 
-  return { text, templateName: env.whatsappTemplateDigest, params };
+  const push = {
+    title: '☕ Resumen del mercado',
+    body: `Referencia: ${params[0]} por carga. Mañana: ${params[2]}`,
+  };
+
+  return { text, templateName: env.whatsappTemplateDigest, params, push };
 }
 
 /**
@@ -128,20 +140,59 @@ function buildWelcomeMessage(snapshot) {
     params[1],
   ].join('\n');
 
-  return { text, templateName: env.whatsappTemplateWelcome, params };
+  const push = {
+    title: '☕ AgroValor',
+    body: `Las notificaciones quedaron activas. Referencia hoy: ${params[0]} por carga.`,
+  };
+
+  return { text, templateName: env.whatsappTemplateWelcome, params, push };
+}
+
+/** Canales por los que le puede llegar algo a este usuario, según sus preferencias y lo que tenga registrado. */
+function channelsFor({ userId, phone, notifyWhatsapp, notifyPush, deviceCount }) {
+  const channels = [];
+  if (notifyWhatsapp && phone) channels.push('whatsapp');
+  if (notifyPush && (deviceCount ?? pushDeviceRepository.countForUser(userId)) > 0) channels.push('push');
+  return channels;
+}
+
+/** Manda el mensaje por cada canal disponible y deja registro de cada envío. */
+async function sendOnChannels({ alertId = null, userId, phone, channels, built }) {
+  const results = [];
+
+  for (const channel of channels) {
+    const result =
+      channel === 'whatsapp'
+        ? await whatsappService.sendTemplateMessage(phone, built.templateName, built.params)
+        : await pushService.sendToUser(userId, { ...built.push, data: { type: 'price_alert' } });
+
+    alertRepository.logDelivery({
+      alertId,
+      userId,
+      phone: channel === 'whatsapp' ? phone : 'app',
+      message: channel === 'whatsapp' ? built.text : `${built.push.title} — ${built.push.body}`,
+      status: result.status,
+      error: result.error || null,
+      channel,
+    });
+    results.push({ channel, ...result });
+  }
+
+  // Basta con que llegue por un canal para darla por avisada.
+  const sent = results.some((r) => r.status === 'sent');
+  return { status: sent ? 'sent' : results[0]?.status || 'failed', results };
 }
 
 async function deliver(alert, built) {
-  const result = await whatsappService.sendTemplateMessage(alert.phone, built.templateName, built.params);
-
-  alertRepository.logDelivery({
-    alertId: alert.id,
+  const channels = channelsFor({
     userId: alert.user_id,
     phone: alert.phone,
-    message: built.text,
-    status: result.status,
-    error: result.error || null,
+    notifyWhatsapp: Boolean(alert.notify_whatsapp),
+    notifyPush: Boolean(alert.notify_push),
+    deviceCount: alert.device_count,
   });
+
+  const result = await sendOnChannels({ alertId: alert.id, userId: alert.user_id, phone: alert.phone, channels, built });
 
   if (result.status === 'sent') {
     alertRepository.markTriggered(alert.id);
@@ -208,22 +259,16 @@ async function sendDigests(type) {
   return { evaluated: alerts.length, sent };
 }
 
-/** Mensaje de prueba, para que el usuario confirme que su número quedó bien. */
+/** Mensaje de prueba por cada canal activo, para que el usuario confirme que le llega. */
 async function sendTestMessage(user) {
-  const snapshot = buildMarketSnapshot();
-  const built = buildWelcomeMessage(snapshot);
-
-  const result = await whatsappService.sendTemplateMessage(user.phone, built.templateName, built.params);
-
-  alertRepository.logDelivery({
+  const channels = channelsFor({
     userId: user.id,
     phone: user.phone,
-    message: built.text,
-    status: result.status,
-    error: result.error || null,
+    notifyWhatsapp: Boolean(user.notify_whatsapp),
+    notifyPush: Boolean(user.notify_push),
   });
 
-  return result;
+  return sendOnChannels({ userId: user.id, phone: user.phone, channels, built: buildWelcomeMessage(buildMarketSnapshot()) });
 }
 
-module.exports = { evaluateThresholdAlerts, sendDigests, sendTestMessage };
+module.exports = { evaluateThresholdAlerts, sendDigests, sendTestMessage, channelsFor };

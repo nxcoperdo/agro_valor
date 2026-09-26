@@ -2,6 +2,7 @@ const express = require('express');
 const userRepository = require('../repositories/userRepository');
 const subscriptionService = require('../services/subscriptionService');
 const whatsappService = require('../services/whatsappService');
+const pushDeviceRepository = require('../repositories/pushDeviceRepository');
 
 const router = express.Router();
 
@@ -15,6 +16,8 @@ function serialize(user) {
     defaultFactor: user.default_factor,
     defaultHumidity: user.default_humidity,
     transportCostCopCarga: user.transport_cost_cop_carga,
+    notifyWhatsapp: user.notify_whatsapp !== 0,
+    notifyPush: user.notify_push !== 0,
     ...subscriptionService.describe(user),
   };
 }
@@ -25,7 +28,8 @@ router.get('/profile', (req, res) => {
 
 router.put('/profile', (req, res, next) => {
   try {
-    const { fullName, phone, municipality, defaultFactor, defaultHumidity, transportCostCopCarga } = req.body || {};
+    const { fullName, phone, municipality, defaultFactor, defaultHumidity, transportCostCopCarga, notifyWhatsapp, notifyPush } =
+      req.body || {};
 
     const normalizedPhone = phone ? whatsappService.normalizePhone(phone) : null;
     if (phone && !normalizedPhone) {
@@ -40,12 +44,35 @@ router.put('/profile', (req, res, next) => {
       defaultHumidity: defaultHumidity != null && defaultHumidity !== '' ? parseFloat(defaultHumidity) : null,
       transportCostCopCarga:
         transportCostCopCarga != null && transportCostCopCarga !== '' ? parseFloat(transportCostCopCarga) : null,
+      notifyWhatsapp: typeof notifyWhatsapp === 'boolean' ? notifyWhatsapp : null,
+      notifyPush: typeof notifyPush === 'boolean' ? notifyPush : null,
     });
 
     res.json(serialize(userRepository.findById(req.user.id)));
   } catch (err) {
     next(err);
   }
+});
+
+/** La app registra aquí el token de Firebase del teléfono para recibir notificaciones push. */
+router.post('/devices', (req, res) => {
+  const { token, platform } = req.body || {};
+  if (typeof token !== 'string' || token.length < 20 || token.length > 4096) {
+    return res.status(400).json({ error: 'Token de dispositivo inválido' });
+  }
+  pushDeviceRepository.upsert({
+    userId: req.user.id,
+    token,
+    platform: typeof platform === 'string' ? platform.slice(0, 20) : null,
+  });
+  res.status(201).json({ ok: true });
+});
+
+/** Al cerrar sesión la app borra su token, para que ese teléfono deje de recibir avisos de esta cuenta. */
+router.delete('/devices', (req, res) => {
+  const { token } = req.body || {};
+  if (typeof token === 'string') pushDeviceRepository.remove(token, req.user.id);
+  res.json({ ok: true });
 });
 
 router.get('/plan', (req, res) => {

@@ -12,3 +12,5 @@ data/*.sqlite
 data/*.sqlite-journal
 data/*.sqlite-wal
 data/*.sqlite-shm
+# Clave privada de la cuenta de servicio de Firebase: nunca al repo
+firebase-service-account*.json

@@ -15,7 +15,7 @@ const _typeLabels = {
   'weekly': 'Resumen semanal',
 };
 
-/// Avisos por WhatsApp cuando el precio de referencia cruza el valor que le sirve al caficultor.
+/// Avisos por la app y por WhatsApp cuando el precio de referencia cruza el valor que le sirve al caficultor.
 class AlertsScreen extends StatefulWidget {
   const AlertsScreen({super.key, required this.session});
 
@@ -59,8 +59,24 @@ class _AlertsScreenState extends State<AlertsScreen> {
   Future<void> _newAlert() async {
     final created = await showFormSheet<bool>(context, title: 'Nueva alerta', child: _NewAlertForm(api: _api));
     if (created == true) {
-      if (mounted) showMessage(context, 'Alerta creada. Te avisaremos por WhatsApp.');
+      if (mounted) showMessage(context, 'Alerta creada. Te avisaremos apenas se cumpla.');
       _reload();
+    }
+  }
+
+  Future<void> _enablePush() async {
+    final push = widget.session.push;
+    if (!push.available) {
+      showMessage(context, 'Esta versión de la app todavía no tiene notificaciones', error: true);
+      return;
+    }
+    final ok = await push.register();
+    if (!mounted) return;
+    if (ok) {
+      showMessage(context, 'Notificaciones activadas en este teléfono');
+      _reload();
+    } else {
+      showMessage(context, 'Activa los permisos de notificación de AgroValor en los ajustes del teléfono', error: true);
     }
   }
 
@@ -73,7 +89,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
   Widget build(BuildContext context) {
     final pro = widget.session.isPro;
     return Scaffold(
-      appBar: AppBar(title: const Text('Alertas por WhatsApp')),
+      appBar: AppBar(title: const Text('Alertas de precio')),
       floatingActionButton: pro
           ? FloatingActionButton.extended(
               onPressed: _newAlert,
@@ -83,8 +99,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
           : null,
       body: !pro
           ? const ProUpsell(
-              title: 'Alertas por WhatsApp',
-              body: 'Te avisamos al celular cuando el precio suba o baje del valor que te sirve, '
+              title: 'Alertas de precio',
+              body: 'Te avisamos al celular, con notificación y por WhatsApp, cuando el precio suba o baje del valor que te sirve, '
                   'o te mandamos un resumen diario o semanal.',
               icon: Icons.notifications_active_rounded,
             )
@@ -99,45 +115,18 @@ class _AlertsScreenState extends State<AlertsScreen> {
   Widget _body(Json data) {
     final alerts = (data['alerts'] as List<dynamic>? ?? const []).cast<Json>();
     final deliveries = (data['deliveries'] as List<dynamic>? ?? const []).cast<Json>();
-    final phone = data['phone'] as String?;
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
-        SectionCard(
-          child: phone == null
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Falta tu número de WhatsApp', style: TextStyle(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
-                    const Muted('Sin número no podemos enviarte las alertas.'),
-                    const SizedBox(height: 12),
-                    OutlinedButton(onPressed: _editProfile, child: const Text('Agregar mi número')),
-                  ],
-                )
-              : Row(
-                  children: [
-                    const Icon(Icons.chat_rounded, color: AvColors.positive),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [const Muted('Los avisos llegan a'), Text(phone, style: mono(size: 15))],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _testing ? null : _sendTest,
-                      child: Text(_testing ? 'Enviando…' : 'Probar'),
-                    ),
-                  ],
-                ),
+        _ChannelsCard(
+          data: data,
+          testing: _testing,
+          onTest: _sendTest,
+          onEdit: _editProfile,
+          onEnablePush: _enablePush,
         ),
-        if (data['whatsappConfigured'] == false) ...[
-          const SizedBox(height: 8),
-          const Muted('El envío de WhatsApp todavía no está conectado en el servidor. Las alertas quedan guardadas.', size: 12),
-        ],
         const SectionLabel('Mis alertas'),
         if (alerts.isEmpty) const Muted('Todavía no tienes alertas. Crea una con el botón de abajo.'),
         for (final a in alerts) ...[
@@ -222,7 +211,7 @@ class _DeliveryTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            sent ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+            delivery['channel'] == 'push' ? Icons.notifications_rounded : Icons.chat_rounded,
             size: 18,
             color: sent ? AvColors.positive : AvColors.danger,
           ),
@@ -325,6 +314,132 @@ class _NewAlertFormState extends State<_NewAlertForm> {
             ),
           const SizedBox(height: 20),
           BusyButton(label: 'Crear alerta', busy: _busy, onPressed: _save),
+        ],
+      ),
+    );
+  }
+}
+
+/// Por dónde le llegan los avisos: la app (push) y WhatsApp.
+class _ChannelsCard extends StatelessWidget {
+  const _ChannelsCard({
+    required this.data,
+    required this.testing,
+    required this.onTest,
+    required this.onEdit,
+    required this.onEnablePush,
+  });
+
+  final Json data;
+  final bool testing;
+  final VoidCallback onTest;
+  final VoidCallback onEdit;
+  final VoidCallback onEnablePush;
+
+  @override
+  Widget build(BuildContext context) {
+    final phone = data['phone'] as String?;
+    final devices = data['deviceCount'] as int? ?? 0;
+    final pushOn = data['notifyPush'] != false;
+    final whatsappOn = data['notifyWhatsapp'] != false;
+
+    final pushStatus = !pushOn
+        ? 'Apagadas'
+        : devices == 0
+            ? 'Sin activar en este teléfono'
+            : devices == 1
+                ? 'Activas en 1 teléfono'
+                : 'Activas en $devices teléfonos';
+    final whatsappStatus = !whatsappOn ? 'Apagado' : phone ?? 'Falta tu número';
+
+    return SectionCard(
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ChannelRow(
+            icon: Icons.notifications_rounded,
+            color: AvColors.accent,
+            title: 'Notificaciones en la app',
+            status: pushStatus,
+            ok: pushOn && devices > 0,
+            action: pushOn && devices == 0 ? TextButton(onPressed: onEnablePush, child: const Text('Activar')) : null,
+          ),
+          if (data['pushConfigured'] == false)
+            const Padding(
+              padding: EdgeInsets.only(left: 36, bottom: 4),
+              child: Muted('El servidor todavía no envía notificaciones push.', size: 12),
+            ),
+          _ChannelRow(
+            icon: Icons.chat_rounded,
+            color: AvColors.positive,
+            title: 'WhatsApp',
+            status: whatsappStatus,
+            ok: whatsappOn && phone != null,
+            action: whatsappOn && phone == null ? TextButton(onPressed: onEdit, child: const Text('Agregar')) : null,
+          ),
+          if (data['whatsappConfigured'] == false)
+            const Padding(
+              padding: EdgeInsets.only(left: 36, bottom: 4),
+              child: Muted('El envío de WhatsApp todavía no está conectado en el servidor.', size: 12),
+            ),
+          const Divider(height: 16),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.tune_rounded, size: 18),
+                label: const Text('Elegir canales'),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: testing ? null : onTest,
+                icon: const Icon(Icons.send_rounded, size: 18),
+                label: Text(testing ? 'Enviando…' : 'Enviar prueba'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChannelRow extends StatelessWidget {
+  const _ChannelRow({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.status,
+    required this.ok,
+    this.action,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String status;
+  final bool ok;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: ok ? color : AvColors.fgFaint),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(status, style: TextStyle(fontSize: 13, color: ok ? AvColors.fg : AvColors.fgMuted)),
+              ],
+            ),
+          ),
+          ?action,
         ],
       ),
     );

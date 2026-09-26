@@ -5,7 +5,7 @@ const userRepository = require('../repositories/userRepository');
 
 const COOKIE_NAME = 'av_token';
 
-function login(username, password) {
+function login(username, password, { remember = false } = {}) {
   const user = userRepository.findByUsername(username);
   if (!user) return null;
 
@@ -15,7 +15,7 @@ function login(username, password) {
   const token = jwt.sign(
     { sub: user.id, username: user.username, role: user.role },
     env.jwtSecret,
-    { expiresIn: env.jwtExpiresIn }
+    { expiresIn: remember ? env.jwtRememberExpiresIn : env.jwtExpiresIn }
   );
 
   return { token, user: { id: user.id, username: user.username, role: user.role } };

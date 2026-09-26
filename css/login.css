@@ -1,0 +1,493 @@
+/* ==========================================================================
+   Login (diseño claro con panel de marca). Clases "lg-" para no chocar con
+   .login-card, que sigue usando la página de registro.
+   ========================================================================== */
+
+/* El body de la app conserva el margen por defecto del navegador; en el login se nota como un marco. */
+body:has(.lg-shell) {
+  margin: 0;
+}
+
+.lg-shell {
+  display: grid;
+  min-height: 100dvh;
+  grid-template-columns: minmax(430px, 1.03fr) minmax(520px, 0.97fr);
+  overflow: hidden;
+  background: #f7f8f5;
+  color: #14251c;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.lg-shell h1,
+.lg-shell h2 {
+  font-family: inherit;
+}
+
+.lg-brand {
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: #fff;
+  background:
+    linear-gradient(145deg, rgba(7, 41, 28, 0.2), rgba(2, 26, 17, 0.82)),
+    radial-gradient(circle at 15% 80%, #245c3e 0, transparent 42%),
+    #06291b;
+}
+
+.lg-brand::before,
+.lg-brand::after {
+  position: absolute;
+  content: "";
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+.lg-brand::before {
+  width: 460px;
+  height: 460px;
+  right: -220px;
+  top: -160px;
+  box-shadow:
+    0 0 0 62px rgba(255, 255, 255, 0.018),
+    0 0 0 126px rgba(255, 255, 255, 0.012);
+}
+
+.lg-brand::after {
+  width: 320px;
+  height: 320px;
+  left: -190px;
+  bottom: -100px;
+  box-shadow: 0 0 0 78px rgba(255, 255, 255, 0.018);
+}
+
+.lg-brand__glow {
+  position: absolute;
+  width: 330px;
+  height: 330px;
+  right: 8%;
+  bottom: 4%;
+  border-radius: 50%;
+  background: rgba(196, 151, 37, 0.12);
+  filter: blur(75px);
+}
+
+.lg-brand__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(100% - 96px, 620px);
+  min-height: 100%;
+  margin: 0 auto;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 56px 0;
+}
+
+.lg-mark,
+.lg-mobile-brand {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 12px;
+  font-size: 22px;
+  font-weight: 760;
+  letter-spacing: -0.04em;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* El logo tiene verde oscuro: sobre el panel oscuro va en una ficha clara para que se lea. */
+.lg-mark__tile {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  border-radius: 14px;
+  background: #f7f8f5;
+}
+
+.lg-mark__tile img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.lg-mobile-brand img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.lg-message {
+  max-width: 590px;
+  margin: auto 0;
+  padding: 70px 0;
+}
+
+.lg-eyebrow {
+  margin: 0 0 16px;
+  color: #bb8b1d;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.lg-message .lg-eyebrow {
+  color: #e7b637;
+}
+
+.lg-message h1 {
+  max-width: 570px;
+  margin: 0;
+  font-size: clamp(42px, 4.4vw, 66px);
+  font-weight: 680;
+  letter-spacing: -0.055em;
+  line-height: 1.03;
+}
+
+.lg-message > p:last-child {
+  max-width: 510px;
+  margin: 28px 0 0;
+  color: rgba(255, 255, 255, 0.67);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.lg-pill {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px 12px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(8px);
+}
+
+.lg-pill__icon {
+  display: grid;
+  width: 39px;
+  height: 39px;
+  place-items: center;
+  border-radius: 11px;
+  color: #edb72a;
+  background: rgba(237, 183, 42, 0.13);
+}
+
+.lg-shell svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lg-pill > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lg-pill strong {
+  font-size: 13px;
+}
+
+.lg-pill small {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.lg-panel {
+  display: grid;
+  /* minmax(0, 1fr): sin esto la columna toma el ancho de la tarjeta y se desborda en celulares. */
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 100dvh;
+  place-items: center;
+  padding: 56px clamp(40px, 6vw, 100px);
+}
+
+.lg-card {
+  width: 100%;
+  max-width: 440px;
+  animation: av-fade-up 420ms var(--av-ease-out) both;
+}
+
+.lg-mobile-brand {
+  display: none;
+  color: #093d29;
+}
+
+.lg-heading {
+  margin-bottom: 38px;
+}
+
+.lg-heading h2 {
+  margin: 0 0 12px;
+  color: #0a2f21;
+  font-size: 38px;
+  font-weight: 730;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+
+.lg-heading > p:last-child {
+  margin: 0;
+  color: #738078;
+  font-size: 15px;
+}
+
+.lg-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.lg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: #293c31;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lg-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lg-input__icon {
+  position: absolute;
+  left: 17px;
+  display: grid;
+  color: #789083;
+  pointer-events: none;
+}
+
+.lg-input input {
+  width: 100%;
+  height: 56px;
+  padding: 0 50px;
+  border: 1px solid #dce4de;
+  outline: none;
+  border-radius: 14px;
+  color: #12291d;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(11, 54, 36, 0.03);
+  font-size: 16px; /* 16px evita que Safari en iPhone haga zoom al enfocar */
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.lg-input input::placeholder {
+  color: #9ba8a0;
+}
+
+.lg-input input:focus {
+  border-color: #1b704c;
+  box-shadow: 0 0 0 4px rgba(21, 104, 69, 0.1);
+}
+
+.lg-toggle {
+  position: absolute;
+  right: 10px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  color: #6e8176;
+  background: transparent;
+}
+
+.lg-toggle:hover {
+  color: #155f41;
+  background: #edf3ef;
+}
+
+.lg-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -4px;
+  color: #53635a;
+  font-size: 12px;
+}
+
+.lg-remember {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  gap: 8px;
+}
+
+.lg-remember input {
+  width: 16px;
+  height: 16px;
+  accent-color: #0f6846;
+}
+
+.lg-link,
+.lg-signup a {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0c6543;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lg-link:hover,
+.lg-signup a:hover {
+  text-decoration: underline;
+}
+
+.lg-note {
+  margin: -10px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #bfddc9;
+  border-radius: 12px;
+  color: #185c3e;
+  background: #eff8f2;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.lg-submit {
+  display: flex;
+  height: 58px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 14px;
+  color: #142818;
+  background: #edb72a;
+  box-shadow: 0 12px 26px rgba(185, 134, 8, 0.2);
+  font-size: 14px;
+  font-weight: 800;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.lg-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #f2bd32;
+  box-shadow: 0 15px 30px rgba(185, 134, 8, 0.26);
+}
+
+.lg-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.lg-submit:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.lg-shell .lg-submit:focus-visible,
+.lg-shell .lg-toggle:focus-visible,
+.lg-shell a:focus-visible,
+.lg-shell .lg-link:focus-visible {
+  outline: 3px solid rgba(18, 104, 69, 0.28);
+  outline-offset: 3px;
+}
+
+.lg-error {
+  margin: -6px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #f1c4c4;
+  border-radius: 12px;
+  color: #9b2c2c;
+  background: #fdf1f1;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lg-signup {
+  margin: 30px 0 0;
+  padding-top: 27px;
+  border-top: 1px solid #e1e7e2;
+  color: #66736b;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .lg-shell {
+    display: block;
+    background: linear-gradient(180deg, #063421 0, #0a4a30 29%, #f6f8f4 29%);
+  }
+
+  .lg-brand {
+    display: none;
+  }
+
+  .lg-panel {
+    min-height: 100dvh;
+    place-items: start center;
+    padding: max(28px, env(safe-area-inset-top)) 20px max(34px, env(safe-area-inset-bottom));
+  }
+
+  .lg-card {
+    padding: 25px 24px 28px;
+    border: 1px solid rgba(15, 61, 40, 0.07);
+    border-radius: 26px;
+    background: #fbfcfa;
+    box-shadow: 0 22px 60px rgba(3, 38, 24, 0.18);
+  }
+
+  .lg-mobile-brand {
+    display: flex;
+    margin-bottom: 34px;
+  }
+
+  .lg-heading {
+    margin-bottom: 30px;
+  }
+
+  .lg-heading h2 {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 420px) {
+  .lg-panel {
+    padding-inline: 14px;
+  }
+
+  .lg-card {
+    padding-inline: 20px;
+  }
+
+  .lg-options {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .lg-options > .lg-link {
+    max-width: 135px;
+    text-align: right;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lg-input input,
+  .lg-submit,
+  .lg-card {
+    transition: none;
+    animation: none;
+  }
+}

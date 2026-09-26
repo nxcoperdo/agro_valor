@@ -1,17 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api/api_client.dart';
+import 'push.dart';
 
 /// Guarda el token en el almacenamiento cifrado del teléfono para no pedir login cada vez.
 class Session extends ChangeNotifier {
-  Session() {
-    api.onUnauthorized = logout;
+  Session({bool pushAvailable = false}) {
+    api.onUnauthorized = () => logout(tellServer: false);
+    push = PushNotifications(api, available: pushAvailable);
   }
 
   static const _tokenKey = 'av_token';
   final _storage = const FlutterSecureStorage();
   final api = ApiClient();
+  late final PushNotifications push;
 
   Json? user;
   bool restoring = true;
@@ -24,6 +29,7 @@ class Session extends ChangeNotifier {
       api.token = await _storage.read(key: _tokenKey);
       if (api.token != null) {
         user = (await api.me())['user'] as Json;
+        unawaited(push.register());
       }
     } on ApiError catch (e) {
       // Sin internet se conserva el token para reintentar; si el servidor lo rechazó, se borra.
@@ -43,7 +49,8 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> logout() async {
+  Future<void> logout({bool tellServer = true}) async {
+    await push.unregister(tellServer: tellServer);
     await _clear();
     notifyListeners();
   }
@@ -59,6 +66,7 @@ class Session extends ChangeNotifier {
     user = res['user'] as Json;
     await _storage.write(key: _tokenKey, value: token);
     notifyListeners();
+    unawaited(push.register());
   }
 
   Future<void> _clear() async {

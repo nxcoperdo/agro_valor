@@ -16,6 +16,11 @@ const ADDED_COLUMNS = [
   // Hora del dato en la bolsa, distinta de cuándo lo consultamos nosotros.
   ['coffee_prices', 'quoted_at', 'TEXT'],
   ['coffee_prices', 'meta', 'TEXT'],
+  // Por qué canales quiere recibir las alertas cada usuario.
+  ['users', 'notify_whatsapp', 'INTEGER NOT NULL DEFAULT 1'],
+  ['users', 'notify_push', 'INTEGER NOT NULL DEFAULT 1'],
+  // "whatsapp" o "push". En los envíos push, la columna phone guarda "app".
+  ['alert_deliveries', 'channel', "TEXT NOT NULL DEFAULT 'whatsapp'"],
 ];
 
 function columnExists(table, column) {

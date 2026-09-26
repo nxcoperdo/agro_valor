@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../session.dart';
+import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/forms.dart';
 
@@ -41,6 +42,8 @@ class _ProfileFormState extends State<_ProfileForm> {
   late final _factor = TextEditingController(text: decimalInputText(widget.profile['defaultFactor'] as num?));
   late final _humidity = TextEditingController(text: decimalInputText(widget.profile['defaultHumidity'] as num?));
   late final _transport = TextEditingController(text: copInputText(widget.profile['transportCostCopCarga'] as num?));
+  late bool _notifyWhatsapp = widget.profile['notifyWhatsapp'] != false;
+  late bool _notifyPush = widget.profile['notifyPush'] != false;
   bool _busy = false;
 
   @override
@@ -63,7 +66,16 @@ class _ProfileFormState extends State<_ProfileForm> {
         'defaultFactor': parseDecimal(_factor.text),
         'defaultHumidity': parseDecimal(_humidity.text),
         'transportCostCopCarga': parseCop(_transport.text),
+        'notifyWhatsapp': _notifyWhatsapp,
+        'notifyPush': _notifyPush,
       });
+      final push = widget.session.push;
+      if (_notifyPush && push.available) {
+        final ok = await push.register();
+        if (!ok && mounted) {
+          showMessage(context, 'Activa los permisos de notificación de AgroValor en los ajustes del teléfono', error: true);
+        }
+      }
       await widget.session.refreshUser();
       if (!mounted) return;
       showMessage(context, 'Datos guardados');
@@ -105,6 +117,36 @@ class _ProfileFormState extends State<_ProfileForm> {
                   controller: _municipality,
                   textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(labelText: 'Municipio'),
+                ),
+              ],
+            ),
+          ),
+          const SectionLabel('Cómo te avisamos'),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                SwitchListTile(
+                  value: _notifyPush,
+                  onChanged: (v) => setState(() => _notifyPush = v),
+                  secondary: const Icon(Icons.notifications_rounded, color: AvColors.accent),
+                  title: const Text('Notificaciones en la app'),
+                  subtitle: Text(
+                    widget.session.push.available
+                        ? 'Llegan a este teléfono, sin costo'
+                        : 'Esta versión de la app todavía no tiene notificaciones',
+                    style: const TextStyle(color: AvColors.fgMuted, fontSize: 12),
+                  ),
+                ),
+                SwitchListTile(
+                  value: _notifyWhatsapp,
+                  onChanged: (v) => setState(() => _notifyWhatsapp = v),
+                  secondary: const Icon(Icons.chat_rounded, color: AvColors.positive),
+                  title: const Text('WhatsApp'),
+                  subtitle: const Text(
+                    'Al número de arriba',
+                    style: TextStyle(color: AvColors.fgMuted, fontSize: 12),
+                  ),
                 ),
               ],
             ),

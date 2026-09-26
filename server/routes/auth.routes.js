@@ -24,8 +24,23 @@ const MIN_PASSWORD_LENGTH = 8;
  * La app móvil no maneja cookies, así que recibe el token en el cuerpo. A la web no
  * se le entrega: allá vive solo en la cookie httpOnly, fuera del alcance de JS.
  */
+function isMobile(req) {
+  return req.get('X-Client') === 'mobile';
+}
+
 function tokenForClient(req, token) {
-  return req.get('X-Client') === 'mobile' ? { token } : {};
+  return isMobile(req) ? { token } : {};
+}
+
+const REMEMBER_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** La app siempre recuerda la sesión; en la web solo si marcaron "Recordarme". */
+function wantsRemember(req) {
+  return isMobile(req) || req.body?.remember === true;
+}
+
+function setSessionCookie(res, token, remember) {
+  res.cookie(authService.COOKIE_NAME, token, remember ? { ...cookieOptions, maxAge: REMEMBER_MS } : cookieOptions);
 }
 
 function publicUser(user) {
@@ -74,8 +89,9 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
       plan: 'free',
     });
 
-    const result = authService.login(normalizedUsername, String(password));
-    res.cookie(authService.COOKIE_NAME, result.token, cookieOptions);
+    const remember = wantsRemember(req);
+    const result = authService.login(normalizedUsername, String(password), { remember });
+    setSessionCookie(res, result.token, remember);
     res.status(201).json({ user: publicUser(user), ...tokenForClient(req, result.token) });
   } catch (err) {
     next(err);
@@ -88,12 +104,13 @@ router.post('/login', loginRateLimit, (req, res) => {
     return res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
   }
 
-  const result = authService.login(String(username).trim().toLowerCase(), String(password));
+  const remember = wantsRemember(req);
+  const result = authService.login(String(username).trim().toLowerCase(), String(password), { remember });
   if (!result) {
-    return res.status(401).json({ error: 'Credenciales inválidas' });
+    return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
   }
 
-  res.cookie(authService.COOKIE_NAME, result.token, cookieOptions);
+  setSessionCookie(res, result.token, remember);
   res.json({ user: publicUser(userRepository.findById(result.user.id)), ...tokenForClient(req, result.token) });
 });
 

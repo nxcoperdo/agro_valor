@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS forecast_cache (
   model_params TEXT
 );
 
-/* Alertas configuradas por el usuario (se entregan por WhatsApp). */
+/* Alertas configuradas por el usuario (se entregan por WhatsApp y/o notificación push). */
 CREATE TABLE IF NOT EXISTS alerts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -77,6 +77,17 @@ CREATE TABLE IF NOT EXISTS alert_deliveries (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_alert_deliveries_created ON alert_deliveries(created_at);
+
+/* Teléfonos con la app instalada: a cada uno le llegan las notificaciones push (Firebase Cloud Messaging). */
+CREATE TABLE IF NOT EXISTS push_devices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  platform TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  last_seen_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_push_devices_user ON push_devices(user_id);
 
 /* Precios reportados por los propios usuarios: la fuente real por cooperativa. */
 CREATE TABLE IF NOT EXISTS price_reports (

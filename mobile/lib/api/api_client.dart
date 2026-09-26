@@ -73,6 +73,9 @@ class ApiClient {
   // Cuenta
   Future<Json> profile() async => await _request('GET', '/account/profile') as Json;
   Future<Json> updateProfile(Json payload) async => await _request('PUT', '/account/profile', payload) as Json;
+  Future<void> registerDevice(String token, String platform) =>
+      _request('POST', '/account/devices', {'token': token, 'platform': platform});
+  Future<void> unregisterDevice(String token) => _request('DELETE', '/account/devices', {'token': token});
 
   // Reportes de precio (gratis: alimentan el dato de todos)
   Future<Json> reportPrice(Json payload) async => await _request('POST', '/reports', payload) as Json;

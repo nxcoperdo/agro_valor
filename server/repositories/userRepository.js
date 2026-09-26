@@ -1,7 +1,7 @@
 const db = require('../db/connection');
 
 const PUBLIC_FIELDS = `id, username, role, plan, plan_expires_at, phone, full_name, municipality,
-  default_factor, default_humidity, transport_cost_cop_carga, created_at`;
+  default_factor, default_humidity, transport_cost_cop_carga, notify_whatsapp, notify_push, created_at`;
 
 function count() {
   return db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
@@ -28,7 +28,11 @@ function create({ username, passwordHash, role = 'user', phone = null, fullName 
   return findById(info.lastInsertRowid);
 }
 
-function updateProfile(id, { fullName, phone, municipality, defaultFactor, defaultHumidity, transportCostCopCarga }) {
+function updateProfile(
+  id,
+  { fullName, phone, municipality, defaultFactor, defaultHumidity, transportCostCopCarga, notifyWhatsapp, notifyPush }
+) {
+  const flag = (value) => (value == null ? null : value ? 1 : 0);
   db.prepare(
     `UPDATE users SET
        full_name = COALESCE(?, full_name),
@@ -36,9 +40,21 @@ function updateProfile(id, { fullName, phone, municipality, defaultFactor, defau
        municipality = COALESCE(?, municipality),
        default_factor = COALESCE(?, default_factor),
        default_humidity = COALESCE(?, default_humidity),
-       transport_cost_cop_carga = COALESCE(?, transport_cost_cop_carga)
+       transport_cost_cop_carga = COALESCE(?, transport_cost_cop_carga),
+       notify_whatsapp = COALESCE(?, notify_whatsapp),
+       notify_push = COALESCE(?, notify_push)
      WHERE id = ?`
-  ).run(fullName, phone, municipality, defaultFactor, defaultHumidity, transportCostCopCarga, id);
+  ).run(
+    fullName,
+    phone,
+    municipality,
+    defaultFactor,
+    defaultHumidity,
+    transportCostCopCarga,
+    flag(notifyWhatsapp),
+    flag(notifyPush),
+    id
+  );
   return findPublicById(id);
 }
 

@@ -8,7 +8,7 @@
  */
 
 // Subir esta versión invalida las cachés viejas en el próximo despliegue.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL_CACHE = `agrovalor-shell-${VERSION}`;
 const DATA_CACHE = `agrovalor-data-${VERSION}`;
 
@@ -16,6 +16,7 @@ const SHELL_ASSETS = [
   './',
   './index.html',
   './css/style.css',
+  './css/login.css',
   './js/app.js',
   './site.webmanifest',
   './img/logo-full.png',
