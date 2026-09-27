@@ -334,6 +334,35 @@ body:has(.lg-shell) {
   accent-color: #0f6846;
 }
 
+.lg-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: -6px 0 18px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #66736b;
+  line-height: 1.4;
+}
+
+.lg-check input {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: #0f6846;
+}
+
+.lg-check a {
+  color: #0c6543;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.lg-check a:hover {
+  text-decoration: underline;
+}
+
 .lg-link,
 .lg-signup a {
   padding: 0;

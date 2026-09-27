@@ -102,6 +102,14 @@ export function renderSignup(root) {
               </span>
             </label>
 
+            <label class="lg-check">
+              <input type="checkbox" name="acceptTerms" id="accept-terms" />
+              <span>
+                Acepto los <a href="#/terminos" target="_blank">términos de uso</a> y la
+                <a href="#/privacidad" target="_blank">política de privacidad</a>.
+              </span>
+            </label>
+
             <button class="lg-submit" type="submit">${SUBMIT_LABEL}</button>
 
             <p class="lg-error" id="signup-error" role="alert" aria-live="polite" hidden></p>
@@ -125,6 +133,9 @@ export function renderSignup(root) {
     toggle.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
   });
 
+  // Sin esto, el clic en los links también marca/desmarca el checkbox (están dentro del <label>).
+  form.querySelectorAll('.lg-check a').forEach((a) => a.addEventListener('click', (e) => e.stopPropagation()));
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     errorEl.hidden = true;
@@ -135,6 +146,12 @@ export function renderSignup(root) {
 
     if (!fullName || !phone || !password) {
       errorEl.textContent = 'Completa tu nombre, tu WhatsApp y una contraseña.';
+      errorEl.hidden = false;
+      return;
+    }
+
+    if (!form.acceptTerms.checked) {
+      errorEl.textContent = 'Debes aceptar los términos de uso y la política de privacidad.';
       errorEl.hidden = false;
       return;
     }

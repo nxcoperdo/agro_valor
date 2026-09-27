@@ -60,7 +60,7 @@ const env = {
   mpPublicKey: process.env.MP_PUBLIC_KEY || '',
   mpWebhookSecret: process.env.MP_WEBHOOK_SECRET || '',
   mpProAmountCop: Number(process.env.MP_PRO_AMOUNT_COP || 12000),
-  mpBackUrl: process.env.MP_BACK_URL || 'http://2.25.80.190:3000/#/cuenta',
+  mpBackUrl: process.env.MP_BACK_URL || 'https://agrovalor.tech/#/cuenta',
   mpPollCron: process.env.MP_POLL_CRON || '0 8 * * *',
 
   dailyDigestCron: process.env.DAILY_DIGEST_CRON || '0 6 * * *',

@@ -1,6 +1,6 @@
 /// Dirección del backend. Se cambia al compilar, sin tocar el código:
-///   flutter run --dart-define=API_BASE_URL=https://agrovalor.co
+///   flutter run --dart-define=API_BASE_URL=https://otra-cosa.com
 const apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://2.25.80.190:3000',
+  defaultValue: 'https://agrovalor.tech',
 );

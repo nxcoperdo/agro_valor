@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../session.dart';
+import 'legal_screen.dart';
 import 'reset_password_screen.dart';
 
 /// Colores del login claro (mismo diseño que la web, css/login.css). El resto de la app es oscura.
@@ -50,6 +51,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   bool _signup = false;
   bool _busy = false;
   bool _showPassword = false;
+  bool _acceptedTerms = false;
   String? _error;
 
   @override
@@ -63,6 +65,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
+    if (_signup && !_acceptedTerms) {
+      setState(() => _error = 'Debes aceptar los términos de uso y la política de privacidad');
+      return;
+    }
     FocusScope.of(context).unfocus();
     setState(() {
       _busy = true;
@@ -88,6 +94,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   void _toggleMode() => setState(() {
     _signup = !_signup;
     _error = null;
+    _acceptedTerms = false;
   });
 
   @override
@@ -274,6 +281,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   },
                 ),
               ),
+              if (_signup) _termsRow(),
               if (!_signup)
                 AnimatedSize(
                   duration: const Duration(milliseconds: 250),
@@ -341,6 +349,52 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+  Widget _termsRow() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          value: _acceptedTerms,
+          onChanged: (v) => setState(() => _acceptedTerms = v ?? false),
+          activeColor: _C.focus,
+          visualDensity: VisualDensity.compact,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 13),
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text('Acepto los ', style: TextStyle(fontSize: 13, color: Color(0xFF66736B))),
+                _Link(
+                  label: 'términos de uso',
+                  size: 13,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => LegalScreen(title: 'Términos de uso', load: widget.session.api.termsOfService),
+                    ),
+                  ),
+                ),
+                const Text(' y la ', style: TextStyle(fontSize: 13, color: Color(0xFF66736B))),
+                _Link(
+                  label: 'política de privacidad',
+                  size: 13,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => LegalScreen(title: 'Política de privacidad', load: widget.session.api.privacyPolicy),
+                    ),
+                  ),
+                ),
+                const Text('.', style: TextStyle(fontSize: 13, color: Color(0xFF66736B))),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _TopBand extends StatelessWidget {
