@@ -32,10 +32,16 @@ function changeBadge(changePct) {
   }${changePct.toFixed(1)}%</span>`;
 }
 
-/** Rango probable (mínimo–máximo), no solo el precio central: entre más lejos la fecha, más ancho. */
-function rangeLine(f, formatter) {
-  if (f.lowImpliedCopPerCarga == null || f.highImpliedCopPerCarga == null) return '';
-  return `<div class="cal-cell-range-price">${formatter(f.lowImpliedCopPerCarga)} – ${formatter(f.highImpliedCopPerCarga)}</div>`;
+/**
+ * El rango probable (mínimo–máximo) es el dato principal de la tarjeta — no hay un precio
+ * central aparte: nadie puede predecir el número exacto de dentro de semanas o meses, y
+ * mostrar uno solo sugería una certeza que no existe. La etiqueta "Rango" solo se pone en
+ * semana/mes (hay espacio); en la vista día la celda es demasiado chica y sobra.
+ */
+function rangeLine(f, formatter, { withLabel = false } = {}) {
+  if (f.lowImpliedCopPerCarga == null || f.highImpliedCopPerCarga == null) return '—';
+  const label = withLabel ? '<span class="cal-range-label">Rango</span> ' : '';
+  return `${label}${formatter(f.lowImpliedCopPerCarga)} – ${formatter(f.highImpliedCopPerCarga)}`;
 }
 
 function renderDayView(daily) {
@@ -58,11 +64,10 @@ function renderDayView(daily) {
           <div class="cal-day-num tabular-nums">
             <span class="cal-day-weekday">${weekday}</span>${dayNumFmt.format(date)}
           </div>
-          ${changeBadge(f.changePct)}
-          <div class="cal-day-price tabular-nums">${
-            f.impliedInternalCopPerCarga != null ? formatCopShort(f.impliedInternalCopPerCarga) : '—'
-          }</div>
-          ${rangeLine(f, formatCopShort)}
+          <div class="cal-day-price-group">
+            ${changeBadge(f.changePct)}
+            <div class="cal-cell-range-price tabular-nums">${rangeLine(f, formatCopShort)}</div>
+          </div>
         </div>
       `;
     })
@@ -90,10 +95,7 @@ function renderWeekView(weekly) {
           <div class="cal-cell-label">Semana ${f.step}</div>
           <div class="cal-cell-range">${dayMonthFmt.format(startDate)} – ${dayMonthFmt.format(endDate)}</div>
           ${changeBadge(f.changePct)}
-          <div class="cal-cell-price tabular-nums">${
-            f.impliedInternalCopPerCarga != null ? formatCop(f.impliedInternalCopPerCarga) : '—'
-          }</div>
-          ${rangeLine(f, formatCop)}
+          <div class="cal-cell-range-price tabular-nums">${rangeLine(f, formatCop, { withLabel: true })}</div>
         </div>
       `;
     })
@@ -113,10 +115,7 @@ function renderMonthView(monthly) {
         <div class="cal-cell cal-month-cell">
           <div class="cal-cell-label">${monthYearFmt.format(date)}</div>
           ${changeBadge(f.changePct)}
-          <div class="cal-cell-price tabular-nums">${
-            f.impliedInternalCopPerCarga != null ? formatCop(f.impliedInternalCopPerCarga) : '—'
-          }</div>
-          ${rangeLine(f, formatCop)}
+          <div class="cal-cell-range-price tabular-nums">${rangeLine(f, formatCop, { withLabel: true })}</div>
         </div>
       `;
     })
@@ -133,7 +132,10 @@ const LOCKED_LABELS = { weekly: 'semanal', monthly: 'mensual' };
 /** Semana y mes completos son Pro: se ve la grilla desenfocada como anticipo, no el dato real. */
 function renderLockedView(kind, count) {
   const blurredCells = Array.from({ length: Math.min(count || 4, 4) })
-    .map(() => '<div class="cal-cell cal-week-cell"><div class="cal-cell-price tabular-nums">$•,•••,•••</div></div>')
+    .map(
+      () =>
+        '<div class="cal-cell cal-week-cell"><div class="cal-cell-range-price tabular-nums">$•,•••,••• – $•,•••,•••</div></div>'
+    )
     .join('');
 
   return `

@@ -23,6 +23,18 @@ class AccountScreen extends StatelessWidget {
         final user = session.user ?? const {};
         final limits = user['limits'] as Map<String, dynamic>?;
         final features = (limits?['features'] as List<dynamic>? ?? const []).cast<String>();
+        final username = user['username'] as String? ?? '';
+        final fullName = user['fullName'] as String?;
+        // El usuario es el correo desde que se pide en el registro; a las cuentas viejas
+        // (antes de pedirlo) les quedó un usuario tipo "juan-perez", que sí tiene sentido
+        // mostrar con "@" delante. A un correo no se le antepone nada, y si ya se mostró
+        // como nombre arriba (porque no hay fullName), no se repite abajo.
+        final isEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(username);
+        final municipality = user['municipality'] as String?;
+        final subtitleParts = <String>[
+          if (fullName != null && username.isNotEmpty) (isEmail ? username : '@$username'),
+          ?municipality,
+        ];
 
         return RefreshIndicator(
           onRefresh: session.refreshUser,
@@ -36,11 +48,13 @@ class AccountScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      (user['fullName'] as String?) ?? (user['username'] as String? ?? ''),
+                      fullName ?? username,
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 4),
-                    Muted('@${user['username']}${user['municipality'] != null ? ' · ${user['municipality']}' : ''}'),
+                    if (subtitleParts.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Muted(subtitleParts.join(' · ')),
+                    ],
                     if (user['phone'] != null) Muted('WhatsApp: ${user['phone']}'),
                   ],
                 ),

@@ -5,13 +5,20 @@ const mpPaymentRepository = require('../repositories/mpPaymentRepository');
 const env = require('../config/env');
 const logger = require('../utils/logger');
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
- * No hay email en el modelo de usuario (a propósito, no se le pide correo a un
- * caficultor). Mercado Pago exige payer_email para crear la suscripción, así que se
- * genera uno técnico que nunca se muestra ni se le pide al usuario.
+ * Desde que el registro pide correo (y el correo ES el usuario, ver auth.routes.js),
+ * user.username ya es un correo real para toda cuenta nueva. Antes se generaba uno
+ * técnico (usuario@pagos.agrovalor.co) para las cuentas creadas cuando aún no se pedía
+ * correo — eso hacía que Mercado Pago mostrara "el correo no coincide con la cuenta" en
+ * el checkout, porque el comprador entra ahí con SU correo real de Mercado Pago, que
+ * nunca iba a coincidir con uno inventado. Con el correo real esto ya no debería pasar;
+ * el fallback técnico solo queda para las cuentas viejas que aún no tienen uno.
  */
-function syntheticEmail(username) {
-  return `${username}@pagos.agrovalor.co`;
+function payerEmailFor(user) {
+  if (EMAIL_RE.test(user.username)) return user.username;
+  return `${user.username}@pagos.agrovalor.co`;
 }
 
 /** Crea la suscripción y devuelve la URL de checkout de Mercado Pago para redirigir al usuario. */
@@ -23,7 +30,7 @@ async function startSubscription(userId) {
   const user = userRepository.findById(userId);
   const { id, initPoint } = await mercadoPagoService.createPreapproval({
     userId,
-    payerEmail: syntheticEmail(user.username),
+    payerEmail: payerEmailFor(user),
   });
 
   userRepository.setMpPreapproval(userId, { preapprovalId: id, status: 'pending' });
@@ -106,4 +113,4 @@ async function handleWebhookEvent(payload) {
   await reconcile();
 }
 
-module.exports = { startSubscription, confirmSubscription, cancelSubscription, reconcile, handleWebhookEvent, syntheticEmail };
+module.exports = { startSubscription, confirmSubscription, cancelSubscription, reconcile, handleWebhookEvent, payerEmailFor };

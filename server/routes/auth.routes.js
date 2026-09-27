@@ -20,6 +20,7 @@ const cookieOptions = {
 };
 
 const MIN_PASSWORD_LENGTH = 8;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * La app móvil no maneja cookies, así que recibe el token en el cuerpo. A la web no
@@ -44,28 +45,6 @@ function setSessionCookie(res, token, remember) {
   res.cookie(authService.COOKIE_NAME, token, remember ? { ...cookieOptions, maxAge: REMEMBER_MS } : cookieOptions);
 }
 
-/** "María José Pérez" -> "mariajoseperez": sin tildes, sin espacios, solo minúsculas y números. */
-function slugifyName(name) {
-  if (!name) return '';
-  return String(name)
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
-}
-
-/** Si el nombre normalizado ya existe, le suma un número hasta encontrar uno libre. */
-function uniqueUsernameFromName(name) {
-  const base = slugifyName(name) || 'usuario';
-  let candidate = base;
-  let suffix = 1;
-  while (userRepository.findByUsername(candidate)) {
-    suffix += 1;
-    candidate = `${base}${suffix}`;
-  }
-  return candidate;
-}
-
 function publicUser(user) {
   return {
     id: user.id,
@@ -84,7 +63,7 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
       return res.status(403).json({ error: 'El registro público está desactivado' });
     }
 
-    const { username, password, phone, fullName, municipality } = req.body || {};
+    const { email, password, phone, fullName, municipality } = req.body || {};
 
     if (!password) {
       return res.status(400).json({ error: 'La contraseña es requerida' });
@@ -94,27 +73,31 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
       return res.status(400).json({ error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` });
     }
 
-    if (!username && !fullName) {
-      return res.status(400).json({ error: 'El nombre es requerido' });
+    // El correo hace de usuario: es lo único que garantiza una identidad única sin
+    // pedirle al caficultor que invente o recuerde un usuario aparte, y de paso es el
+    // dato que necesita Mercado Pago como payer_email — antes se generaba uno técnico
+    // (usuario@pagos.agrovalor.co) que no correspondía a nadie, y eso es justo lo que
+    // hacía fallar el checkout con "el correo no coincide con la cuenta".
+    const normalizedEmail = email ? String(email).trim().toLowerCase() : '';
+    if (!normalizedEmail || !EMAIL_RE.test(normalizedEmail)) {
+      return res.status(400).json({ error: 'Escribe un correo válido' });
     }
 
-    const normalizedPhone = phone ? whatsappService.normalizePhone(phone) : null;
-
-    // El registro simplificado (web y app) no pide "usuario": se arma solo a partir del
-    // nombre, y si ya existe le suma un número (uniqueUsernameFromName), así el
-    // caficultor nunca tiene que inventarse ni recordar un usuario aparte de su nombre.
-    const normalizedUsername = username ? String(username).trim().toLowerCase() : uniqueUsernameFromName(fullName);
-
-    if (!normalizedUsername) {
-      return res.status(400).json({ error: 'El usuario o el nombre son requeridos' });
+    if (!phone) {
+      return res.status(400).json({ error: 'El número de WhatsApp es requerido' });
     }
 
-    if (username && userRepository.findByUsername(normalizedUsername)) {
-      return res.status(409).json({ error: 'Ese usuario ya está registrado' });
+    const normalizedPhone = whatsappService.normalizePhone(phone);
+    if (!normalizedPhone) {
+      return res.status(400).json({ error: 'El número de WhatsApp no parece válido' });
+    }
+
+    if (userRepository.findByUsername(normalizedEmail)) {
+      return res.status(409).json({ error: 'Ese correo ya está registrado' });
     }
 
     const user = userRepository.create({
-      username: normalizedUsername,
+      username: normalizedEmail,
       passwordHash: bcrypt.hashSync(String(password), 10),
       role: 'user',
       phone: normalizedPhone,
@@ -124,7 +107,7 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
     });
 
     const remember = wantsRemember(req);
-    const result = authService.login(normalizedUsername, String(password), { remember });
+    const result = authService.login(normalizedEmail, String(password), { remember });
     setSessionCookie(res, result.token, remember);
     res.status(201).json({ user: publicUser(user), ...tokenForClient(req, result.token) });
   } catch (err) {
@@ -135,13 +118,13 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
 router.post('/login', loginRateLimit, (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
-    return res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
+    return res.status(400).json({ error: 'Correo y contraseña son requeridos' });
   }
 
   const remember = wantsRemember(req);
   const result = authService.login(String(username).trim().toLowerCase(), String(password), { remember });
   if (!result) {
-    return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+    return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
   }
 
   setSessionCookie(res, result.token, remember);
@@ -161,7 +144,7 @@ router.post('/password-reset/request', passwordResetRateLimit, async (req, res, 
   try {
     const { username } = req.body || {};
     if (!username) {
-      return res.status(400).json({ error: 'El usuario es requerido' });
+      return res.status(400).json({ error: 'El correo es requerido' });
     }
     const result = await passwordResetService.requestReset(username);
     res.json(result);
@@ -174,7 +157,7 @@ router.post('/password-reset/confirm', passwordResetRateLimit, (req, res, next) 
   try {
     const { username, code, newPassword } = req.body || {};
     if (!username || !code) {
-      return res.status(400).json({ error: 'El usuario y el código son requeridos' });
+      return res.status(400).json({ error: 'El correo y el código son requeridos' });
     }
     passwordResetService.confirmReset(username, code, newPassword);
     res.json({ ok: true });

@@ -57,10 +57,10 @@ export function renderLogin(root) {
 
           <form id="login-form" novalidate>
             <label class="lg-field">
-              <span>Usuario</span>
+              <span>Correo</span>
               <span class="lg-input">
                 <span class="lg-input__icon">${icon('user')}</span>
-                <input type="text" name="username" autocomplete="username" placeholder="Tu usuario" required />
+                <input type="text" name="username" autocomplete="username" placeholder="tu@correo.com" required />
               </span>
             </label>
 
@@ -111,7 +111,7 @@ export function renderLogin(root) {
     const username = form.username.value.trim();
     const password = form.password.value;
     if (!username || !password) {
-      errorEl.textContent = 'Escribe tu usuario y tu contraseña.';
+      errorEl.textContent = 'Escribe tu correo y tu contraseña.';
       errorEl.hidden = false;
       return;
     }

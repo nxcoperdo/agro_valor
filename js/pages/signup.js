@@ -2,7 +2,7 @@ import { api } from '../services/api.js';
 import { setCachedUser } from '../services/auth.js';
 
 const ICONS = {
-  badge: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z" /><circle cx="12" cy="10" r="2.5" />',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" />',
   lock: '<path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" />',
   phone: '<rect x="6" y="2" width="12" height="20" rx="2.5" /><path d="M10 18h4" />',
   eye: '<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.5" />',
@@ -53,19 +53,19 @@ export function renderSignup(root) {
           <div class="lg-heading">
             <p class="lg-eyebrow">Empieza gratis</p>
             <h2>Crea tu cuenta</h2>
-            <p>Con tu nombre, tu WhatsApp y una contraseña ya puedes entrar.</p>
+            <p>Con tu correo, tu WhatsApp y una contraseña ya puedes entrar.</p>
           </div>
 
           <form id="signup-form" novalidate>
             <label class="lg-field">
-              <span>Nombre completo</span>
+              <span>Correo</span>
               <span class="lg-input">
-                <span class="lg-input__icon">${icon('badge')}</span>
+                <span class="lg-input__icon">${icon('mail')}</span>
                 <input
-                  type="text"
-                  name="fullName"
-                  autocomplete="name"
-                  placeholder="Cómo te llamas"
+                  type="email"
+                  name="email"
+                  autocomplete="email"
+                  placeholder="tu@correo.com"
                   required
                 />
               </span>
@@ -140,12 +140,12 @@ export function renderSignup(root) {
     e.preventDefault();
     errorEl.hidden = true;
 
-    const fullName = form.fullName.value.trim();
+    const email = form.email.value.trim();
     const phone = form.phone.value.trim();
     const password = form.password.value;
 
-    if (!fullName || !phone || !password) {
-      errorEl.textContent = 'Completa tu nombre, tu WhatsApp y una contraseña.';
+    if (!email || !phone || !password) {
+      errorEl.textContent = 'Completa tu correo, tu WhatsApp y una contraseña.';
       errorEl.hidden = false;
       return;
     }
@@ -160,7 +160,7 @@ export function renderSignup(root) {
     submitBtn.innerHTML = '<span>Creando cuenta…</span>';
 
     try {
-      const { user } = await api.signup({ fullName, phone, password });
+      const { user } = await api.signup({ email, phone, password });
       setCachedUser(user);
       window.location.hash = '#/dashboard';
     } catch (err) {

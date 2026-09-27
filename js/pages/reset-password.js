@@ -10,8 +10,8 @@ const ICONS = {
 const icon = (name) => `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none">${ICONS[name]}</svg>`;
 
 const NO_PHONE_MESSAGE =
-  'No tienes un WhatsApp registrado para recibir el código. Escríbele al equipo de AgroValor con tu usuario y te ayudamos a mano.';
-const NOT_FOUND_MESSAGE = 'Ese usuario no existe.';
+  'No tienes un WhatsApp registrado para recibir el código. Escríbele al equipo de AgroValor con tu correo y te ayudamos a mano.';
+const NOT_FOUND_MESSAGE = 'Ese correo no existe.';
 
 function shell(cardHtml) {
   return `
@@ -56,15 +56,15 @@ function requestStepHtml() {
     <div class="lg-heading">
       <p class="lg-eyebrow">¿Olvidaste tu contraseña?</p>
       <h2>Recupera tu cuenta</h2>
-      <p>Escribe tu usuario y te mandamos un código por WhatsApp.</p>
+      <p>Escribe tu correo y te mandamos un código por WhatsApp.</p>
     </div>
 
     <form id="request-form" novalidate>
       <label class="lg-field">
-        <span>Usuario</span>
+        <span>Correo</span>
         <span class="lg-input">
           <span class="lg-input__icon">${icon('user')}</span>
-          <input type="text" name="username" autocomplete="username" placeholder="Tu usuario" required />
+          <input type="text" name="username" autocomplete="username" placeholder="tu@correo.com" required />
         </span>
       </label>
 

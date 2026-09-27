@@ -839,13 +839,13 @@ button,
 }
 
 .cal-day-cell {
-  padding: var(--av-space-1) 2px var(--av-space-2);
-  min-height: 64px;
+  padding: var(--av-space-2) 2px;
+  min-height: 88px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .cal-day-cell.cal-blank {
@@ -859,23 +859,51 @@ button,
   color: var(--av-fg);
 }
 
-.cal-day-price {
-  font-size: 0.62rem;
-  color: var(--av-fg-muted);
+/* Agrupa el badge de variación + rango como una sola unidad, para poder moverlos juntos
+   entre la grilla de escritorio (columna, centrado) y la lista de celular (columna,
+   alineada a la derecha) sin que el badge quede suelto. */
+.cal-day-price-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
 }
 
-/* Vistas semana y mes: tarjetas más grandes con rango de fechas */
+/* En una celda tan chica no cabe el separador con borde de .cal-cell-range-price de
+   semana/mes; aquí el rango es directamente el número de la celda, sin línea ni etiqueta,
+   más chico porque son dos cifras juntas en poco espacio. */
+.cal-day-cell .cal-cell-range-price {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+  width: auto;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1.2;
+  opacity: 1;
+}
+
+/* Vistas semana y mes: tarjetas más grandes con rango de fechas. min-width más ancho que
+   antes (130px apretaba 3 columnas de texto largo en pantallas medianas); flex column con
+   gap propio en vez de márgenes sueltos, para que el espaciado entre línea y línea sea
+   parejo y no se vea todo apeñuscado. */
 .cal-grid-week {
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: var(--av-space-3);
 }
 
 .cal-grid-month {
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: var(--av-space-3);
 }
 
 .cal-week-cell,
 .cal-month-cell {
-  padding: var(--av-space-3);
+  padding: var(--av-space-4) var(--av-space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
 }
 
 .cal-cell-label {
@@ -888,34 +916,41 @@ button,
 .cal-cell-range {
   font-size: 0.68rem;
   color: var(--av-fg-muted);
-  margin: 2px 0 var(--av-space-1);
+  margin-bottom: var(--av-space-1);
 }
 
-.cal-cell-price {
-  font-size: 1.05rem;
+.cal-change {
+  display: inline-block;
+  padding: 2px var(--av-space-2);
+  border-radius: 999px;
+  background: var(--av-surface);
+  font-size: 0.7rem;
   font-weight: 700;
-  color: var(--av-fg);
-  margin-top: var(--av-space-1);
 }
 
-/* Rango probable (mínimo–máximo) bajo el precio central: letra chica a propósito, no
-   compite con el número principal pero deja ver que no es una cifra exacta. */
+/* El rango es la respuesta a "¿cuánto podría valer?" — nadie puede predecir el número
+   exacto de dentro de semanas o meses, así que no hay un precio central compitiendo por
+   atención: el rango ES el dato principal de la tarjeta, por eso el tamaño grande. */
 .cal-cell-range-price {
-  font-size: 0.65rem;
-  color: var(--av-fg-muted);
-  margin-top: 2px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--av-fg);
+  margin-top: var(--av-space-2);
+  letter-spacing: -0.01em;
+  width: 100%;
+}
+
+.cal-cell-range-price .cal-range-label {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 0.6rem;
+  margin-right: 3px;
 }
 
 .cal-range-legend {
   font-size: 0.72rem;
   color: var(--av-fg-muted);
   margin-top: var(--av-space-2);
-}
-
-.cal-change {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
 }
 
 .cal-day-weekday {
@@ -965,10 +1000,21 @@ button,
     color: var(--av-fg-muted);
   }
 
-  .cal-day-price {
-    font-size: 0.85rem;
-    color: var(--av-fg);
+  /* En la fila (celular) el grupo completo —no solo el precio— es el que se empuja a la
+     derecha, para que el badge y el rango queden alineados con el precio y no sueltos
+     por ahí en medio de la fila. */
+  .cal-day-price-group {
+    align-items: flex-end;
     margin-left: auto;
+  }
+
+  .cal-day-price {
+    font-size: 0.95rem;
+    color: var(--av-fg);
+  }
+
+  .cal-day-cell .cal-cell-range-price {
+    font-size: 0.68rem;
   }
 }
 

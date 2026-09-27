@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   final _form = GlobalKey<FormState>();
   final _username = TextEditingController();
   final _password = TextEditingController();
-  final _fullName = TextEditingController();
+  final _email = TextEditingController();
   final _phone = TextEditingController();
 
   bool _signup = false;
@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   void dispose() {
     _entrance.dispose();
-    for (final c in [_username, _password, _fullName, _phone]) {
+    for (final c in [_username, _password, _email, _phone]) {
       c.dispose();
     }
     super.dispose();
@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (_signup) {
         await widget.session.signup({
           'password': _password.text,
-          'fullName': _fullName.text.trim(),
+          'email': _email.text.trim(),
           'phone': _phone.text.trim(),
         });
       } else {
@@ -212,19 +212,25 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ),
               ),
               const SizedBox(height: 28),
-              // Al registrarse se pide primero cómo se llama y su WhatsApp, y la
-              // contraseña de último — así queda en el mismo orden en que se le
-              // pregunta. Al iniciar sesión sigue siendo Usuario y luego Contraseña.
+              // Al registrarse se pide primero el correo (que además funciona como
+              // usuario) y su WhatsApp, y la contraseña de último. Al iniciar sesión
+              // sigue siendo Correo y luego Contraseña.
               if (_signup) ...[
                 _reveal(
                   4,
                   _Field(
-                    label: 'Nombre',
-                    controller: _fullName,
-                    icon: Icons.badge_outlined,
-                    hint: 'Cómo te llamas',
-                    capitalization: TextCapitalization.words,
-                    autofill: const [AutofillHints.name],
+                    label: 'Correo',
+                    controller: _email,
+                    icon: Icons.mail_outline_rounded,
+                    hint: 'tu@correo.com',
+                    keyboard: TextInputType.emailAddress,
+                    autofill: const [AutofillHints.email],
+                    validator: (v) {
+                      final value = v?.trim() ?? '';
+                      if (value.isEmpty) return 'Escribe tu correo';
+                      if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value)) return 'Escribe un correo válido';
+                      return null;
+                    },
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -237,6 +243,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     hint: '300 123 4567',
                     keyboard: TextInputType.phone,
                     autofill: const [AutofillHints.telephoneNumber],
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu WhatsApp' : null,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -244,12 +251,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 _reveal(
                   4,
                   _Field(
-                    label: 'Usuario',
+                    label: 'Correo',
                     controller: _username,
-                    icon: Icons.person_outline_rounded,
-                    hint: 'Tu usuario',
+                    icon: Icons.mail_outline_rounded,
+                    hint: 'tu@correo.com',
+                    keyboard: TextInputType.emailAddress,
                     autofill: const [AutofillHints.username],
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu usuario' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu correo' : null,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -425,7 +433,6 @@ class _Field extends StatelessWidget {
     this.trailing,
     this.validator,
     this.keyboard,
-    this.capitalization = TextCapitalization.none,
     this.action = TextInputAction.next,
     this.onSubmitted,
     this.autofill,
@@ -439,7 +446,6 @@ class _Field extends StatelessWidget {
   final Widget? trailing;
   final FormFieldValidator<String>? validator;
   final TextInputType? keyboard;
-  final TextCapitalization capitalization;
   final TextInputAction action;
   final ValueChanged<String>? onSubmitted;
   final Iterable<String>? autofill;
@@ -465,7 +471,6 @@ class _Field extends StatelessWidget {
           autocorrect: false,
           enableSuggestions: !obscure,
           keyboardType: keyboard,
-          textCapitalization: capitalization,
           textInputAction: action,
           onFieldSubmitted: onSubmitted,
           autofillHints: autofill,

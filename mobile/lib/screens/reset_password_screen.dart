@@ -76,10 +76,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         setState(
           () => _note =
               'No tienes un WhatsApp registrado para recibir el código. Escríbele al equipo de AgroValor con tu '
-              'usuario y te ayudamos a mano.',
+              'correo y te ayudamos a mano.',
         );
       } else {
-        setState(() => _error = 'Ese usuario no existe.');
+        setState(() => _error = 'Ese correo no existe.');
       }
     } catch (e) {
       setState(() => _error = '$e');
@@ -197,18 +197,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ),
           const SizedBox(height: 10),
           const Text(
-            'Escribe tu usuario y te mandamos un código por WhatsApp.',
+            'Escribe tu correo y te mandamos un código por WhatsApp.',
             style: TextStyle(fontSize: 15, color: _C.muted, height: 1.4),
           ),
           const SizedBox(height: 24),
           _field(
-            label: 'Usuario',
+            label: 'Correo',
             controller: _username,
-            icon: Icons.person_outline_rounded,
-            hint: 'Tu usuario',
+            icon: Icons.mail_outline_rounded,
+            hint: 'tu@correo.com',
+            keyboard: TextInputType.emailAddress,
             action: TextInputAction.done,
             onSubmitted: (_) => _submitRequest(),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu usuario' : null,
+            validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu correo' : null,
           ),
           if (_note != null) ...[
             const SizedBox(height: 16),

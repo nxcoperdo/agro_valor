@@ -12,9 +12,11 @@ function generateCode() {
 }
 
 /**
- * No hay email en el modelo de usuario, así que el código viaja por WhatsApp al
- * teléfono guardado en el perfil. Si no hay teléfono (es opcional en el signup),
- * no hay canal automático: se avisa para que lo resuelvan a mano desde el panel admin.
+ * No hay servicio de envío de correo montado, así que el código viaja por WhatsApp al
+ * teléfono guardado en el perfil (username ya es el correo, pero solo sirve para
+ * identificar la cuenta, no para recibir nada). Si el teléfono no quedó guardado —cuentas
+ * viejas de antes de pedirlo—, no hay canal automático: se avisa para que lo resuelvan a
+ * mano desde el panel admin.
  */
 async function requestReset(username) {
   const user = userRepository.findByUsername(String(username || '').trim().toLowerCase());
