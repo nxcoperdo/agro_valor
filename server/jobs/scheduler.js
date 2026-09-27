@@ -5,7 +5,7 @@ const exchangeRateService = require('../services/exchangeRateService');
 const fncScraperService = require('../services/fncScraperService');
 const forecastService = require('../services/forecastService');
 const alertService = require('../services/alertService');
-const playBillingService = require('../services/playBillingService');
+const mercadoPagoBillingService = require('../services/mercadoPagoBillingService');
 const logger = require('../utils/logger');
 
 /**
@@ -90,12 +90,12 @@ function start() {
     CRON_OPTIONS
   );
 
-  // Notificaciones de Google Play (renovó, canceló, venció): se pregunta cada pocos
-  // minutos en vez de recibir un webhook, porque el server todavía no tiene HTTPS.
+  // Cobros de Mercado Pago (web y app): ellos cobran solos cada mes, esto solo revisa si ya
+  // hicieron un cobro nuevo (sustituye al webhook mientras no haya HTTPS).
   cron.schedule(
-    env.playNotificationsPullCron,
+    env.mpPollCron,
     () => {
-      playBillingService.pullAndProcessNotifications().catch((err) => logger.error('Cron Play Billing:', err));
+      mercadoPagoBillingService.reconcile().catch((err) => logger.error('Cron Mercado Pago:', err));
     },
     CRON_OPTIONS
   );

@@ -6,6 +6,7 @@ import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/forms.dart';
+import 'pro_screen.dart';
 import 'profile_screen.dart';
 
 const _typeLabels = {
@@ -98,11 +99,13 @@ class _AlertsScreenState extends State<AlertsScreen> {
             )
           : null,
       body: !pro
-          ? const ProUpsell(
+          ? ProUpsell(
               title: 'Alertas de precio',
               body: 'Te avisamos al celular, con notificación y por WhatsApp, cuando el precio suba o baje del valor que te sirve, '
                   'o te mandamos un resumen diario o semanal.',
               icon: Icons.notifications_active_rounded,
+              onUpgrade: () =>
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProScreen(session: widget.session))),
             )
           : AsyncView<Json>(
               key: _viewKey,

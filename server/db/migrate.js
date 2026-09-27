@@ -21,9 +21,14 @@ const ADDED_COLUMNS = [
   ['users', 'notify_push', 'INTEGER NOT NULL DEFAULT 1'],
   // "whatsapp" o "push". En los envíos push, la columna phone guarda "app".
   ['alert_deliveries', 'channel', "TEXT NOT NULL DEFAULT 'whatsapp'"],
-  // Qué compra de Google Play Billing activó el Pro de este usuario (solo se usa desde la app).
+  // play_purchase_token/play_product_id: quedaron de un intento con Google Play Billing
+  // que se descartó (Mercado Pago lo reemplazó en web y app). Se dejan sin usar en vez de
+  // migrar para borrarlas — SQLite no borra columnas fácil y no tiene costo dejarlas.
   ['users', 'play_purchase_token', 'TEXT'],
   ['users', 'play_product_id', 'TEXT'],
+  // Suscripción de Mercado Pago (web y app).
+  ['users', 'mp_preapproval_id', 'TEXT'],
+  ['users', 'mp_preapproval_status', 'TEXT'],
 ];
 
 function columnExists(table, column) {

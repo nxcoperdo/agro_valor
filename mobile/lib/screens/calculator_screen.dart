@@ -6,6 +6,7 @@ import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/forms.dart';
+import 'pro_screen.dart';
 
 /// Cuánto le queda realmente al caficultor por carga según su café, y en qué cooperativa le conviene vender.
 class CalculatorScreen extends StatelessWidget {
@@ -185,6 +186,8 @@ class _CalculatorState extends State<_Calculator> {
               ? 'Hay ${formatCop(result['maxDifferenceCop'] as num)} de diferencia entre la mejor y la peor '
                   'de las ${result['cooperativesCount']} cooperativas para tu café.'
               : 'Activa Pro para ver en qué cooperativa te conviene vender.',
+          onUpgrade: () =>
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProScreen(session: widget.session))),
         ),
       ] else if (coops.isNotEmpty) ...[
         const SectionLabel('¿Dónde te queda más plata?'),

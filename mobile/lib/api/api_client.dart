@@ -77,6 +77,7 @@ class ApiClient {
       await _request('GET', '/prices/history?days=$days') as List<dynamic>;
   Future<Json> cooperatives() async => await _request('GET', '/cooperatives') as Json;
   Future<Json> plans() async => await _request('GET', '/public/plans') as Json;
+  Future<Json> plan() async => await _request('GET', '/account/plan') as Json;
   Future<Json> privacyPolicy() async => await _request('GET', '/public/legal/privacy') as Json;
   Future<Json> termsOfService() async => await _request('GET', '/public/legal/terms') as Json;
 
@@ -91,11 +92,6 @@ class ApiClient {
       _request('POST', '/account/devices', {'token': token, 'platform': platform});
   Future<void> unregisterDevice(String token) => _request('DELETE', '/account/devices', {'token': token});
   Future<void> deleteAccount(String password) => _request('DELETE', '/account', {'password': password});
-  Future<Json> verifyPlayPurchase(String purchaseToken, String productId) async =>
-      await _request('POST', '/account/play-purchase/verify', {
-        'purchaseToken': purchaseToken,
-        'productId': productId,
-      }) as Json;
 
   // Reportes de precio (gratis: alimentan el dato de todos)
   Future<Json> reportPrice(Json payload) async => await _request('POST', '/reports', payload) as Json;

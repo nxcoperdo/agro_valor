@@ -4,7 +4,7 @@ const userRepository = require('../repositories/userRepository');
 const subscriptionService = require('../services/subscriptionService');
 const whatsappService = require('../services/whatsappService');
 const authService = require('../services/authService');
-const playBillingService = require('../services/playBillingService');
+const mercadoPagoBillingService = require('../services/mercadoPagoBillingService');
 const pushDeviceRepository = require('../repositories/pushDeviceRepository');
 
 const router = express.Router();
@@ -23,6 +23,7 @@ function serialize(user) {
     transportCostCopCarga: user.transport_cost_cop_carga,
     notifyWhatsapp: user.notify_whatsapp !== 0,
     notifyPush: user.notify_push !== 0,
+    mpSubscriptionPending: user.mp_preapproval_status === 'pending',
     ...subscriptionService.describe(user),
   };
 }
@@ -107,12 +108,24 @@ router.get('/plan', (req, res) => {
   });
 });
 
-/** La app llama esto justo después de que Play Billing confirma la compra del lado del teléfono. */
-router.post('/play-purchase/verify', async (req, res, next) => {
+/**
+ * Crea la suscripción de Mercado Pago y devuelve la URL de checkout. La web redirige el
+ * navegador a esta URL; la app la abre en un WebView embebido dentro de la misma pantalla.
+ */
+router.post('/mercadopago/subscribe', async (req, res, next) => {
   try {
-    const { purchaseToken, productId } = req.body || {};
-    await playBillingService.verifyAndActivate(req.user.id, { purchaseToken, productId });
-    res.json(serialize(userRepository.findById(req.user.id)));
+    const { initPoint } = await mercadoPagoBillingService.startSubscription(req.user.id);
+    res.json({ initPoint });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Se llama cuando el usuario vuelve del checkout de Mercado Pago (web o WebView de la app). */
+router.post('/mercadopago/confirm', async (req, res, next) => {
+  try {
+    const user = await mercadoPagoBillingService.confirmSubscription(req.user.id);
+    res.json(serialize(user));
   } catch (err) {
     next(err);
   }

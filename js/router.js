@@ -13,6 +13,7 @@ import { renderAccount } from './pages/account.js';
 import { renderAdmin } from './pages/admin.js';
 import { renderPasswordReset } from './pages/reset-password.js';
 import { renderPrivacyPolicy, renderTermsOfService, renderCookiePolicy } from './pages/legal.js';
+import { renderProPlan } from './pages/pro.js';
 
 /**
  * `shell: true` = pantalla con sesión, se dibuja dentro del marco de navegación.
@@ -33,6 +34,7 @@ const ROUTES = {
   '#/ventas': { render: renderSales, shell: true },
   '#/reportar': { render: renderReport, shell: true },
   '#/cuenta': { render: renderAccount, shell: true },
+  '#/pro': { render: renderProPlan, shell: true },
   '#/admin': { render: renderAdmin, shell: true, adminOnly: true },
 };
 

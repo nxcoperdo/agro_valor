@@ -129,3 +129,15 @@ CREATE TABLE IF NOT EXISTS password_resets (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
+
+/* Historial de cobros de la suscripción de Mercado Pago (idempotencia: un cobro no se aplica dos veces). */
+CREATE TABLE IF NOT EXISTS mp_payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  mp_payment_id TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL,
+  amount_cop INTEGER NOT NULL,
+  billing_period_start TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_mp_payments_user ON mp_payments(user_id);

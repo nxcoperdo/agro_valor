@@ -143,11 +143,12 @@ const tabular = [FontFeature.tabularFigures()];
 
 /// Pantalla para funciones Pro cuando el usuario tiene el plan gratis.
 class ProUpsell extends StatelessWidget {
-  const ProUpsell({super.key, required this.title, required this.body, this.icon = Icons.lock_rounded});
+  const ProUpsell({super.key, required this.title, required this.body, this.icon = Icons.lock_rounded, this.onUpgrade});
 
   final String title;
   final String body;
   final IconData icon;
+  final VoidCallback? onUpgrade;
 
   @override
   Widget build(BuildContext context) {
@@ -173,6 +174,10 @@ class ProUpsell extends StatelessWidget {
         Text(body, textAlign: TextAlign.center, style: const TextStyle(color: AvColors.fgMuted, fontSize: 15, height: 1.4)),
         const SizedBox(height: 20),
         const Center(child: Pill(label: 'Función de AgroValor Pro', color: AvColors.accent)),
+        if (onUpgrade != null) ...[
+          const SizedBox(height: 20),
+          FilledButton(onPressed: onUpgrade, child: const Text('Ver plan Pro')),
+        ],
       ],
     );
   }
@@ -182,13 +187,21 @@ class ProUpsell extends StatelessWidget {
 /// encima. A diferencia de [ProUpsell] no ocupa toda la pantalla, va incrustado junto a
 /// contenido gratis que sí funciona (ej. el cálculo del día de hoy, sin el resto del mes).
 class LockedTeaser extends StatelessWidget {
-  const LockedTeaser({super.key, required this.preview, required this.title, required this.body, this.height});
+  const LockedTeaser({
+    super.key,
+    required this.preview,
+    required this.title,
+    required this.body,
+    this.height,
+    this.onUpgrade,
+  });
 
   /// El contenido real que se muestra borroso detrás de la venta (no datos falsos).
   final Widget preview;
   final String title;
   final String body;
   final double? height;
+  final VoidCallback? onUpgrade;
 
   @override
   Widget build(BuildContext context) {
@@ -233,6 +246,14 @@ class LockedTeaser extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.3),
                         ),
+                        if (onUpgrade != null) ...[
+                          const SizedBox(height: 12),
+                          FilledButton(
+                            onPressed: onUpgrade,
+                            style: FilledButton.styleFrom(minimumSize: const Size(0, 36)),
+                            child: const Text('Ver plan Pro'),
+                          ),
+                        ],
                       ],
                     ),
                   ),

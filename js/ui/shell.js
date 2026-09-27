@@ -6,6 +6,7 @@ const BASE_NAV_ITEMS = [
   { hash: '#/alertas', label: 'Alertas' },
   { hash: '#/ventas', label: 'Mis ventas' },
   { hash: '#/reportar', label: 'Reportar precio' },
+  { hash: '#/pro', label: 'Plan Pro' },
   { hash: '#/cuenta', label: 'Mi cuenta' },
 ];
 
@@ -137,7 +138,7 @@ export function paywall(featureName, description) {
       <span class="badge badge-pro">AgroValor Pro</span>
       <h2>${featureName}</h2>
       <p>${description}</p>
-      <a class="btn-primary" href="#/cuenta">Ver cómo activar Pro</a>
+      <a class="btn-primary" href="#/pro">Ver plan Pro</a>
     </div>
   `;
 }

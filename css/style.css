@@ -1874,6 +1874,38 @@ body.nav-locked {
   background: var(--av-accent);
 }
 
+/* Página del plan Pro -------------------------------------------------------- */
+
+.pro-hero {
+  text-align: center;
+}
+
+.pro-hero-title {
+  margin: var(--av-space-3) 0 var(--av-space-2);
+  font-size: 1.6rem;
+}
+
+.pro-price {
+  margin: 0 0 var(--av-space-4);
+}
+
+.pro-price-amount {
+  font-size: 2.4rem;
+  font-weight: 700;
+  font-feature-settings: "tnum";
+}
+
+.pro-price-period {
+  margin-left: var(--av-space-2);
+  color: var(--av-fg-muted);
+  font-size: 0.95rem;
+}
+
+.pro-features-list li {
+  font-size: 0.95rem;
+  padding-left: 1.6em;
+}
+
 /* Panel admin -------------------------------------------------------------- */
 
 .metric-grid {

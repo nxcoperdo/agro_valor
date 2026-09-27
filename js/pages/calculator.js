@@ -89,7 +89,7 @@ function lockedComparisonPanel(data) {
           Hay una diferencia de <strong>${formatCop(data.maxDifferenceCop || 0)}</strong> entre la mejor y la
           peor de las ${data.cooperativesCount} cooperativas para tu café.
         </p>
-        <a class="btn-primary" href="#/cuenta">Ver cuál me conviene</a>
+        <a class="btn-primary" href="#/pro">Ver cuál me conviene</a>
       </div>
     </div>
   `;

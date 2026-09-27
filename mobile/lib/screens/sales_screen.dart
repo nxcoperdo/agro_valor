@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/cooperative_picker.dart';
 import '../widgets/forms.dart';
+import 'pro_screen.dart';
 
 /// Historial de ventas comparado contra el precio de referencia de cada día.
 class SalesScreen extends StatefulWidget {
@@ -67,10 +68,12 @@ class _SalesScreenState extends State<SalesScreen> {
             )
           : null,
       body: !pro
-          ? const ProUpsell(
+          ? ProUpsell(
               title: 'Historial de ventas',
               body: 'Anota cada venta y mira si vendiste por encima o por debajo del precio de referencia de ese día.',
               icon: Icons.receipt_long_rounded,
+              onUpgrade: () =>
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProScreen(session: widget.session))),
             )
           : AsyncView<Json>(
               key: _viewKey,

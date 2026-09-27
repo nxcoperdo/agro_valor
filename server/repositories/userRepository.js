@@ -68,17 +68,17 @@ function setPasswordHash(id, passwordHash) {
   return findPublicById(id);
 }
 
-function setPlayPurchase(id, { purchaseToken, productId }) {
-  db.prepare('UPDATE users SET play_purchase_token = ?, play_product_id = ? WHERE id = ?').run(
-    purchaseToken,
-    productId,
+function setMpPreapproval(id, { preapprovalId, status }) {
+  db.prepare('UPDATE users SET mp_preapproval_id = ?, mp_preapproval_status = ? WHERE id = ?').run(
+    preapprovalId,
+    status,
     id
   );
   return findPublicById(id);
 }
 
-function findByPlayPurchaseToken(token) {
-  return db.prepare('SELECT * FROM users WHERE play_purchase_token = ?').get(token);
+function findAllWithMpPreapproval(status) {
+  return db.prepare('SELECT * FROM users WHERE mp_preapproval_status = ?').all(status);
 }
 
 function listAll(limit = 200) {
@@ -104,8 +104,8 @@ module.exports = {
   updateProfile,
   setPlan,
   setPasswordHash,
-  setPlayPurchase,
-  findByPlayPurchaseToken,
+  setMpPreapproval,
+  findAllWithMpPreapproval,
   listAll,
   deleteById,
 };

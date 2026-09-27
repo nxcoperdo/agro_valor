@@ -5,21 +5,18 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api/api_client.dart';
 import 'push.dart';
-import 'services/play_billing.dart';
 
 /// Guarda el token en el almacenamiento cifrado del teléfono para no pedir login cada vez.
 class Session extends ChangeNotifier {
   Session() {
     api.onUnauthorized = () => logout(tellServer: false);
     push = PushNotifications(api);
-    billing = PlayBilling(api, onActivated: refreshUser);
   }
 
   static const _tokenKey = 'av_token';
   final _storage = const FlutterSecureStorage();
   final api = ApiClient();
   late final PushNotifications push;
-  late final PlayBilling billing;
 
   Json? user;
   bool restoring = true;

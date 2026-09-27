@@ -48,11 +48,19 @@ export async function renderAccount(container) {
         ${
           !profile.isPro
             ? `<div class="notice notice-info upgrade-note">
-                 <p><strong>¿Cómo activo Pro?</strong> Escríbenos por WhatsApp para activarte el plan.
-                 Por ahora la activación se hace manualmente después del pago por Nequi o Daviplata.</p>
+                 ${
+                   profile.mpSubscriptionPending
+                     ? `<p><strong>Tu pago está en proceso.</strong> Si ya autorizaste el cobro en Mercado Pago, confirma aquí.</p>
+                        <button type="button" class="btn-primary" id="mp-confirm-btn">Ya pagué, confirmar</button>`
+                     : `<a class="btn-primary" href="#/pro">Ver todos los beneficios y suscribirme</a>`
+                 }
+                 <p class="disclaimer">
+                   ¿Prefieres pagar por Nequi o Daviplata? Escríbenos por WhatsApp y te activamos el plan a mano.
+                 </p>
                </div>`
             : ''
         }
+        <p class="form-error" id="mp-error" role="alert" hidden></p>
       </div>
 
       <div class="panel">
@@ -134,6 +142,33 @@ export async function renderAccount(container) {
         <p class="form-error" id="delete-account-error" role="alert" hidden></p>
       </div>
     `;
+
+    const mpErrorEl = container.querySelector('#mp-error');
+    const mpConfirmBtn = container.querySelector('#mp-confirm-btn');
+
+    // Si el usuario acaba de volver del checkout de Mercado Pago, se intenta confirmar
+    // solo, sin que tenga que darle clic al botón de "Ya pagué".
+    if (profile.mpSubscriptionPending) {
+      api
+        .mpConfirm()
+        .then((updated) => {
+          if (updated.isPro) renderAccount(container);
+        })
+        .catch(() => {});
+    }
+
+    mpConfirmBtn?.addEventListener('click', async () => {
+      mpErrorEl.hidden = true;
+      mpConfirmBtn.disabled = true;
+      try {
+        await api.mpConfirm();
+        await renderAccount(container);
+      } catch (err) {
+        mpErrorEl.textContent = err.message;
+        mpErrorEl.hidden = false;
+        mpConfirmBtn.disabled = false;
+      }
+    });
 
     const form = container.querySelector('#profile-form');
     const errorEl = container.querySelector('#profile-error');

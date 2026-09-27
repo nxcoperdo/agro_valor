@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../format.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'legal_screen.dart';
+import 'pro_screen.dart';
 import 'profile_screen.dart';
 import 'report_screen.dart';
 import 'sales_screen.dart';
@@ -81,12 +81,17 @@ class AccountScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              if (!session.isPro) ...[const SizedBox(height: 12), _SubscribeCard(session: session)],
               const SizedBox(height: 12),
               Card(
                 clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: [
+                    _MenuTile(
+                      icon: Icons.workspace_premium_rounded,
+                      title: session.isPro ? 'Plan Pro' : 'Ver plan Pro',
+                      subtitle: session.isPro ? 'Beneficios de tu suscripción' : 'Beneficios y cómo suscribirte',
+                      open: () => ProScreen(session: session),
+                    ),
                     _MenuTile(
                       icon: Icons.badge_rounded,
                       title: 'Mis datos',
@@ -219,74 +224,6 @@ class AccountScreen extends StatelessWidget {
     );
 
     password.dispose();
-  }
-}
-
-/// Botón de suscripción vía Google Play Billing. Si Play no está disponible (emulador
-/// sin cuenta, o el producto todavía no existe en Play Console), no muestra nada.
-class _SubscribeCard extends StatefulWidget {
-  const _SubscribeCard({required this.session});
-
-  final Session session;
-
-  @override
-  State<_SubscribeCard> createState() => _SubscribeCardState();
-}
-
-class _SubscribeCardState extends State<_SubscribeCard> {
-  ProductDetails? _product;
-  bool _loading = true;
-  bool _buying = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.session.billing.loadProduct().then((product) {
-      if (mounted) {
-        setState(() {
-          _product = product;
-          _loading = false;
-        });
-      }
-    });
-  }
-
-  Future<void> _buy() async {
-    final product = _product;
-    if (product == null) return;
-    setState(() => _buying = true);
-    try {
-      await widget.session.billing.buy(product);
-    } finally {
-      if (mounted) setState(() => _buying = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) return const SizedBox.shrink();
-
-    final product = _product;
-    if (product == null) return const SizedBox.shrink();
-
-    return SectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Pásate a Pro', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-          const SizedBox(height: 4),
-          const Muted('Alertas por WhatsApp, calculadora de precio neto y proyección del mercado.', size: 12),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: _buying ? null : _buy,
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-            child: _buying
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text('Suscribirme — ${product.price}/mes'),
-          ),
-        ],
-      ),
-    );
   }
 }
 

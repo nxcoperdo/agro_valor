@@ -132,7 +132,7 @@ function renderLockedView(kind, count) {
       <div class="locked-teaser-cta">
         <span class="badge badge-pro">AgroValor Pro</span>
         <p class="highlight-note">Ve la proyección ${LOCKED_LABELS[kind]} completa, ${count} horizonte(s) más.</p>
-        <a class="btn-primary" href="#/cuenta">Activar Pro</a>
+        <a class="btn-primary" href="#/pro">Activar Pro</a>
       </div>
     </div>
   `;
@@ -184,7 +184,7 @@ export async function renderForecastPanel(container) {
 
       if (activeTab === 'daily' && locked && locked.dailyCount > 0) {
         bodyEl.innerHTML += `<p class="highlight-note" style="margin-top: var(--av-space-3);">
-          Este es solo el pronóstico de mañana. <a href="#/cuenta">Activa Pro</a> para ver los próximos
+          Este es solo el pronóstico de mañana. <a href="#/pro">Activa Pro</a> para ver los próximos
           ${locked.dailyCount} días.
         </p>`;
       }

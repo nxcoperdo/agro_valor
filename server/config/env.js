@@ -54,17 +54,14 @@ const env = {
     ? path.resolve(process.cwd(), process.env.FIREBASE_SERVICE_ACCOUNT_PATH)
     : '',
 
-  // Cobro de Pro dentro de la app vía Google Play Billing (12.000 COP/mes). La web sigue
-  // cobrando por Nequi/Daviplata con activación manual; esto es solo para la app.
-  googlePlayPackageName: process.env.GOOGLE_PLAY_PACKAGE_NAME || 'co.agrovalor.app',
-  googlePlayProductId: process.env.GOOGLE_PLAY_PRODUCT_ID || 'agrovalor_pro_mensual',
-  googlePlayServiceAccountPath: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_PATH
-    ? path.resolve(process.cwd(), process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_PATH)
-    : '',
-  // Nombre completo de la suscripción *pull* de Pub/Sub (no push: no depende de tener HTTPS),
-  // ej. "projects/mi-proyecto/subscriptions/agrovalor-rtdn-pull".
-  googlePlaySubscriptionName: process.env.GOOGLE_PLAY_PUBSUB_SUBSCRIPTION || '',
-  playNotificationsPullCron: process.env.PLAY_NOTIFICATIONS_PULL_CRON || '*/5 * * * *',
+  // Cobro de Pro vía Mercado Pago Suscripciones (Preapproval), tanto en la web (redirección)
+  // como en la app (WebView embebido con la misma URL de checkout).
+  mpAccessToken: process.env.MP_ACCESS_TOKEN || '',
+  mpPublicKey: process.env.MP_PUBLIC_KEY || '',
+  mpWebhookSecret: process.env.MP_WEBHOOK_SECRET || '',
+  mpProAmountCop: Number(process.env.MP_PRO_AMOUNT_COP || 12000),
+  mpBackUrl: process.env.MP_BACK_URL || 'http://2.25.80.190:3000/#/cuenta',
+  mpPollCron: process.env.MP_POLL_CRON || '0 8 * * *',
 
   dailyDigestCron: process.env.DAILY_DIGEST_CRON || '0 6 * * *',
   weeklyDigestCron: process.env.WEEKLY_DIGEST_CRON || '0 6 * * 1',

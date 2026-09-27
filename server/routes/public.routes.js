@@ -3,6 +3,8 @@ const marketSummaryService = require('../services/marketSummaryService');
 const cooperativeService = require('../services/cooperativeService');
 const subscriptionService = require('../services/subscriptionService');
 const legalContentService = require('../services/legalContentService');
+const mercadoPagoService = require('../services/mercadoPagoService');
+const mercadoPagoBillingService = require('../services/mercadoPagoBillingService');
 
 const router = express.Router();
 
@@ -38,6 +40,24 @@ router.get('/legal/terms', (req, res) => {
 
 router.get('/legal/cookies', (req, res) => {
   res.json(legalContentService.getCookiePolicy());
+});
+
+/**
+ * Notificación de Mercado Pago. En la práctica queda inactiva hasta que el server tenga
+ * HTTPS (Mercado Pago no entrega webhooks a HTTP) — la reconciliación real hoy la hace
+ * el cron diario (mercadoPagoBillingService.reconcile), esto es solo para cuando haya
+ * HTTPS y llegue en tiempo real.
+ */
+router.post('/webhooks/mercadopago', async (req, res) => {
+  const dataId = req.query['data.id'];
+  const ok = mercadoPagoService.verifyWebhookSignature(req.headers['x-signature'], req.headers['x-request-id'], dataId);
+
+  if (!ok) {
+    return res.status(401).json({ error: 'Firma inválida' });
+  }
+
+  res.json({ ok: true });
+  mercadoPagoBillingService.handleWebhookEvent(req.body || {}).catch(() => {});
 });
 
 module.exports = router;

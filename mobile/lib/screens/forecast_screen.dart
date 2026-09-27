@@ -5,6 +5,7 @@ import '../format.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'pro_screen.dart';
 
 class ForecastScreen extends StatelessWidget {
   const ForecastScreen({super.key, required this.session});
@@ -15,15 +16,16 @@ class ForecastScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return AsyncView<Json>(
       load: session.api.forecast,
-      builder: (context, data) => _ForecastTabs(data: data),
+      builder: (context, data) => _ForecastTabs(data: data, session: session),
     );
   }
 }
 
 class _ForecastTabs extends StatelessWidget {
-  const _ForecastTabs({required this.data});
+  const _ForecastTabs({required this.data, required this.session});
 
   final Json data;
+  final Session session;
 
   static const _lockedKey = {'daily': 'dailyCount', 'weekly': 'weeklyCount', 'monthly': 'monthlyCount'};
   static const _lockedLabel = {'weekly': 'semanal', 'monthly': 'mensual'};
@@ -51,6 +53,7 @@ class _ForecastTabs extends StatelessWidget {
                     note: data['note'] as String?,
                     lockedCount: (locked?[_lockedKey[key]] as num?)?.toInt() ?? 0,
                     lockedLabel: _lockedLabel[key],
+                    session: session,
                   ),
               ],
             ),
@@ -62,9 +65,10 @@ class _ForecastTabs extends StatelessWidget {
 }
 
 class _ForecastList extends StatelessWidget {
-  const _ForecastList({required this.items, this.note, this.lockedCount = 0, this.lockedLabel});
+  const _ForecastList({required this.items, required this.session, this.note, this.lockedCount = 0, this.lockedLabel});
 
   final List<Json> items;
+  final Session session;
   final String? note;
   final int lockedCount;
   final String? lockedLabel;
@@ -96,6 +100,8 @@ class _ForecastList extends StatelessWidget {
           ),
           title: 'Proyección $lockedLabel',
           body: 'Activa Pro para ver los $lockedCount horizonte(s) completos.',
+          onUpgrade: () =>
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProScreen(session: session))),
         ),
       );
     }
