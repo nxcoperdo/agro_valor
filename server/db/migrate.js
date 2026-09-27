@@ -21,6 +21,9 @@ const ADDED_COLUMNS = [
   ['users', 'notify_push', 'INTEGER NOT NULL DEFAULT 1'],
   // "whatsapp" o "push". En los envíos push, la columna phone guarda "app".
   ['alert_deliveries', 'channel', "TEXT NOT NULL DEFAULT 'whatsapp'"],
+  // Qué compra de Google Play Billing activó el Pro de este usuario (solo se usa desde la app).
+  ['users', 'play_purchase_token', 'TEXT'],
+  ['users', 'play_product_id', 'TEXT'],
 ];
 
 function columnExists(table, column) {

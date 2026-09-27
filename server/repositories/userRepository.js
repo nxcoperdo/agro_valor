@@ -68,6 +68,19 @@ function setPasswordHash(id, passwordHash) {
   return findPublicById(id);
 }
 
+function setPlayPurchase(id, { purchaseToken, productId }) {
+  db.prepare('UPDATE users SET play_purchase_token = ?, play_product_id = ? WHERE id = ?').run(
+    purchaseToken,
+    productId,
+    id
+  );
+  return findPublicById(id);
+}
+
+function findByPlayPurchaseToken(token) {
+  return db.prepare('SELECT * FROM users WHERE play_purchase_token = ?').get(token);
+}
+
 function listAll(limit = 200) {
   return db.prepare(`SELECT ${PUBLIC_FIELDS} FROM users ORDER BY created_at DESC LIMIT ?`).all(limit);
 }
@@ -91,6 +104,8 @@ module.exports = {
   updateProfile,
   setPlan,
   setPasswordHash,
+  setPlayPurchase,
+  findByPlayPurchaseToken,
   listAll,
   deleteById,
 };

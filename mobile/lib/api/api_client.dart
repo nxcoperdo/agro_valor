@@ -86,6 +86,11 @@ class ApiClient {
       _request('POST', '/account/devices', {'token': token, 'platform': platform});
   Future<void> unregisterDevice(String token) => _request('DELETE', '/account/devices', {'token': token});
   Future<void> deleteAccount(String password) => _request('DELETE', '/account', {'password': password});
+  Future<Json> verifyPlayPurchase(String purchaseToken, String productId) async =>
+      await _request('POST', '/account/play-purchase/verify', {
+        'purchaseToken': purchaseToken,
+        'productId': productId,
+      }) as Json;
 
   // Reportes de precio (gratis: alimentan el dato de todos)
   Future<Json> reportPrice(Json payload) async => await _request('POST', '/reports', payload) as Json;

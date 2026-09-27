@@ -4,6 +4,7 @@ const userRepository = require('../repositories/userRepository');
 const subscriptionService = require('../services/subscriptionService');
 const whatsappService = require('../services/whatsappService');
 const authService = require('../services/authService');
+const playBillingService = require('../services/playBillingService');
 const pushDeviceRepository = require('../repositories/pushDeviceRepository');
 
 const router = express.Router();
@@ -82,6 +83,17 @@ router.get('/plan', (req, res) => {
     ...subscriptionService.describe(req.fullUser),
     plans: subscriptionService.PLANS,
   });
+});
+
+/** La app llama esto justo después de que Play Billing confirma la compra del lado del teléfono. */
+router.post('/play-purchase/verify', async (req, res, next) => {
+  try {
+    const { purchaseToken, productId } = req.body || {};
+    await playBillingService.verifyAndActivate(req.user.id, { purchaseToken, productId });
+    res.json(serialize(userRepository.findById(req.user.id)));
+  } catch (err) {
+    next(err);
+  }
 });
 
 /**

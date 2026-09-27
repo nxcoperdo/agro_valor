@@ -54,6 +54,18 @@ const env = {
     ? path.resolve(process.cwd(), process.env.FIREBASE_SERVICE_ACCOUNT_PATH)
     : '',
 
+  // Cobro de Pro dentro de la app vía Google Play Billing (12.000 COP/mes). La web sigue
+  // cobrando por Nequi/Daviplata con activación manual; esto es solo para la app.
+  googlePlayPackageName: process.env.GOOGLE_PLAY_PACKAGE_NAME || 'co.agrovalor.app',
+  googlePlayProductId: process.env.GOOGLE_PLAY_PRODUCT_ID || 'agrovalor_pro_mensual',
+  googlePlayServiceAccountPath: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_PATH
+    ? path.resolve(process.cwd(), process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_PATH)
+    : '',
+  // Nombre completo de la suscripción *pull* de Pub/Sub (no push: no depende de tener HTTPS),
+  // ej. "projects/mi-proyecto/subscriptions/agrovalor-rtdn-pull".
+  googlePlaySubscriptionName: process.env.GOOGLE_PLAY_PUBSUB_SUBSCRIPTION || '',
+  playNotificationsPullCron: process.env.PLAY_NOTIFICATIONS_PULL_CRON || '*/5 * * * *',
+
   dailyDigestCron: process.env.DAILY_DIGEST_CRON || '0 6 * * *',
   weeklyDigestCron: process.env.WEEKLY_DIGEST_CRON || '0 6 * * 1',
   // Los horarios de los jobs se interpretan en esta zona, sin depender de cómo esté

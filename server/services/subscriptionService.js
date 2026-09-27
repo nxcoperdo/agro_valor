@@ -64,4 +64,13 @@ function cancel(userId) {
   return userRepository.setPlan(userId, 'free', null);
 }
 
-module.exports = { PLANS, isPro, describe, activatePro, cancel };
+/**
+ * Activa Pro con la fecha exacta de vencimiento que da Google Play (a diferencia de
+ * activatePro, que suma meses a mano para la activación manual de Nequi/Daviplata).
+ */
+function setProUntil(userId, expiresAtIso) {
+  const expiresAt = new Date(expiresAtIso).toISOString().replace('T', ' ').slice(0, 19);
+  return userRepository.setPlan(userId, 'pro', expiresAt);
+}
+
+module.exports = { PLANS, isPro, describe, activatePro, cancel, setProUntil };

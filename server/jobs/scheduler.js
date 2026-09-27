@@ -5,6 +5,7 @@ const exchangeRateService = require('../services/exchangeRateService');
 const fncScraperService = require('../services/fncScraperService');
 const forecastService = require('../services/forecastService');
 const alertService = require('../services/alertService');
+const playBillingService = require('../services/playBillingService');
 const logger = require('../utils/logger');
 
 /**
@@ -85,6 +86,16 @@ function start() {
     env.weeklyDigestCron,
     () => {
       alertService.sendDigests('weekly').catch((err) => logger.error('Cron resumen semanal:', err));
+    },
+    CRON_OPTIONS
+  );
+
+  // Notificaciones de Google Play (renovó, canceló, venció): se pregunta cada pocos
+  // minutos en vez de recibir un webhook, porque el server todavía no tiene HTTPS.
+  cron.schedule(
+    env.playNotificationsPullCron,
+    () => {
+      playBillingService.pullAndProcessNotifications().catch((err) => logger.error('Cron Play Billing:', err));
     },
     CRON_OPTIONS
   );
