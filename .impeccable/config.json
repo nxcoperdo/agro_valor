@@ -8,6 +8,12 @@
         "value": "montserrat",
         "createdAt": "2026-08-09T18:26:27.447Z",
         "reason": "User confirmed Montserrat is intentional — paired with Poppins as the project's established brand typography system"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-09-27T19:54:01.504Z",
+        "reason": "User confirmed Inter is intentional"
       }
     ]
   }
