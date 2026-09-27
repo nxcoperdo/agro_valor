@@ -44,6 +44,28 @@ function setSessionCookie(res, token, remember) {
   res.cookie(authService.COOKIE_NAME, token, remember ? { ...cookieOptions, maxAge: REMEMBER_MS } : cookieOptions);
 }
 
+/** "María José Pérez" -> "mariajoseperez": sin tildes, sin espacios, solo minúsculas y números. */
+function slugifyName(name) {
+  if (!name) return '';
+  return String(name)
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/** Si el nombre normalizado ya existe, le suma un número hasta encontrar uno libre. */
+function uniqueUsernameFromName(name) {
+  const base = slugifyName(name) || 'usuario';
+  let candidate = base;
+  let suffix = 1;
+  while (userRepository.findByUsername(candidate)) {
+    suffix += 1;
+    candidate = `${base}${suffix}`;
+  }
+  return candidate;
+}
+
 function publicUser(user) {
   return {
     id: user.id,
@@ -72,22 +94,23 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
       return res.status(400).json({ error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` });
     }
 
-    const normalizedPhone = phone ? whatsappService.normalizePhone(phone) : null;
-
-    // El registro simplificado de la web no pide "usuario": se usa el teléfono como tal,
-    // así el caficultor entra después con lo único que de verdad recuerda. El registro
-    // con usuario explícito (la app móvil) sigue funcionando igual que siempre.
-    const usesPhoneAsUsername = !username;
-    const normalizedUsername = username ? String(username).trim().toLowerCase() : normalizedPhone;
-
-    if (!normalizedUsername) {
-      return res.status(400).json({ error: 'El usuario o el teléfono son requeridos' });
+    if (!username && !fullName) {
+      return res.status(400).json({ error: 'El nombre es requerido' });
     }
 
-    if (userRepository.findByUsername(normalizedUsername)) {
-      return res.status(409).json({
-        error: usesPhoneAsUsername ? 'Ese teléfono ya está registrado' : 'Ese usuario ya está registrado',
-      });
+    const normalizedPhone = phone ? whatsappService.normalizePhone(phone) : null;
+
+    // El registro simplificado (web y app) no pide "usuario": se arma solo a partir del
+    // nombre, y si ya existe le suma un número (uniqueUsernameFromName), así el
+    // caficultor nunca tiene que inventarse ni recordar un usuario aparte de su nombre.
+    const normalizedUsername = username ? String(username).trim().toLowerCase() : uniqueUsernameFromName(fullName);
+
+    if (!normalizedUsername) {
+      return res.status(400).json({ error: 'El usuario o el nombre son requeridos' });
+    }
+
+    if (username && userRepository.findByUsername(normalizedUsername)) {
+      return res.status(409).json({ error: 'Ese usuario ya está registrado' });
     }
 
     const user = userRepository.create({

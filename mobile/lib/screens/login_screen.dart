@@ -46,7 +46,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   final _password = TextEditingController();
   final _fullName = TextEditingController();
   final _phone = TextEditingController();
-  final _municipality = TextEditingController();
 
   bool _signup = false;
   bool _busy = false;
@@ -56,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   void dispose() {
     _entrance.dispose();
-    for (final c in [_username, _password, _fullName, _phone, _municipality]) {
+    for (final c in [_username, _password, _fullName, _phone]) {
       c.dispose();
     }
     super.dispose();
@@ -72,11 +71,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     try {
       if (_signup) {
         await widget.session.signup({
-          'username': _username.text.trim(),
           'password': _password.text,
           'fullName': _fullName.text.trim(),
           'phone': _phone.text.trim(),
-          'municipality': _municipality.text.trim(),
         });
       } else {
         await widget.session.login(_username.text.trim(), _password.text);
@@ -208,20 +205,50 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ),
               ),
               const SizedBox(height: 28),
-              _reveal(
-                4,
-                _Field(
-                  label: 'Usuario',
-                  controller: _username,
-                  icon: Icons.person_outline_rounded,
-                  hint: 'Tu usuario',
-                  autofill: const [AutofillHints.username],
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu usuario' : null,
+              // Al registrarse se pide primero cómo se llama y su WhatsApp, y la
+              // contraseña de último — así queda en el mismo orden en que se le
+              // pregunta. Al iniciar sesión sigue siendo Usuario y luego Contraseña.
+              if (_signup) ...[
+                _reveal(
+                  4,
+                  _Field(
+                    label: 'Nombre',
+                    controller: _fullName,
+                    icon: Icons.badge_outlined,
+                    hint: 'Cómo te llamas',
+                    capitalization: TextCapitalization.words,
+                    autofill: const [AutofillHints.name],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
+                _reveal(
+                  5,
+                  _Field(
+                    label: 'Celular (WhatsApp)',
+                    controller: _phone,
+                    icon: Icons.phone_iphone_rounded,
+                    hint: '300 123 4567',
+                    keyboard: TextInputType.phone,
+                    autofill: const [AutofillHints.telephoneNumber],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ] else ...[
+                _reveal(
+                  4,
+                  _Field(
+                    label: 'Usuario',
+                    controller: _username,
+                    icon: Icons.person_outline_rounded,
+                    hint: 'Tu usuario',
+                    autofill: const [AutofillHints.username],
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu usuario' : null,
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
               _reveal(
-                5,
+                6,
                 _Field(
                   label: 'Contraseña',
                   controller: _password,
@@ -229,8 +256,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   hint: _signup ? 'Mínimo 8 caracteres' : 'Tu contraseña',
                   obscure: !_showPassword,
                   autofill: [_signup ? AutofillHints.newPassword : AutofillHints.password],
-                  action: _signup ? TextInputAction.next : TextInputAction.done,
-                  onSubmitted: _signup ? null : (_) => _submit(),
+                  action: TextInputAction.done,
+                  onSubmitted: (_) => _submit(),
                   trailing: IconButton(
                     onPressed: () => setState(() => _showPassword = !_showPassword),
                     tooltip: _showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña',
@@ -247,12 +274,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   },
                 ),
               ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOutCubic,
-                alignment: Alignment.topCenter,
-                child: _signup ? _signupFields() : _forgotRow(),
-              ),
+              if (!_signup)
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.topCenter,
+                  child: _forgotRow(),
+                ),
               if (_error != null) ...[
                 const SizedBox(height: 16),
                 _Notice(text: _error!, fg: _C.errorFg, bg: _C.errorBg, border: _C.errorBorder),
@@ -313,40 +341,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _signupFields() {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
-        _Field(
-          label: 'Nombre completo',
-          controller: _fullName,
-          icon: Icons.badge_outlined,
-          hint: 'Cómo te llamas',
-          capitalization: TextCapitalization.words,
-          autofill: const [AutofillHints.name],
-        ),
-        const SizedBox(height: 20),
-        _Field(
-          label: 'Celular (WhatsApp)',
-          controller: _phone,
-          icon: Icons.phone_iphone_rounded,
-          hint: '300 123 4567',
-          keyboard: TextInputType.phone,
-          autofill: const [AutofillHints.telephoneNumber],
-        ),
-        const SizedBox(height: 20),
-        _Field(
-          label: 'Municipio',
-          controller: _municipality,
-          icon: Icons.place_outlined,
-          hint: 'Dónde está tu finca',
-          capitalization: TextCapitalization.words,
-          action: TextInputAction.done,
-          onSubmitted: (_) => _submit(),
-        ),
-      ],
-    );
-  }
 }
 
 class _TopBand extends StatelessWidget {
