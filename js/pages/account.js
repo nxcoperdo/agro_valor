@@ -93,10 +93,28 @@ export async function renderAccount(container) {
       </div>
 
       <div class="panel">
-        <div class="panel-header"><h2>Privacidad</h2></div>
+        <div class="panel-header"><h2>Cambiar contraseña</h2></div>
+        <form class="calc-form" id="password-form">
+          <div class="field">
+            <label for="currentPassword">Contraseña actual</label>
+            <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required />
+          </div>
+          <div class="field">
+            <label for="newPassword">Contraseña nueva</label>
+            <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" minlength="8" required />
+          </div>
+          <button type="submit" class="btn-primary">Cambiar contraseña</button>
+        </form>
+        <p class="form-error" id="password-error" role="alert" hidden></p>
+        <p class="form-success" id="password-success" role="status" hidden></p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Legal</h2></div>
         <p class="panel-intro">
-          Cómo usamos tus datos y qué pasa con ellos si eliminas tu cuenta.
-          <a href="#/privacidad">Ver la política de privacidad</a>.
+          <a href="#/privacidad">Política de privacidad</a> ·
+          <a href="#/terminos">Términos de uso</a> ·
+          <a href="#/cookies">Política de cookies</a>
         </p>
       </div>
 
@@ -147,6 +165,30 @@ export async function renderAccount(container) {
       }
 
       submitBtn.disabled = false;
+    });
+
+    const passwordForm = container.querySelector('#password-form');
+    const passwordErrorEl = container.querySelector('#password-error');
+    const passwordSuccessEl = container.querySelector('#password-success');
+    const passwordBtn = passwordForm.querySelector('button[type="submit"]');
+
+    passwordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      passwordErrorEl.hidden = true;
+      passwordSuccessEl.hidden = true;
+      passwordBtn.disabled = true;
+
+      try {
+        await api.changePassword(passwordForm.currentPassword.value, passwordForm.newPassword.value);
+        passwordForm.reset();
+        passwordSuccessEl.textContent = 'Contraseña cambiada.';
+        passwordSuccessEl.hidden = false;
+      } catch (err) {
+        passwordErrorEl.textContent = err.message;
+        passwordErrorEl.hidden = false;
+      }
+
+      passwordBtn.disabled = false;
     });
 
     const deleteForm = container.querySelector('#delete-account-form');

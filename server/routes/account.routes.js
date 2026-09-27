@@ -9,6 +9,8 @@ const pushDeviceRepository = require('../repositories/pushDeviceRepository');
 
 const router = express.Router();
 
+const MIN_PASSWORD_LENGTH = 8;
+
 function serialize(user) {
   return {
     id: user.id,
@@ -52,6 +54,26 @@ router.put('/profile', (req, res, next) => {
     });
 
     res.json(serialize(userRepository.findById(req.user.id)));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Cambiar la contraseña estando logueado (distinto del flujo de "olvidé mi contraseña"). */
+router.put('/password', (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+
+    if (!currentPassword || !bcrypt.compareSync(String(currentPassword), req.fullUser.password_hash)) {
+      return res.status(401).json({ error: 'La contraseña actual no es correcta' });
+    }
+
+    if (!newPassword || String(newPassword).length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({ error: `La contraseña nueva debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` });
+    }
+
+    userRepository.setPasswordHash(req.user.id, bcrypt.hashSync(String(newPassword), 10));
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

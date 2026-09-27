@@ -32,4 +32,12 @@ router.get('/legal/privacy', (req, res) => {
   res.json(legalContentService.getPrivacyPolicy());
 });
 
+router.get('/legal/terms', (req, res) => {
+  res.json(legalContentService.getTermsOfService());
+});
+
+router.get('/legal/cookies', (req, res) => {
+  res.json(legalContentService.getCookiePolicy());
+});
+
 module.exports = router;

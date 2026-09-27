@@ -2,21 +2,24 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../format.dart';
-import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
-class PrivacyScreen extends StatelessWidget {
-  const PrivacyScreen({super.key, required this.session});
+/// Pantalla genérica para cualquier texto legal (privacidad, términos): mismo layout,
+/// distinto título y distinta llamada. La app no tiene política de cookies porque no
+/// usa cookies (eso es solo de la web); acá basta con privacidad y términos.
+class LegalScreen extends StatelessWidget {
+  const LegalScreen({super.key, required this.title, required this.load});
 
-  final Session session;
+  final String title;
+  final Future<Json> Function() load;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Política de privacidad')),
+      appBar: AppBar(title: Text(title)),
       body: AsyncView<Json>(
-        load: session.api.privacyPolicy,
+        load: load,
         builder: (context, data) {
           final sections = (data['sections'] as List<dynamic>? ?? const []).cast<Json>();
           final updatedAt = data['updatedAt'] as String?;

@@ -30,6 +30,8 @@ export const api = {
   market: () => request('/public/market'),
   plans: () => request('/public/plans'),
   privacyPolicy: () => request('/public/legal/privacy'),
+  termsOfService: () => request('/public/legal/terms'),
+  cookiePolicy: () => request('/public/legal/cookies'),
 
   // Sesión
   signup: (payload) => request('/auth/signup', { method: 'POST', ...body(payload) }),
@@ -44,6 +46,8 @@ export const api = {
   profile: () => request('/account/profile'),
   updateProfile: (payload) => request('/account/profile', { method: 'PUT', ...body(payload) }),
   plan: () => request('/account/plan'),
+  changePassword: (currentPassword, newPassword) =>
+    request('/account/password', { method: 'PUT', ...body({ currentPassword, newPassword }) }),
   deleteAccount: (password) => request('/account', { method: 'DELETE', ...body({ password }) }),
 
   // Mercado (con cuenta)

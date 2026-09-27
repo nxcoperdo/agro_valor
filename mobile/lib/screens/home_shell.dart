@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../session.dart';
 import '../theme.dart';
 import 'account_screen.dart';
+import 'alerts_screen.dart';
 import 'calculator_screen.dart';
 import 'cooperatives_screen.dart';
 import 'forecast_screen.dart';
@@ -26,6 +27,7 @@ class _HomeShellState extends State<HomeShell> {
     (title: 'Precio del café', label: 'Precio', icon: Icons.show_chart_rounded),
     (title: 'Cooperativas', label: 'Cooperativas', icon: Icons.storefront_rounded),
     (title: 'Calculadora', label: 'Calcular', icon: Icons.calculate_rounded),
+    (title: 'Alertas', label: 'Alertas', icon: Icons.notifications_active_rounded),
     (title: 'Proyección', label: 'Proyección', icon: Icons.calendar_month_rounded),
     (title: 'Mi cuenta', label: 'Cuenta', icon: Icons.person_rounded),
   ];
@@ -36,6 +38,7 @@ class _HomeShellState extends State<HomeShell> {
       PriceScreen(session: widget.session),
       CooperativesScreen(session: widget.session),
       CalculatorScreen(session: widget.session),
+      AlertsScreen(session: widget.session),
       ForecastScreen(session: widget.session),
       AccountScreen(session: widget.session),
     ];

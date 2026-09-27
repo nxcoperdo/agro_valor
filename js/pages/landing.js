@@ -165,6 +165,11 @@ export async function renderLanding(root) {
           La información es de carácter informativo y no constituye asesoría financiera ni
           garantía de precio de compra.
         </p>
+        <p class="landing-legal-links">
+          <a href="#/privacidad">Política de privacidad</a> ·
+          <a href="#/terminos">Términos de uso</a> ·
+          <a href="#/cookies">Política de cookies</a>
+        </p>
       </footer>
     </div>
   `;

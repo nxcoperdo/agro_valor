@@ -178,7 +178,77 @@ class _ProfileFormState extends State<_ProfileForm> {
           ),
           const SizedBox(height: 24),
           BusyButton(label: 'Guardar', busy: _busy, onPressed: _save),
+          const SectionLabel('Seguridad'),
+          _ChangePasswordCard(session: widget.session),
         ],
+      ),
+    );
+  }
+}
+
+class _ChangePasswordCard extends StatefulWidget {
+  const _ChangePasswordCard({required this.session});
+
+  final Session session;
+
+  @override
+  State<_ChangePasswordCard> createState() => _ChangePasswordCardState();
+}
+
+class _ChangePasswordCardState extends State<_ChangePasswordCard> {
+  final _form = GlobalKey<FormState>();
+  final _current = TextEditingController();
+  final _newPassword = TextEditingController();
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _newPassword.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_form.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _busy = true);
+    try {
+      await widget.session.api.changePassword(_current.text, _newPassword.text);
+      _current.clear();
+      _newPassword.clear();
+      if (mounted) showMessage(context, 'Contraseña cambiada');
+    } catch (e) {
+      if (mounted) showMessage(context, '$e', error: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionCard(
+      child: Form(
+        key: _form,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: _current,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Contraseña actual'),
+              validator: (v) => (v == null || v.isEmpty) ? 'Escribe tu contraseña actual' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _newPassword,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Contraseña nueva', helperText: 'Mínimo 8 caracteres'),
+              validator: (v) => (v == null || v.length < 8) ? 'Mínimo 8 caracteres' : null,
+            ),
+            const SizedBox(height: 16),
+            BusyButton(label: 'Cambiar contraseña', busy: _busy, onPressed: _submit),
+          ],
+        ),
       ),
     );
   }

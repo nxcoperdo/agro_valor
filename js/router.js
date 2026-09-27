@@ -12,7 +12,7 @@ import { renderReport } from './pages/report.js';
 import { renderAccount } from './pages/account.js';
 import { renderAdmin } from './pages/admin.js';
 import { renderPasswordReset } from './pages/reset-password.js';
-import { renderPrivacyPolicy } from './pages/privacy.js';
+import { renderPrivacyPolicy, renderTermsOfService, renderCookiePolicy } from './pages/legal.js';
 
 /**
  * `shell: true` = pantalla con sesión, se dibuja dentro del marco de navegación.
@@ -22,6 +22,8 @@ import { renderPrivacyPolicy } from './pages/privacy.js';
 const ROUTES = {
   '#/': { render: renderLanding },
   '#/privacidad': { render: renderPrivacyPolicy },
+  '#/terminos': { render: renderTermsOfService },
+  '#/cookies': { render: renderCookiePolicy },
   '#/login': { render: renderLogin, guestOnly: true },
   '#/registro': { render: renderSignup, guestOnly: true },
   '#/recuperar': { render: renderPasswordReset, guestOnly: true },

@@ -78,10 +78,15 @@ class ApiClient {
   Future<Json> cooperatives() async => await _request('GET', '/cooperatives') as Json;
   Future<Json> plans() async => await _request('GET', '/public/plans') as Json;
   Future<Json> privacyPolicy() async => await _request('GET', '/public/legal/privacy') as Json;
+  Future<Json> termsOfService() async => await _request('GET', '/public/legal/terms') as Json;
 
   // Cuenta
   Future<Json> profile() async => await _request('GET', '/account/profile') as Json;
   Future<Json> updateProfile(Json payload) async => await _request('PUT', '/account/profile', payload) as Json;
+  Future<void> changePassword(String currentPassword, String newPassword) => _request('PUT', '/account/password', {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      });
   Future<void> registerDevice(String token, String platform) =>
       _request('POST', '/account/devices', {'token': token, 'platform': platform});
   Future<void> unregisterDevice(String token) => _request('DELETE', '/account/devices', {'token': token});

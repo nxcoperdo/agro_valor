@@ -1449,6 +1449,45 @@ body.nav-locked {
   font-size: 0.85rem;
 }
 
+.landing-legal-links {
+  margin-top: var(--av-space-2);
+  font-size: 0.8rem;
+}
+
+.landing-legal-links a {
+  color: var(--av-fg-muted);
+}
+
+.cookie-notice {
+  position: fixed;
+  left: var(--av-space-3);
+  right: var(--av-space-3);
+  bottom: var(--av-space-3);
+  z-index: 1000;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--av-space-3);
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--av-space-3) var(--av-space-4);
+  background: var(--av-surface);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-md);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.cookie-notice p {
+  flex: 1 1 260px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--av-fg-muted);
+}
+
+.cookie-notice .btn-primary {
+  flex-shrink: 0;
+}
+
 /* Formularios ----------------------------------------------------------- */
 
 .calc-form {
