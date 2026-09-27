@@ -33,7 +33,7 @@ async function requestReset(username) {
 
   passwordResetRepository.create({ userId: user.id, codeHash, expiresAt });
 
-  await whatsappService.sendTemplateMessage(user.phone, env.whatsappTemplateReset, [code]);
+  await whatsappService.sendTemplateMessage(user.phone, env.whatsappTemplateReset, [code], { copyCode: code });
 
   return { sent: true };
 }

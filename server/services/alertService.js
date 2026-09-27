@@ -60,14 +60,19 @@ function buildThresholdMessage(alert, snapshot) {
   const direction = alert.type === 'above' ? 'subió por encima de' : 'bajó por debajo de';
   const params = [direction, formatCop(alert.threshold_cop_carga), formatCop(snapshot.referencePrice), bestPriceLine(snapshot.best)];
 
+  // Mismo texto de la plantilla aprobada en Meta (categoría Utilidad): se redactó como
+  // aviso de algo que el usuario configuró, porque la versión anterior Meta la clasificaba
+  // como Marketing.
   const text = [
-    '☕ AgroValor',
+    'Se cumplió la alerta de precio que configuraste en tu cuenta de AgroValor.',
     '',
-    `El precio del café ${params[0]} tu meta de ${params[1]}.`,
+    `Condición de tu alerta: el precio del café ${params[0]} ${params[1]} por carga.`,
     '',
-    `Precio interno de referencia hoy: ${params[2]} por carga de 125 kg.`,
+    `Precio de referencia registrado hoy: ${params[2]} por carga de 125 kg.`,
     '',
-    params[3],
+    `Detalle de tu comparación de cooperativas: ${params[3]}`,
+    '',
+    'Recibes este mensaje porque creaste esta alerta. Puedes editarla o eliminarla desde tu cuenta.',
   ].join('\n');
 
   const push = {
@@ -103,18 +108,18 @@ function buildDigestMessage(snapshot) {
   const params = [referenceLine, bestPriceLine(snapshot.best), highlightLine('day'), highlightLine('week'), highlightLine('month')];
 
   const text = [
-    '☕ AgroValor — resumen del mercado',
+    'Este es el resumen del mercado que programaste en tu cuenta de AgroValor.',
     '',
-    `Precio interno de referencia: ${params[0]} por carga de 125 kg.`,
+    `Precio de referencia registrado: ${params[0]} por carga de 125 kg.`,
     '',
-    params[1],
+    `Detalle de tu comparación de cooperativas: ${params[1]}`,
     '',
     'Proyección del mercado internacional:',
     `• Mañana: ${params[2]}`,
     `• En una semana: ${params[3]}`,
     `• En un mes: ${params[4]}`,
     '',
-    'Es una estimación, no una garantía de precio de compra.',
+    'Es una estimación, no una garantía de precio de compra. Recibes este mensaje porque activaste el resumen; puedes desactivarlo desde tu cuenta.',
   ].join('\n');
 
   const push = {
@@ -133,11 +138,13 @@ function buildWelcomeMessage(snapshot) {
   const params = [snapshot ? formatCop(snapshot.referencePrice) : 'no disponible en este momento', bestPriceLine(snapshot && snapshot.best)];
 
   const text = [
-    '☕ AgroValor',
+    'Tu número quedó conectado a tu cuenta de AgroValor. Por aquí te llegarán las alertas de precio que configures.',
     '',
-    'Tu número quedó conectado. Aquí te llegarán tus alertas de precio.',
-    `Precio interno de referencia hoy: ${params[0]} por carga de 125 kg.`,
-    params[1],
+    `Precio de referencia registrado hoy: ${params[0]} por carga de 125 kg.`,
+    '',
+    `Detalle de tu comparación de cooperativas: ${params[1]}`,
+    '',
+    'Puedes desactivar estos mensajes cuando quieras desde tu cuenta.',
   ].join('\n');
 
   const push = {

@@ -39,9 +39,11 @@ function isConfigured() {
  * @param {string} phone
  * @param {string} templateName Nombre exacto de la plantilla aprobada en Meta.
  * @param {string[]} params Valores para las variables {{1}}, {{2}}... del cuerpo, en orden.
+ * @param {{copyCode?: string}} [options] copyCode: para plantillas de categoría
+ *   Autenticación, que Meta exige con botón "Copiar código" — el código va también en el botón.
  * @returns {Promise<{status: 'sent'|'queued'|'failed', error?: string}>}
  */
-async function sendTemplateMessage(phone, templateName, params = []) {
+async function sendTemplateMessage(phone, templateName, params = [], { copyCode } = {}) {
   const to = normalizePhone(phone);
 
   if (!to) {
@@ -56,6 +58,21 @@ async function sendTemplateMessage(phone, templateName, params = []) {
   }
 
   const url = `https://graph.facebook.com/${env.whatsappApiVersion}/${env.whatsappPhoneNumberId}/messages`;
+
+  const components = [
+    {
+      type: 'body',
+      parameters: params.map((value) => ({ type: 'text', text: String(value) })),
+    },
+  ];
+  if (copyCode) {
+    components.push({
+      type: 'button',
+      sub_type: 'url',
+      index: '0',
+      parameters: [{ type: 'text', text: String(copyCode) }],
+    });
+  }
 
   try {
     const res = await fetchWithTimeout(
@@ -73,12 +90,7 @@ async function sendTemplateMessage(phone, templateName, params = []) {
           template: {
             name: templateName,
             language: { code: env.whatsappTemplateLang },
-            components: [
-              {
-                type: 'body',
-                parameters: params.map((value) => ({ type: 'text', text: String(value) })),
-              },
-            ],
+            components,
           },
         }),
       },
