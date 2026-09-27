@@ -116,6 +116,28 @@ function renderMonthView(monthly) {
 
 const RENDERERS = { daily: renderDayView, weekly: renderWeekView, monthly: renderMonthView };
 
+const LOCKED_LABELS = { weekly: 'semanal', monthly: 'mensual' };
+
+/** Semana y mes completos son Pro: se ve la grilla desenfocada como anticipo, no el dato real. */
+function renderLockedView(kind, count) {
+  const blurredCells = Array.from({ length: Math.min(count || 4, 4) })
+    .map(() => '<div class="cal-cell cal-week-cell"><div class="cal-cell-price tabular-nums">$•,•••,•••</div></div>')
+    .join('');
+
+  return `
+    <div class="locked-teaser">
+      <div class="locked-teaser-blur">
+        <div class="cal-grid cal-grid-week">${blurredCells}</div>
+      </div>
+      <div class="locked-teaser-cta">
+        <span class="badge badge-pro">AgroValor Pro</span>
+        <p class="highlight-note">Ve la proyección ${LOCKED_LABELS[kind]} completa, ${count} horizonte(s) más.</p>
+        <a class="btn-primary" href="#/cuenta">Activar Pro</a>
+      </div>
+    </div>
+  `;
+}
+
 export async function renderForecastPanel(container) {
   container.innerHTML = `
     <div class="panel">
@@ -136,9 +158,9 @@ export async function renderForecastPanel(container) {
 
   try {
     const data = await api.forecast();
-    const { daily = [], weekly = [], monthly = [], note } = data;
+    const { daily = [], weekly = [], monthly = [], note, locked } = data;
 
-    if (!daily.length && !weekly.length && !monthly.length) {
+    if (!daily.length && !weekly.length && !monthly.length && !locked) {
       bodyEl.innerHTML =
         '<p class="empty-state">Aún no hay suficiente historial de precios para proyectar. Se necesitan al menos dos días de datos.</p>';
       return;
@@ -154,7 +176,18 @@ export async function renderForecastPanel(container) {
             data-tab="${t.key}" role="tab" aria-selected="${t.key === activeTab}">${t.label}</button>
         `
       ).join('');
-      bodyEl.innerHTML = RENDERERS[activeTab](views[activeTab]);
+      const lockedCount = locked && (activeTab === 'weekly' ? locked.weeklyCount : locked.monthlyCount);
+      bodyEl.innerHTML =
+        activeTab !== 'daily' && lockedCount > 0
+          ? renderLockedView(activeTab, lockedCount)
+          : RENDERERS[activeTab](views[activeTab]);
+
+      if (activeTab === 'daily' && locked && locked.dailyCount > 0) {
+        bodyEl.innerHTML += `<p class="highlight-note" style="margin-top: var(--av-space-3);">
+          Este es solo el pronóstico de mañana. <a href="#/cuenta">Activa Pro</a> para ver los próximos
+          ${locked.dailyCount} días.
+        </p>`;
+      }
 
       // bodyEl es el mismo nodo siempre: hay que quitar la clase y forzar un
       // reflow para que la animación se vuelva a reproducir en cada cambio.

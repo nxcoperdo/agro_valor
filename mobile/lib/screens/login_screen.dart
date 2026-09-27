@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../session.dart';
+import 'reset_password_screen.dart';
 
 /// Colores del login claro (mismo diseño que la web, css/login.css). El resto de la app es oscura.
 class _C {
@@ -26,9 +27,6 @@ class _C {
   static const errorFg = Color(0xFF9B2C2C);
   static const errorBg = Color(0xFFFDF1F1);
   static const errorBorder = Color(0xFFF1C4C4);
-  static const noteFg = Color(0xFF185C3E);
-  static const noteBg = Color(0xFFEFF8F2);
-  static const noteBorder = Color(0xFFBFDDC9);
 }
 
 class LoginScreen extends StatefulWidget {
@@ -40,7 +38,9 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+  // Entrada escalonada: arranca mientras la intro se desvanece, así el video y el login quedan entrelazados.
+  late final _entrance = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..forward();
   final _form = GlobalKey<FormState>();
   final _username = TextEditingController();
   final _password = TextEditingController();
@@ -51,11 +51,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _signup = false;
   bool _busy = false;
   bool _showPassword = false;
-  bool _showForgot = false;
   String? _error;
 
   @override
   void dispose() {
+    _entrance.dispose();
     for (final c in [_username, _password, _fullName, _phone, _municipality]) {
       c.dispose();
     }
@@ -91,7 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
   void _toggleMode() => setState(() {
     _signup = !_signup;
     _error = null;
-    _showForgot = false;
   });
 
   @override
@@ -110,13 +109,29 @@ class _LoginScreenState extends State<LoginScreen> {
           body: Stack(
             children: [
               // Franja verde que ocupa ~29% de la pantalla, como en la versión móvil de la web.
-              const Positioned(top: 0, left: 0, right: 0, child: _TopBand()),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: SlideTransition(
+                  position: Tween(begin: const Offset(0, -1), end: Offset.zero).animate(
+                    CurvedAnimation(
+                      parent: _entrance,
+                      curve: const Interval(0, 0.45, curve: Curves.easeOutCubic),
+                    ),
+                  ),
+                  child: const _TopBand(),
+                ),
+              ),
               SafeArea(
                 child: Align(
                   alignment: Alignment.topCenter,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
-                    child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 440), child: _card()),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 440),
+                      child: _Reveal(animation: _entrance, start: 0.15, distance: 0.06, child: _card()),
+                    ),
                   ),
                 ),
               ),
@@ -142,72 +157,95 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Image.asset('assets/branding/logo.png', width: 46, height: 46),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'AgroValor',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.9, color: _C.brand),
-                  ),
-                ],
+              _reveal(
+                0,
+                Row(
+                  children: [
+                    Image.asset('assets/branding/logo.png', width: 46, height: 46),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'AgroValor',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.9, color: _C.brand),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 30),
-              Text(
-                (_signup ? 'Empieza gratis' : 'Bienvenido de nuevo').toUpperCase(),
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 2, color: _C.eyebrow),
+              _reveal(
+                1,
+                Text(
+                  (_signup ? 'Empieza gratis' : 'Bienvenido de nuevo').toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                    color: _C.eyebrow,
+                  ),
+                ),
               ),
               const SizedBox(height: 14),
-              Text(
-                _signup ? 'Crea tu cuenta' : 'Inicia sesión',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -1.4,
-                  height: 1.1,
-                  color: _C.title,
+              _reveal(
+                2,
+                Text(
+                  _signup ? 'Crea tu cuenta' : 'Inicia sesión',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -1.4,
+                    height: 1.1,
+                    color: _C.title,
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
-              Text(
-                _signup
-                    ? 'Consulta el precio de tu café por carga, todos los días.'
-                    : 'Ingresa tus datos para acceder a tu cuenta.',
-                style: const TextStyle(fontSize: 15, color: _C.muted, height: 1.4),
+              _reveal(
+                3,
+                Text(
+                  _signup
+                      ? 'Consulta el precio de tu café por carga, todos los días.'
+                      : 'Ingresa tus datos para acceder a tu cuenta.',
+                  style: const TextStyle(fontSize: 15, color: _C.muted, height: 1.4),
+                ),
               ),
               const SizedBox(height: 28),
-              _Field(
-                label: 'Usuario',
-                controller: _username,
-                icon: Icons.person_outline_rounded,
-                hint: 'Tu usuario',
-                autofill: const [AutofillHints.username],
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu usuario' : null,
+              _reveal(
+                4,
+                _Field(
+                  label: 'Usuario',
+                  controller: _username,
+                  icon: Icons.person_outline_rounded,
+                  hint: 'Tu usuario',
+                  autofill: const [AutofillHints.username],
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Escribe tu usuario' : null,
+                ),
               ),
               const SizedBox(height: 20),
-              _Field(
-                label: 'Contraseña',
-                controller: _password,
-                icon: Icons.lock_outline_rounded,
-                hint: _signup ? 'Mínimo 8 caracteres' : 'Tu contraseña',
-                obscure: !_showPassword,
-                autofill: [_signup ? AutofillHints.newPassword : AutofillHints.password],
-                action: _signup ? TextInputAction.next : TextInputAction.done,
-                onSubmitted: _signup ? null : (_) => _submit(),
-                trailing: IconButton(
-                  onPressed: () => setState(() => _showPassword = !_showPassword),
-                  tooltip: _showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña',
-                  icon: Icon(
-                    _showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    size: 20,
-                    color: const Color(0xFF6E8176),
+              _reveal(
+                5,
+                _Field(
+                  label: 'Contraseña',
+                  controller: _password,
+                  icon: Icons.lock_outline_rounded,
+                  hint: _signup ? 'Mínimo 8 caracteres' : 'Tu contraseña',
+                  obscure: !_showPassword,
+                  autofill: [_signup ? AutofillHints.newPassword : AutofillHints.password],
+                  action: _signup ? TextInputAction.next : TextInputAction.done,
+                  onSubmitted: _signup ? null : (_) => _submit(),
+                  trailing: IconButton(
+                    onPressed: () => setState(() => _showPassword = !_showPassword),
+                    tooltip: _showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña',
+                    icon: Icon(
+                      _showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      size: 20,
+                      color: const Color(0xFF6E8176),
+                    ),
                   ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Escribe tu contraseña';
+                    if (_signup && v.length < 8) return 'Mínimo 8 caracteres';
+                    return null;
+                  },
                 ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Escribe tu contraseña';
-                  if (_signup && v.length < 8) return 'Mínimo 8 caracteres';
-                  return null;
-                },
               ),
               AnimatedSize(
                 duration: const Duration(milliseconds: 250),
@@ -220,20 +258,30 @@ class _LoginScreenState extends State<LoginScreen> {
                 _Notice(text: _error!, fg: _C.errorFg, bg: _C.errorBg, border: _C.errorBorder),
               ],
               const SizedBox(height: 22),
-              _SubmitButton(label: _signup ? 'Crear mi cuenta' : 'Entrar a mi cuenta', busy: _busy, onPressed: _submit),
+              _reveal(
+                6,
+                _SubmitButton(
+                  label: _signup ? 'Crear mi cuenta' : 'Entrar a mi cuenta',
+                  busy: _busy,
+                  onPressed: _submit,
+                ),
+              ),
               const SizedBox(height: 28),
               const Divider(height: 1, color: _C.divider),
               const SizedBox(height: 22),
-              Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(
-                    _signup ? '¿Ya tienes una cuenta? ' : '¿Aún no tienes una cuenta? ',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF66736B)),
-                  ),
-                  _Link(label: _signup ? 'Inicia sesión' : 'Crear cuenta', onTap: _busy ? null : _toggleMode),
-                ],
+              _reveal(
+                7,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      _signup ? '¿Ya tienes una cuenta? ' : '¿Aún no tienes una cuenta? ',
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF66736B)),
+                    ),
+                    _Link(label: _signup ? 'Inicia sesión' : 'Crear cuenta', onTap: _busy ? null : _toggleMode),
+                  ],
+                ),
               ),
             ],
           ),
@@ -241,6 +289,10 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+  /// Cada bloque de la tarjeta entra un poco después del anterior.
+  Widget _reveal(int index, Widget child) =>
+      _Reveal(animation: _entrance, start: 0.3 + index * 0.06, distance: 0.35, child: child);
 
   Widget _forgotRow() {
     return Column(
@@ -252,20 +304,11 @@ class _LoginScreenState extends State<LoginScreen> {
           child: _Link(
             label: '¿Olvidaste tu contraseña?',
             size: 12,
-            onTap: () => setState(() => _showForgot = !_showForgot),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => ResetPasswordScreen(session: widget.session)),
+            ),
           ),
         ),
-        if (_showForgot) ...[
-          const SizedBox(height: 12),
-          const _Notice(
-            text:
-                'Por ahora la contraseña se restablece a mano: escríbele al equipo de AgroValor con tu usuario '
-                'y te ayudamos.',
-            fg: _C.noteFg,
-            bg: _C.noteBg,
-            border: _C.noteBorder,
-          ),
-        ],
       ],
     );
   }
@@ -485,6 +528,33 @@ class _Notice extends StatelessWidget {
         border: Border.all(color: border),
       ),
       child: Text(text, style: TextStyle(fontSize: 13, height: 1.5, color: fg)),
+    );
+  }
+}
+
+/// Aparece subiendo levemente, en el tramo [start, start + 0.4] de la animación de entrada.
+class _Reveal extends StatelessWidget {
+  const _Reveal({required this.animation, required this.start, required this.distance, required this.child});
+
+  final Animation<double> animation;
+  final double start;
+
+  /// Cuánto sube, en proporción al alto del propio bloque.
+  final double distance;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Interval(start.clamp(0.0, 1.0), (start + 0.4).clamp(0.0, 1.0), curve: Curves.easeOutCubic),
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween(begin: Offset(0, distance), end: Offset.zero).animate(curved),
+        child: child,
+      ),
     );
   }
 }

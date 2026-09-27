@@ -13,23 +13,11 @@ class CalculatorScreen extends StatelessWidget {
 
   final Session session;
 
-  static const _upsell = ProUpsell(
-    title: 'Calculadora de precio neto',
-    body: 'Escribe tu factor, humedad y transporte y mira cuánto te queda por carga en cada cooperativa.',
-    icon: Icons.calculate_rounded,
-  );
-
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: session,
-      builder: (context, _) {
-        if (!session.isPro) return _upsell;
-        return AsyncView<Json>(
-          load: session.api.profile,
-          builder: (context, profile) => _Calculator(session: session, profile: profile),
-        );
-      },
+    return AsyncView<Json>(
+      load: session.api.profile,
+      builder: (context, profile) => _Calculator(session: session, profile: profile),
     );
   }
 }
@@ -141,6 +129,7 @@ class _CalculatorState extends State<_Calculator> {
   List<Widget> _results(Json result) {
     final ref = result['againstReference'] as Json;
     final coops = (result['byCooperative'] as List<dynamic>? ?? const []).cast<Json>();
+    final locked = result['locked'] == true;
     final cargas = (ref['inputs'] as Json)['cargas'] as num;
     final diffPct = ref['differenceVsBasePct'] as num;
 
@@ -168,7 +157,36 @@ class _CalculatorState extends State<_Calculator> {
           ],
         ),
       ),
-      if (coops.isNotEmpty) ...[
+      if (locked) ...[
+        const SectionLabel('¿Dónde te queda más plata?'),
+        LockedTeaser(
+          height: 220,
+          preview: Column(
+            children: [
+              for (var i = 0; i < ((result['cooperativesCount'] as num?)?.toInt() ?? 3); i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _CoopResult(
+                    coop: const {
+                      'rank': 1,
+                      'name': 'Cooperativa •••••••',
+                      'isBest': false,
+                      'lostVsBest': 999999,
+                      'netPerCarga': 9999999,
+                      'total': 9999999,
+                    },
+                    showTotal: false,
+                  ),
+                ),
+            ],
+          ),
+          title: '¿Dónde te queda más plata?',
+          body: result['maxDifferenceCop'] != null
+              ? 'Hay ${formatCop(result['maxDifferenceCop'] as num)} de diferencia entre la mejor y la peor '
+                  'de las ${result['cooperativesCount']} cooperativas para tu café.'
+              : 'Activa Pro para ver en qué cooperativa te conviene vender.',
+        ),
+      ] else if (coops.isNotEmpty) ...[
         const SectionLabel('¿Dónde te queda más plata?'),
         for (final c in coops) ...[_CoopResult(coop: c, showTotal: cargas != 1), const SizedBox(height: 8)],
       ],

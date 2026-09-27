@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
@@ -172,6 +174,74 @@ class ProUpsell extends StatelessWidget {
         const SizedBox(height: 20),
         const Center(child: Pill(label: 'Función de AgroValor Pro', color: AvColors.accent)),
       ],
+    );
+  }
+}
+
+/// Anticipo de una función Pro: se ve la forma del dato real desenfocada, con la venta
+/// encima. A diferencia de [ProUpsell] no ocupa toda la pantalla, va incrustado junto a
+/// contenido gratis que sí funciona (ej. el cálculo del día de hoy, sin el resto del mes).
+class LockedTeaser extends StatelessWidget {
+  const LockedTeaser({super.key, required this.preview, required this.title, required this.body, this.height});
+
+  /// El contenido real que se muestra borroso detrás de la venta (no datos falsos).
+  final Widget preview;
+  final String title;
+  final String body;
+  final double? height;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        height: height,
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            IgnorePointer(
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                child: Opacity(opacity: 0.55, child: preview),
+              ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.black.withValues(alpha: 0.15), Colors.black.withValues(alpha: 0.78)],
+                  ),
+                ),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Pill(label: 'AgroValor Pro', color: AvColors.accent),
+                        const SizedBox(height: 10),
+                        Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Colors.white),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          body,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -7,7 +7,8 @@ const whatsappService = require('../services/whatsappService');
 const userRepository = require('../repositories/userRepository');
 const authMiddleware = require('../middleware/authMiddleware');
 const { loadUser } = require('../middleware/requirePlan');
-const { loginRateLimit, signupRateLimit } = require('../middleware/rateLimit');
+const { loginRateLimit, signupRateLimit, passwordResetRateLimit } = require('../middleware/rateLimit');
+const passwordResetService = require('../services/passwordResetService');
 
 const router = express.Router();
 
@@ -63,21 +64,31 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
 
     const { username, password, phone, fullName, municipality } = req.body || {};
 
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
+    if (!password) {
+      return res.status(400).json({ error: 'La contraseña es requerida' });
     }
 
     if (String(password).length < MIN_PASSWORD_LENGTH) {
       return res.status(400).json({ error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` });
     }
 
-    const normalizedUsername = String(username).trim().toLowerCase();
+    const normalizedPhone = phone ? whatsappService.normalizePhone(phone) : null;
 
-    if (userRepository.findByUsername(normalizedUsername)) {
-      return res.status(409).json({ error: 'Ese usuario ya está registrado' });
+    // El registro simplificado de la web no pide "usuario": se usa el teléfono como tal,
+    // así el caficultor entra después con lo único que de verdad recuerda. El registro
+    // con usuario explícito (la app móvil) sigue funcionando igual que siempre.
+    const usesPhoneAsUsername = !username;
+    const normalizedUsername = username ? String(username).trim().toLowerCase() : normalizedPhone;
+
+    if (!normalizedUsername) {
+      return res.status(400).json({ error: 'El usuario o el teléfono son requeridos' });
     }
 
-    const normalizedPhone = phone ? whatsappService.normalizePhone(phone) : null;
+    if (userRepository.findByUsername(normalizedUsername)) {
+      return res.status(409).json({
+        error: usesPhoneAsUsername ? 'Ese teléfono ya está registrado' : 'Ese usuario ya está registrado',
+      });
+    }
 
     const user = userRepository.create({
       username: normalizedUsername,
@@ -121,6 +132,32 @@ router.post('/logout', (req, res) => {
 
 router.get('/me', authMiddleware, loadUser, (req, res) => {
   res.json({ user: publicUser(req.fullUser) });
+});
+
+router.post('/password-reset/request', passwordResetRateLimit, async (req, res, next) => {
+  try {
+    const { username } = req.body || {};
+    if (!username) {
+      return res.status(400).json({ error: 'El usuario es requerido' });
+    }
+    const result = await passwordResetService.requestReset(username);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/password-reset/confirm', passwordResetRateLimit, (req, res, next) => {
+  try {
+    const { username, code, newPassword } = req.body || {};
+    if (!username || !code) {
+      return res.status(400).json({ error: 'El usuario y el código son requeridos' });
+    }
+    passwordResetService.confirmReset(username, code, newPassword);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;

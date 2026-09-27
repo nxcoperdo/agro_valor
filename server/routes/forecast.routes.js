@@ -1,8 +1,12 @@
 const express = require('express');
 const forecastService = require('../services/forecastService');
 const marketSummaryService = require('../services/marketSummaryService');
+const subscriptionService = require('../services/subscriptionService');
 
 const router = express.Router();
+
+// Gratis: solo el día de mañana, como muestra. Semana y mes completos son Pro.
+const FREE_DAILY_STEPS = 1;
 
 /**
  * El modelo proyecta la cotización internacional, que es la serie que tenemos.
@@ -12,6 +16,7 @@ const router = express.Router();
  * que pagará su cooperativa.
  */
 router.get('/', (req, res) => {
+  const isPro = subscriptionService.isPro(req.fullUser);
   const forecasts = forecastService.getForecast();
   const summary = marketSummaryService.getMarketSummary();
 
@@ -33,10 +38,18 @@ router.get('/', (req, res) => {
     };
   };
 
+  const daily = forecasts.filter((f) => f.granularity === 'day').map(enrich);
+  const weekly = forecasts.filter((f) => f.granularity === 'week').map(enrich);
+  const monthly = forecasts.filter((f) => f.granularity === 'month').map(enrich);
+
   res.json({
-    daily: forecasts.filter((f) => f.granularity === 'day').map(enrich),
-    weekly: forecasts.filter((f) => f.granularity === 'week').map(enrich),
-    monthly: forecasts.filter((f) => f.granularity === 'month').map(enrich),
+    daily: isPro ? daily : daily.slice(0, FREE_DAILY_STEPS),
+    weekly: isPro ? weekly : [],
+    monthly: isPro ? monthly : [],
+    isPro,
+    locked: isPro
+      ? null
+      : { dailyCount: Math.max(daily.length - FREE_DAILY_STEPS, 0), weeklyCount: weekly.length, monthlyCount: monthly.length },
     currentUsdPerLb: currentCents != null ? currentCents / 100 : null,
     internalNowCopPerCarga: internalNow,
     note:

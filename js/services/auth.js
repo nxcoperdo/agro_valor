@@ -20,6 +20,10 @@ export function isPro() {
   return Boolean(cachedUser && cachedUser.isPro);
 }
 
+export function isAdmin() {
+  return Boolean(cachedUser && cachedUser.role === 'admin');
+}
+
 export function setCachedUser(user) {
   cachedUser = user;
 }

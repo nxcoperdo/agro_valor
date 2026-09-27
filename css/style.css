@@ -1396,6 +1396,26 @@ body.nav-locked {
   color: var(--av-fg-muted);
 }
 
+.ios-install-steps {
+  max-width: 420px;
+  margin: var(--av-space-4) auto 0;
+  padding: var(--av-space-4);
+  background: var(--av-surface-alt);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-md);
+  text-align: left;
+}
+
+.ios-install-steps ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--av-space-2);
+  margin: 0;
+  padding-left: 1.3em;
+  font-size: 0.9rem;
+  color: var(--av-fg-muted);
+}
+
 .value-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1721,6 +1741,38 @@ body.nav-locked {
   color: var(--av-accent);
 }
 
+/* Anticipo bloqueado: se ve la forma del dato real, pero borroso, con la venta de Pro encima. */
+.locked-teaser {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--av-radius-md);
+  min-height: 160px;
+}
+
+.locked-teaser-blur {
+  filter: blur(6px);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+
+.locked-teaser-cta {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--av-space-2);
+  text-align: center;
+  padding: var(--av-space-4);
+  background: linear-gradient(180deg, rgba(20, 18, 14, 0.15), rgba(20, 18, 14, 0.75));
+}
+
+.locked-teaser-cta .highlight-note {
+  max-width: 40ch;
+}
+
 .plans-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -1781,6 +1833,77 @@ body.nav-locked {
   height: 8px;
   border-radius: 50%;
   background: var(--av-accent);
+}
+
+/* Panel admin -------------------------------------------------------------- */
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--av-space-3);
+}
+
+.metric-tile {
+  background: var(--av-surface-alt);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-md);
+  padding: var(--av-space-3);
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.metric-label {
+  margin-top: 2px;
+  font-size: 0.78rem;
+  color: var(--av-fg-muted);
+}
+
+.admin-table input {
+  min-height: 36px;
+  padding: 0.35rem 0.5rem;
+  background: var(--av-muted-bg);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-sm);
+  color: var(--av-fg);
+  font-size: 0.85rem;
+  width: 100%;
+  min-width: 80px;
+}
+
+.admin-table input:focus-visible {
+  border-color: var(--av-accent);
+  outline: none;
+}
+
+.admin-table input[type="checkbox"] {
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.admin-active-cell {
+  text-align: center;
+}
+
+.admin-row-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--av-space-2);
+}
+
+.admin-months-input {
+  min-height: 36px;
+  width: 56px;
+  padding: 0.35rem 0.4rem;
+  background: var(--av-muted-bg);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-sm);
+  color: var(--av-fg);
+  font-size: 0.85rem;
 }
 
 /* Etiquetas de origen del precio ------------------------------------------ */

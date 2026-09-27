@@ -25,4 +25,13 @@ const testMessageRateLimit = rateLimit({
   message: { error: 'Ya enviaste varios mensajes de prueba. Espera un momento.' },
 });
 
-module.exports = { loginRateLimit, signupRateLimit, testMessageRateLimit };
+/** Enviar el código de recuperación por WhatsApp también cuesta, mismo límite que el mensaje de prueba. */
+const passwordResetRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Ya pediste varios códigos de recuperación. Espera un momento e intenta de nuevo.' },
+});
+
+module.exports = { loginRateLimit, signupRateLimit, testMessageRateLimit, passwordResetRateLimit };

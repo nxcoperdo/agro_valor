@@ -47,6 +47,7 @@ const env = {
   whatsappTemplateAlert: process.env.WHATSAPP_TEMPLATE_ALERT || 'agrovalor_alerta_precio',
   whatsappTemplateDigest: process.env.WHATSAPP_TEMPLATE_DIGEST || 'agrovalor_resumen_mercado',
   whatsappTemplateWelcome: process.env.WHATSAPP_TEMPLATE_WELCOME || 'agrovalor_bienvenida',
+  whatsappTemplateReset: process.env.WHATSAPP_TEMPLATE_RESET || 'agrovalor_recuperacion',
 
   // Notificaciones push a la app (Firebase Cloud Messaging): ruta al JSON de la cuenta de servicio.
   firebaseServiceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH

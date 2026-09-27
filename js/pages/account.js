@@ -1,5 +1,5 @@
 import { api } from '../services/api.js';
-import { refreshUser } from '../services/auth.js';
+import { refreshUser, setCachedUser } from '../services/auth.js';
 
 function planCard(plan, current) {
   const isCurrent = plan.id === current.plan;
@@ -91,6 +91,30 @@ export async function renderAccount(container) {
         <p class="form-error" id="profile-error" role="alert" hidden></p>
         <p class="form-success" id="profile-success" role="status" hidden></p>
       </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Privacidad</h2></div>
+        <p class="panel-intro">
+          Cómo usamos tus datos y qué pasa con ellos si eliminas tu cuenta.
+          <a href="#/privacidad">Ver la política de privacidad</a>.
+        </p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Zona de peligro</h2></div>
+        <p class="panel-intro">
+          Eliminar tu cuenta borra tus datos, tus alertas y tu historial de ventas. Es
+          irreversible. Tus reportes de precio se quedan, pero sin tu nombre.
+        </p>
+        <form class="calc-form" id="delete-account-form">
+          <div class="field">
+            <label for="deleteAccountPassword">Confirma tu contraseña</label>
+            <input type="password" id="deleteAccountPassword" name="password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="btn-danger">Eliminar mi cuenta</button>
+        </form>
+        <p class="form-error" id="delete-account-error" role="alert" hidden></p>
+      </div>
     `;
 
     const form = container.querySelector('#profile-form');
@@ -123,6 +147,30 @@ export async function renderAccount(container) {
       }
 
       submitBtn.disabled = false;
+    });
+
+    const deleteForm = container.querySelector('#delete-account-form');
+    const deleteErrorEl = container.querySelector('#delete-account-error');
+    const deleteBtn = deleteForm.querySelector('button[type="submit"]');
+
+    deleteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      deleteErrorEl.hidden = true;
+
+      if (!window.confirm('¿Seguro que quieres eliminar tu cuenta? Esto no se puede deshacer.')) {
+        return;
+      }
+
+      deleteBtn.disabled = true;
+      try {
+        await api.deleteAccount(deleteForm.password.value);
+        setCachedUser(null);
+        window.location.hash = '#/';
+      } catch (err) {
+        deleteErrorEl.textContent = err.message;
+        deleteErrorEl.hidden = false;
+        deleteBtn.disabled = false;
+      }
     });
   } catch (err) {
     container.innerHTML = `<div class="panel"><p class="panel-error">${err.message}</p></div>`;

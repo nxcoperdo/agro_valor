@@ -1,7 +1,9 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const userRepository = require('../repositories/userRepository');
 const subscriptionService = require('../services/subscriptionService');
 const whatsappService = require('../services/whatsappService');
+const authService = require('../services/authService');
 const pushDeviceRepository = require('../repositories/pushDeviceRepository');
 
 const router = express.Router();
@@ -80,6 +82,26 @@ router.get('/plan', (req, res) => {
     ...subscriptionService.describe(req.fullUser),
     plans: subscriptionService.PLANS,
   });
+});
+
+/**
+ * Elimina la cuenta por completo. Pide la contraseña actual porque es irreversible.
+ * Los admin no pueden borrarse por aquí, para no dejar la app sin nadie que administre.
+ */
+router.delete('/', (req, res) => {
+  const { password } = req.body || {};
+
+  if (!password || !bcrypt.compareSync(String(password), req.fullUser.password_hash)) {
+    return res.status(401).json({ error: 'Contraseña incorrecta' });
+  }
+
+  if (req.fullUser.role === 'admin') {
+    return res.status(403).json({ error: 'No puedes eliminar una cuenta de administrador desde aquí' });
+  }
+
+  userRepository.deleteById(req.user.id);
+  res.clearCookie(authService.COOKIE_NAME);
+  res.json({ ok: true });
 });
 
 module.exports = router;

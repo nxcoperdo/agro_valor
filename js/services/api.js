@@ -29,6 +29,7 @@ export const api = {
   // Público
   market: () => request('/public/market'),
   plans: () => request('/public/plans'),
+  privacyPolicy: () => request('/public/legal/privacy'),
 
   // Sesión
   signup: (payload) => request('/auth/signup', { method: 'POST', ...body(payload) }),
@@ -36,11 +37,14 @@ export const api = {
     request('/auth/login', { method: 'POST', ...body({ username, password, remember }) }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),
+  requestPasswordReset: (username) => request('/auth/password-reset/request', { method: 'POST', ...body({ username }) }),
+  confirmPasswordReset: (payload) => request('/auth/password-reset/confirm', { method: 'POST', ...body(payload) }),
 
   // Cuenta
   profile: () => request('/account/profile'),
   updateProfile: (payload) => request('/account/profile', { method: 'PUT', ...body(payload) }),
   plan: () => request('/account/plan'),
+  deleteAccount: (password) => request('/account', { method: 'DELETE', ...body({ password }) }),
 
   // Mercado (con cuenta)
   currentPrice: () => request('/prices/current'),
@@ -62,4 +66,17 @@ export const api = {
   // Reportes colaborativos (disponible para cualquier cuenta)
   createReport: (payload) => request('/reports', { method: 'POST', ...body(payload) }),
   myReports: () => request('/reports/mine'),
+
+  // Admin
+  adminUsers: () => request('/admin/users'),
+  activatePro: (userId, months) => request(`/admin/users/${userId}/activate-pro`, { method: 'POST', ...body({ months }) }),
+  cancelPro: (userId) => request(`/admin/users/${userId}/cancel-pro`, { method: 'POST' }),
+  adminCooperatives: () => request('/admin/cooperatives'),
+  createCooperative: (payload) => request('/admin/cooperatives', { method: 'POST', ...body(payload) }),
+  updateCooperative: (id, payload) => request(`/admin/cooperatives/${id}`, { method: 'PUT', ...body(payload) }),
+  adminReports: () => request('/admin/reports'),
+  deleteReport: (id) => request(`/admin/reports/${id}`, { method: 'DELETE' }),
+  adminMetrics: () => request('/admin/metrics'),
+  resetUserPassword: (userId, newPassword) =>
+    request(`/admin/users/${userId}/reset-password`, { method: 'POST', ...body({ newPassword }) }),
 };

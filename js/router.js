@@ -10,21 +10,28 @@ import { renderAlerts } from './pages/alerts.js';
 import { renderSales } from './pages/sales.js';
 import { renderReport } from './pages/report.js';
 import { renderAccount } from './pages/account.js';
+import { renderAdmin } from './pages/admin.js';
+import { renderPasswordReset } from './pages/reset-password.js';
+import { renderPrivacyPolicy } from './pages/privacy.js';
 
 /**
  * `shell: true` = pantalla con sesión, se dibuja dentro del marco de navegación.
  * `guestOnly` = si ya hay sesión, no tiene sentido mostrarla (login/registro).
+ * `adminOnly` = además de sesión, exige `role === 'admin'`.
  */
 const ROUTES = {
   '#/': { render: renderLanding },
+  '#/privacidad': { render: renderPrivacyPolicy },
   '#/login': { render: renderLogin, guestOnly: true },
   '#/registro': { render: renderSignup, guestOnly: true },
+  '#/recuperar': { render: renderPasswordReset, guestOnly: true },
   '#/dashboard': { render: renderDashboard, shell: true },
   '#/calculadora': { render: renderCalculator, shell: true },
   '#/alertas': { render: renderAlerts, shell: true },
   '#/ventas': { render: renderSales, shell: true },
   '#/reportar': { render: renderReport, shell: true },
   '#/cuenta': { render: renderAccount, shell: true },
+  '#/admin': { render: renderAdmin, shell: true, adminOnly: true },
 };
 
 const DEFAULT_ROUTE = '#/';
@@ -48,6 +55,11 @@ async function handleRoute() {
   }
 
   if (route.guestOnly && user) {
+    window.location.hash = '#/dashboard';
+    return;
+  }
+
+  if (route.adminOnly && (!user || user.role !== 'admin')) {
     window.location.hash = '#/dashboard';
     return;
   }

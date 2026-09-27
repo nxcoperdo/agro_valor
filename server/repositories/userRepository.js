@@ -63,8 +63,23 @@ function setPlan(id, plan, expiresAt = null) {
   return findPublicById(id);
 }
 
+function setPasswordHash(id, passwordHash) {
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, id);
+  return findPublicById(id);
+}
+
 function listAll(limit = 200) {
   return db.prepare(`SELECT ${PUBLIC_FIELDS} FROM users ORDER BY created_at DESC LIMIT ?`).all(limit);
+}
+
+/**
+ * Borra la cuenta. Las tablas relacionadas ya están pensadas para esto en el esquema
+ * (server/db/schema.sql): alertas, ventas y dispositivos push se borran en cascada;
+ * los reportes de precio se quedan pero pierden el vínculo con el usuario (ON DELETE
+ * SET NULL), porque ya son el dato colectivo que usan otros caficultores.
+ */
+function deleteById(id) {
+  db.prepare('DELETE FROM users WHERE id = ?').run(id);
 }
 
 module.exports = {
@@ -75,5 +90,7 @@ module.exports = {
   create,
   updateProfile,
   setPlan,
+  setPasswordHash,
   listAll,
+  deleteById,
 };

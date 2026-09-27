@@ -2,6 +2,7 @@ const express = require('express');
 const marketSummaryService = require('../services/marketSummaryService');
 const cooperativeService = require('../services/cooperativeService');
 const subscriptionService = require('../services/subscriptionService');
+const legalContentService = require('../services/legalContentService');
 
 const router = express.Router();
 
@@ -25,6 +26,10 @@ router.get('/market', (req, res) => {
 
 router.get('/plans', (req, res) => {
   res.json({ plans: subscriptionService.PLANS });
+});
+
+router.get('/legal/privacy', (req, res) => {
+  res.json(legalContentService.getPrivacyPolicy());
 });
 
 module.exports = router;

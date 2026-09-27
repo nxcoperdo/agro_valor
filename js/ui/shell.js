@@ -1,6 +1,6 @@
 import { getCachedUser, logout } from '../services/auth.js';
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { hash: '#/dashboard', label: 'Mercado' },
   { hash: '#/calculadora', label: 'Calculadora' },
   { hash: '#/alertas', label: 'Alertas' },
@@ -9,8 +9,15 @@ const NAV_ITEMS = [
   { hash: '#/cuenta', label: 'Mi cuenta' },
 ];
 
-function navLinks(activeHash, linkClass) {
-  return NAV_ITEMS.map(
+function navItemsFor(user) {
+  if (user && user.role === 'admin') {
+    return [...BASE_NAV_ITEMS, { hash: '#/admin', label: 'Admin' }];
+  }
+  return BASE_NAV_ITEMS;
+}
+
+function navLinks(activeHash, linkClass, user) {
+  return navItemsFor(user).map(
     (item) => `
       <a href="${item.hash}" class="${linkClass} ${item.hash === activeHash ? 'is-active' : ''}"
          ${item.hash === activeHash ? 'aria-current="page"' : ''}>${item.label}</a>
@@ -99,7 +106,7 @@ export function renderShell(root, activeHash) {
         </header>
 
         <nav class="app-nav" aria-label="Secciones">
-          ${navLinks(activeHash, 'app-nav-link')}
+          ${navLinks(activeHash, 'app-nav-link', user)}
         </nav>
       </div>
 
@@ -110,7 +117,7 @@ export function renderShell(root, activeHash) {
           <span class="brand-word"><span class="brand-agro">Agro</span><span class="brand-valor">Valor</span></span>
           <button type="button" class="nav-toggle" id="drawer-close" aria-label="Cerrar menú">✕</button>
         </div>
-        ${navLinks(activeHash, 'app-drawer-link')}
+        ${navLinks(activeHash, 'app-drawer-link', user)}
       </nav>
 
       <main class="app-main" id="page-content"></main>

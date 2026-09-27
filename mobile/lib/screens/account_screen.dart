@@ -5,6 +5,7 @@ import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'alerts_screen.dart';
+import 'privacy_screen.dart';
 import 'profile_screen.dart';
 import 'report_screen.dart';
 import 'sales_screen.dart';
@@ -111,6 +112,12 @@ class AccountScreen extends StatelessWidget {
                       subtitle: 'Cuéntanos cuánto te pagó una cooperativa',
                       open: () => ReportScreen(session: session),
                     ),
+                    _MenuTile(
+                      icon: Icons.privacy_tip_outlined,
+                      title: 'Política de privacidad',
+                      subtitle: 'Qué datos guardamos y para qué',
+                      open: () => PrivacyScreen(session: session),
+                    ),
                   ],
                 ),
               ),
@@ -125,11 +132,93 @@ class AccountScreen extends StatelessWidget {
                   side: const BorderSide(color: AvColors.border),
                 ),
               ),
+              const SizedBox(height: 28),
+              const Divider(color: AvColors.border),
+              const SizedBox(height: 12),
+              const Text('Zona de peligro', style: TextStyle(fontWeight: FontWeight.w700, color: AvColors.danger)),
+              const SizedBox(height: 4),
+              const Muted('Elimina tu cuenta, tus alertas y tu historial de ventas. No se puede deshacer.', size: 12),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => _confirmDeleteAccount(context, session),
+                icon: const Icon(Icons.delete_forever_rounded, color: AvColors.danger),
+                label: const Text('Eliminar mi cuenta', style: TextStyle(color: AvColors.danger)),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  side: const BorderSide(color: AvColors.danger),
+                ),
+              ),
             ],
           ),
         );
       },
     );
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context, Session session) async {
+    final password = TextEditingController();
+    var busy = false;
+    String? error;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) => AlertDialog(
+          title: const Text('Eliminar mi cuenta'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Esto no se puede deshacer. Escribe tu contraseña para confirmar.'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: password,
+                obscureText: true,
+                autofocus: true,
+                decoration: const InputDecoration(labelText: 'Contraseña'),
+              ),
+              if (error != null) ...[
+                const SizedBox(height: 8),
+                Text(error!, style: const TextStyle(color: AvColors.danger, fontSize: 13)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: busy ? null : () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: busy
+                  ? null
+                  : () async {
+                      if (password.text.isEmpty) return;
+                      setState(() => busy = true);
+                      try {
+                        await session.deleteAccount(password.text);
+                        if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                      } catch (e) {
+                        setState(() {
+                          busy = false;
+                          error = '$e';
+                        });
+                      }
+                    },
+              style: FilledButton.styleFrom(backgroundColor: AvColors.danger),
+              child: busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Eliminar'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    password.dispose();
   }
 }
 

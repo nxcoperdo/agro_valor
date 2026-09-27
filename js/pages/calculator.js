@@ -1,6 +1,4 @@
 import { api } from '../services/api.js';
-import { isPro } from '../services/auth.js';
-import { paywall } from '../ui/shell.js';
 import { formatCop } from '../utils/currency.js';
 
 function breakdownRow(step) {
@@ -40,15 +38,64 @@ function comparisonRow(row) {
   `;
 }
 
-export async function renderCalculator(container) {
-  if (!isPro()) {
-    container.innerHTML = paywall(
-      'Calculadora de precio neto',
-      'Calcula cuánto te queda realmente por tu café según tu factor de rendimiento, tu humedad y el transporte, y descubre en qué cooperativa te conviene venderlo.'
-    );
-    return;
-  }
+function fullComparisonPanel(data, r) {
+  const best = data.byCooperative[0];
+  const worst = data.byCooperative[data.byCooperative.length - 1];
+  const spread = best && worst ? best.total - worst.total : 0;
 
+  return `
+    ${
+      spread > 0
+        ? `<p class="highlight-note">Entre la mejor y la peor opción hay una diferencia de
+           <strong>${formatCop(spread)}</strong> por estas ${r.inputs.cargas} carga(s).</p>`
+        : ''
+    }
+    <div class="table-scroll">
+      <table class="coop-table">
+        <thead>
+          <tr><th>#</th><th>Cooperativa</th><th>Neto por carga</th><th>Total</th><th>Dejas de ganar</th></tr>
+        </thead>
+        <tbody>${data.byCooperative.map(comparisonRow).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+/** Sin Pro se muestra cuánto hay en juego, pero no en cuál cooperativa: eso es lo que se paga. */
+function lockedComparisonPanel(data) {
+  return `
+    <div class="locked-teaser">
+      <div class="locked-teaser-blur">
+        <div class="table-scroll">
+          <table class="coop-table">
+            <thead>
+              <tr><th>#</th><th>Cooperativa</th><th>Neto por carga</th><th>Total</th><th>Dejas de ganar</th></tr>
+            </thead>
+            <tbody>
+              ${Array.from({ length: Math.min(data.cooperativesCount || 3, 4) })
+                .map(
+                  (_, i) => `
+                <tr><td>${i + 1}</td><td>Cooperativa •••</td><td>$•,•••,•••</td><td>$•,•••,•••</td><td>−$•••,•••</td></tr>
+              `
+                )
+                .join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="locked-teaser-cta">
+        <span class="badge badge-pro">AgroValor Pro</span>
+        <p class="highlight-note">
+          Hay una diferencia de <strong>${formatCop(data.maxDifferenceCop || 0)}</strong> entre la mejor y la
+          peor de las ${data.cooperativesCount} cooperativas para tu café.
+        </p>
+        <a class="btn-primary" href="#/cuenta">Ver cuál me conviene</a>
+      </div>
+    </div>
+  `;
+}
+
+export async function renderCalculator(container) {
   container.innerHTML = `
     <div class="panel">
       <div class="panel-header">
@@ -105,9 +152,6 @@ export async function renderCalculator(container) {
       });
 
       const r = data.againstReference;
-      const best = data.byCooperative[0];
-      const worst = data.byCooperative[data.byCooperative.length - 1];
-      const spread = best && worst ? best.total - worst.total : 0;
 
       resultEl.innerHTML = `
         <div class="panel av-fade-in">
@@ -126,23 +170,14 @@ export async function renderCalculator(container) {
           <p class="disclaimer">${r.disclaimer}</p>
         </div>
 
-        <div class="panel av-fade-in">
-          <div class="panel-header"><h2>¿A quién le vendo?</h2></div>
-          ${
-            spread > 0
-              ? `<p class="highlight-note">Entre la mejor y la peor opción hay una diferencia de
-                 <strong>${formatCop(spread)}</strong> por estas ${r.inputs.cargas} carga(s).</p>`
-              : ''
-          }
-          <div class="table-scroll">
-            <table class="coop-table">
-              <thead>
-                <tr><th>#</th><th>Cooperativa</th><th>Neto por carga</th><th>Total</th><th>Dejas de ganar</th></tr>
-              </thead>
-              <tbody>${data.byCooperative.map(comparisonRow).join('')}</tbody>
-            </table>
-          </div>
-        </div>
+        ${
+          data.locked || data.byCooperative
+            ? `<div class="panel av-fade-in">
+                <div class="panel-header"><h2>¿A quién le vendo?</h2></div>
+                ${data.locked ? lockedComparisonPanel(data) : fullComparisonPanel(data, r)}
+              </div>`
+            : ''
+        }
       `;
     } catch (err) {
       resultEl.innerHTML = `<div class="panel"><p class="panel-error">${err.message}</p></div>`;

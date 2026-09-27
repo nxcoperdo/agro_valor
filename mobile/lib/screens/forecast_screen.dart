@@ -13,26 +13,9 @@ class ForecastScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: session,
-      builder: (context, _) {
-        if (!session.isPro) {
-          return const ProUpsell(
-            title: 'Proyección de precio',
-            body: 'Ve hacia dónde podría moverse el precio: día a día, semana a semana y mes a mes, en pesos por carga.',
-            icon: Icons.calendar_month_rounded,
-          );
-        }
-        return AsyncView<Json>(
-          load: session.api.forecast,
-          onUpgradeRequired: (_) => const ProUpsell(
-            title: 'Proyección de precio',
-            body: 'Tu plan Pro venció. Renuévalo para seguir viendo la proyección.',
-            icon: Icons.calendar_month_rounded,
-          ),
-          builder: (context, data) => _ForecastTabs(data: data),
-        );
-      },
+    return AsyncView<Json>(
+      load: session.api.forecast,
+      builder: (context, data) => _ForecastTabs(data: data),
     );
   }
 }
@@ -42,8 +25,13 @@ class _ForecastTabs extends StatelessWidget {
 
   final Json data;
 
+  static const _lockedKey = {'daily': 'dailyCount', 'weekly': 'weeklyCount', 'monthly': 'monthlyCount'};
+  static const _lockedLabel = {'weekly': 'semanal', 'monthly': 'mensual'};
+
   @override
   Widget build(BuildContext context) {
+    final locked = data['locked'] as Json?;
+
     return DefaultTabController(
       length: 3,
       child: Column(
@@ -61,6 +49,8 @@ class _ForecastTabs extends StatelessWidget {
                   _ForecastList(
                     items: (data[key] as List<dynamic>? ?? const []).cast<Json>(),
                     note: data['note'] as String?,
+                    lockedCount: (locked?[_lockedKey[key]] as num?)?.toInt() ?? 0,
+                    lockedLabel: _lockedLabel[key],
                   ),
               ],
             ),
@@ -72,13 +62,44 @@ class _ForecastTabs extends StatelessWidget {
 }
 
 class _ForecastList extends StatelessWidget {
-  const _ForecastList({required this.items, this.note});
+  const _ForecastList({required this.items, this.note, this.lockedCount = 0, this.lockedLabel});
 
   final List<Json> items;
   final String? note;
+  final int lockedCount;
+  final String? lockedLabel;
 
   @override
   Widget build(BuildContext context) {
+    // Semana y mes completos son Pro: en vez de la lista real se ve un anticipo borroso.
+    if (lockedCount > 0 && lockedLabel != null) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: LockedTeaser(
+          height: 320,
+          preview: Column(
+            children: [
+              for (var i = 0; i < 4; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: SectionCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    child: Row(
+                      children: [
+                        const Expanded(child: Text('••• •••', style: TextStyle(fontWeight: FontWeight.w600))),
+                        Text('\$••,•••,•••', style: mono(size: 15, weight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          title: 'Proyección $lockedLabel',
+          body: 'Activa Pro para ver los $lockedCount horizonte(s) completos.',
+        ),
+      );
+    }
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -119,6 +140,14 @@ class _ForecastList extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+        if (lockedLabel == null && lockedCount > 0)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Este es solo el pronóstico de mañana. Activa Pro para ver los próximos $lockedCount días.',
+              style: const TextStyle(color: AvColors.accent, fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         if (note != null) ...[const SizedBox(height: 8), Muted(note!, size: 12)],

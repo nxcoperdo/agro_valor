@@ -2,25 +2,59 @@ import { api } from '../services/api.js';
 import { formatCop } from '../utils/currency.js';
 import { canInstall, promptInstall, onInstallAvailabilityChange, isStandalone } from '../services/pwa.js';
 
-/** El navegador solo deja instalar cuando él lo decide, así que el botón aparece y desaparece solo. */
-function setupInstallButton(root) {
-  const btn = root.querySelector('#install-btn');
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=co.agrovalor.app';
+
+/**
+ * En Android se manda a la ficha de Google Play (la app nativa es mejor que la PWA:
+ * push real, más fluida). En iPhone no existe instalador: Safari solo deja agregar a
+ * la pantalla de inicio a mano, así que se explica el paso a paso. En todo lo demás
+ * (escritorio) se deja el instalador de PWA de siempre, que ahí sí tiene sentido.
+ */
+function setupInstallButtons(root) {
+  if (isStandalone()) return;
+
+  const playBtn = root.querySelector('#play-store-btn');
+  const iosBtn = root.querySelector('#ios-install-btn');
+  const iosSteps = root.querySelector('#ios-install-steps');
+  const pwaBtn = root.querySelector('#install-btn');
   const note = root.querySelector('#install-note');
-  if (!btn) return;
+
+  const ua = navigator.userAgent;
+  const isAndroid = /Android/i.test(ua);
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+
+  if (isAndroid) {
+    playBtn.hidden = false;
+    note.hidden = false;
+    note.textContent = 'Se abre Google Play. La app tiene alertas push y va más fluida que la web.';
+    return;
+  }
+
+  if (isIOS) {
+    iosBtn.hidden = false;
+    iosBtn.addEventListener('click', () => {
+      const opening = iosSteps.hidden;
+      iosSteps.hidden = !opening;
+      iosBtn.setAttribute('aria-expanded', String(opening));
+    });
+    return;
+  }
+
+  if (!pwaBtn) return;
 
   const sync = (available) => {
-    const show = available && !isStandalone();
-    btn.hidden = !show;
-    note.hidden = !show;
+    pwaBtn.hidden = !available;
+    note.hidden = !available;
+    note.textContent = 'Instálala en tu equipo y ábrela aunque estés sin señal.';
   };
 
   sync(canInstall());
   const unsubscribe = onInstallAvailabilityChange(sync);
 
-  btn.addEventListener('click', async () => {
-    btn.disabled = true;
+  pwaBtn.addEventListener('click', async () => {
+    pwaBtn.disabled = true;
     await promptInstall();
-    btn.disabled = false;
+    pwaBtn.disabled = false;
   });
 
   // Al salir de la landing el nodo se destruye; se suelta el listener para no acumularlos.
@@ -69,11 +103,28 @@ export async function renderLanding(root) {
         <p class="hero-meta" id="hero-meta"></p>
         <div class="hero-cta">
           <a class="btn-primary btn-lg" href="#/registro">Empieza gratis</a>
+          <a class="btn-ghost btn-lg" id="play-store-btn" href="${PLAY_STORE_URL}" hidden>Descargar en Google Play</a>
+          <button
+            type="button"
+            class="btn-ghost btn-lg"
+            id="ios-install-btn"
+            aria-expanded="false"
+            aria-controls="ios-install-steps"
+            hidden
+          >
+            Instalar en iPhone
+          </button>
           <button type="button" class="btn-ghost btn-lg" id="install-btn" hidden>Instalar la app</button>
         </div>
-        <p class="hero-install-note" id="install-note" hidden>
-          Instálala en tu celular y ábrela aunque estés sin señal.
-        </p>
+        <p class="hero-install-note" id="install-note" hidden></p>
+        <div class="ios-install-steps" id="ios-install-steps" hidden>
+          <ol>
+            <li>Abre esta página en <strong>Safari</strong> (los pasos no funcionan desde otro navegador).</li>
+            <li>Toca el ícono de <strong>Compartir</strong> (el cuadrado con la flecha hacia arriba), en la barra inferior.</li>
+            <li>Baja en la lista y toca <strong>«Agregar a pantalla de inicio»</strong>.</li>
+            <li>Toca <strong>«Agregar»</strong> arriba a la derecha. Listo, queda como una app más.</li>
+          </ol>
+        </div>
       </section>
 
       <section class="panel landing-panel">
@@ -123,7 +174,7 @@ export async function renderLanding(root) {
   const tbody = root.querySelector('#landing-coops');
   const disclaimerEl = root.querySelector('#landing-disclaimer');
 
-  setupInstallButton(root);
+  setupInstallButtons(root);
 
   try {
     const market = await api.market();

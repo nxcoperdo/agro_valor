@@ -78,13 +78,8 @@ export function renderLogin(root) {
                 <input type="checkbox" name="remember" checked />
                 <span>Recordarme</span>
               </label>
-              <button class="lg-link" type="button" id="forgot">¿Olvidaste tu contraseña?</button>
+              <a class="lg-link" href="#/recuperar">¿Olvidaste tu contraseña?</a>
             </div>
-
-            <p class="lg-note" id="forgot-note" hidden>
-              Por ahora la contraseña se restablece a mano: escríbele al equipo de AgroValor con tu usuario y te
-              ayudamos.
-            </p>
 
             <button class="lg-submit" type="submit">${SUBMIT_LABEL}</button>
 
@@ -107,11 +102,6 @@ export function renderLogin(root) {
     form.password.type = show ? 'text' : 'password';
     toggle.innerHTML = icon(show ? 'eyeOff' : 'eye');
     toggle.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
-  });
-
-  root.querySelector('#forgot').addEventListener('click', () => {
-    const note = root.querySelector('#forgot-note');
-    note.hidden = !note.hidden;
   });
 
   form.addEventListener('submit', async (e) => {

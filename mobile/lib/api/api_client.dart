@@ -62,6 +62,14 @@ class ApiClient {
       await _request('POST', '/auth/login', {'username': username, 'password': password}) as Json;
   Future<Json> signup(Json payload) async => await _request('POST', '/auth/signup', payload) as Json;
   Future<Json> me() async => await _request('GET', '/auth/me') as Json;
+  Future<Json> requestPasswordReset(String username) async =>
+      await _request('POST', '/auth/password-reset/request', {'username': username}) as Json;
+  Future<Json> confirmPasswordReset(String username, String code, String newPassword) async =>
+      await _request('POST', '/auth/password-reset/confirm', {
+        'username': username,
+        'code': code,
+        'newPassword': newPassword,
+      }) as Json;
 
   // Mercado
   Future<Json> currentPrice() async => await _request('GET', '/prices/current') as Json;
@@ -69,6 +77,7 @@ class ApiClient {
       await _request('GET', '/prices/history?days=$days') as List<dynamic>;
   Future<Json> cooperatives() async => await _request('GET', '/cooperatives') as Json;
   Future<Json> plans() async => await _request('GET', '/public/plans') as Json;
+  Future<Json> privacyPolicy() async => await _request('GET', '/public/legal/privacy') as Json;
 
   // Cuenta
   Future<Json> profile() async => await _request('GET', '/account/profile') as Json;
@@ -76,6 +85,7 @@ class ApiClient {
   Future<void> registerDevice(String token, String platform) =>
       _request('POST', '/account/devices', {'token': token, 'platform': platform});
   Future<void> unregisterDevice(String token) => _request('DELETE', '/account/devices', {'token': token});
+  Future<void> deleteAccount(String password) => _request('DELETE', '/account', {'password': password});
 
   // Reportes de precio (gratis: alimentan el dato de todos)
   Future<Json> reportPrice(Json payload) async => await _request('POST', '/reports', payload) as Json;

@@ -14,3 +14,4 @@ data/*.sqlite-wal
 data/*.sqlite-shm
 # Clave privada de la cuenta de servicio de Firebase: nunca al repo
 firebase-service-account*.json
+mobile/android/app/google-services.json

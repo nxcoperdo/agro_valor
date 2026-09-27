@@ -49,4 +49,39 @@ function countToday(userId) {
     .get(userId).n;
 }
 
-module.exports = { create, aggregateRecent, findByUser, countToday };
+/** Para el panel admin: todos los reportes recientes, de cualquier usuario, con nombre legible. */
+function findRecent(limit = 100) {
+  return db
+    .prepare(
+      `SELECT r.*, c.name AS cooperative_name, u.username
+       FROM price_reports r
+       LEFT JOIN cooperatives c ON c.id = r.cooperative_id
+       LEFT JOIN users u ON u.id = r.user_id
+       ORDER BY r.created_at DESC
+       LIMIT ?`
+    )
+    .all(limit);
+}
+
+function deleteById(id) {
+  db.prepare('DELETE FROM price_reports WHERE id = ?').run(id);
+}
+
+function countAllToday() {
+  return db.prepare("SELECT COUNT(*) AS n FROM price_reports WHERE date(created_at) = date('now')").get().n;
+}
+
+function countAllRecent(days = 7) {
+  return db.prepare(`SELECT COUNT(*) AS n FROM price_reports WHERE reported_for_date >= date('now', ?)`).get(`-${days} days`).n;
+}
+
+module.exports = {
+  create,
+  aggregateRecent,
+  findByUser,
+  countToday,
+  findRecent,
+  deleteById,
+  countAllToday,
+  countAllRecent,
+};

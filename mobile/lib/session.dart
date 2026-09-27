@@ -62,6 +62,14 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Borra la cuenta en el server (que ya se lleva el dispositivo push en cascada,
+  /// así que a diferencia de logout() no hace falta avisarle aparte) y limpia la sesión local.
+  Future<void> deleteAccount(String password) async {
+    await api.deleteAccount(password);
+    await _clear();
+    notifyListeners();
+  }
+
   Future<void> _start(Future<Json> call) async {
     final res = await call;
     final token = res['token'] as String?;
