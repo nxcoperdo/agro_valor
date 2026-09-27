@@ -34,7 +34,7 @@ function findActiveByTypes(types) {
   const placeholders = types.map(() => '?').join(',');
   return db
     .prepare(
-      `SELECT a.*, u.phone, u.username, u.plan, u.plan_expires_at, u.notify_whatsapp, u.notify_push,
+      `SELECT a.*, u.phone, u.username, u.role, u.plan, u.plan_expires_at, u.notify_whatsapp, u.notify_push,
               (SELECT COUNT(*) FROM push_devices d WHERE d.user_id = u.id) AS device_count
        FROM alerts a
        JOIN users u ON u.id = a.user_id

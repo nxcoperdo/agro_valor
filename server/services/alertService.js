@@ -203,7 +203,7 @@ async function deliver(alert, built) {
 
 function isEligible(alert) {
   return subscriptionService.isPro({
-    role: 'user',
+    role: alert.role,
     plan: alert.plan,
     plan_expires_at: alert.plan_expires_at,
   });
