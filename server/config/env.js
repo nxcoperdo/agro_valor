@@ -54,6 +54,9 @@ const env = {
     ? path.resolve(process.cwd(), process.env.FIREBASE_SERVICE_ACCOUNT_PATH)
     : '',
 
+  // Dominio público canónico: lo usan las páginas de SEO, el sitemap y las etiquetas canonical/og.
+  publicBaseUrl: (process.env.PUBLIC_BASE_URL || 'https://agrovalor.tech').replace(/\/$/, ''),
+
   // Cobro de Pro vía Mercado Pago Suscripciones (Preapproval), tanto en la web (redirección)
   // como en la app (WebView embebido con la misma URL de checkout).
   mpAccessToken: process.env.MP_ACCESS_TOKEN || '',

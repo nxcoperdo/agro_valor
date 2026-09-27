@@ -16,6 +16,8 @@ const reportsRoutes = require('./routes/reports.routes');
 const salesRoutes = require('./routes/sales.routes');
 const adminRoutes = require('./routes/admin.routes');
 const internalRoutes = require('./routes/internal.routes');
+const seoRoutes = require('./routes/seo.routes');
+const env = require('./config/env');
 
 const authMiddleware = require('./middleware/authMiddleware');
 const { loadUser, requirePro, requireAdmin } = require('./middleware/requirePlan');
@@ -28,6 +30,18 @@ function createApp() {
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(express.json());
   app.use(cookieParser());
+
+  // www.agrovalor.tech y agrovalor.tech servirían lo mismo: para Google eso es contenido
+  // duplicado. Se deja una sola versión canónica (sin www).
+  app.use((req, res, next) => {
+    if ((req.method === 'GET' || req.method === 'HEAD') && req.hostname && req.hostname.startsWith('www.')) {
+      return res.redirect(301, `${env.publicBaseUrl}${req.originalUrl}`);
+    }
+    next();
+  });
+
+  // Páginas públicas renderizadas en el servidor (precio del día, sitemap) para Google.
+  app.use(seoRoutes);
 
   // Abierto: la vitrina pública del producto.
   app.use('/api/auth', authRoutes);

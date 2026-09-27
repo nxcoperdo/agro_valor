@@ -166,6 +166,7 @@ export async function renderLanding(root) {
           garantía de precio de compra.
         </p>
         <p class="landing-legal-links">
+          <a href="/precio-cafe-hoy">Precio del café hoy</a> ·
           <a href="#/privacidad">Política de privacidad</a> ·
           <a href="#/terminos">Términos de uso</a> ·
           <a href="#/cookies">Política de cookies</a>

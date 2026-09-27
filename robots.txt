@@ -1,5 +1,8 @@
 # www.robotstxt.org/
 
-# Allow crawling of all content
 User-agent: *
-Disallow:
+Allow: /
+# La API no tiene contenido para indexar, solo datos para la app.
+Disallow: /api/
+
+Sitemap: https://agrovalor.tech/sitemap.xml
