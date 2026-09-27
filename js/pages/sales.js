@@ -62,7 +62,7 @@ export async function renderSales(container) {
             </div>
             <div class="field">
               <label for="priceCopCarga">Precio por carga (COP)</label>
-              <input type="number" id="priceCopCarga" name="priceCopCarga" min="1" step="1000" required inputmode="numeric" />
+              <input type="number" id="priceCopCarga" name="priceCopCarga" min="1" step="1" required inputmode="numeric" />
             </div>
             <div class="field">
               <label for="factor">Factor</label>

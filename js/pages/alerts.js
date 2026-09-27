@@ -79,7 +79,7 @@ export async function renderAlerts(container) {
             </div>
             <div class="field" id="threshold-field">
               <label for="thresholdCopCarga">Precio por carga (COP)</label>
-              <input type="number" id="thresholdCopCarga" name="thresholdCopCarga" placeholder="2400000" min="10000" step="10000" inputmode="numeric" />
+              <input type="number" id="thresholdCopCarga" name="thresholdCopCarga" placeholder="2400000" min="10000" step="1" inputmode="numeric" />
             </div>
             <button type="submit" class="btn-primary">Crear alerta</button>
           </form>

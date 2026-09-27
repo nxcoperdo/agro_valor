@@ -125,7 +125,7 @@ export async function renderCalculator(container) {
         </div>
         <div class="field">
           <label for="transportCostCopCarga">Transporte por carga (COP)</label>
-          <input type="number" id="transportCostCopCarga" name="transportCostCopCarga" placeholder="0" min="0" step="1000" inputmode="numeric" />
+          <input type="number" id="transportCostCopCarga" name="transportCostCopCarga" placeholder="0" min="0" step="1" inputmode="numeric" />
         </div>
         <button type="submit" class="btn-primary">Calcular</button>
       </form>

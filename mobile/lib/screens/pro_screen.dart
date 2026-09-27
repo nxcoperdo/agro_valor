@@ -24,6 +24,8 @@ class ProScreen extends StatefulWidget {
 }
 
 class _ProScreenState extends State<ProScreen> with WidgetsBindingObserver {
+  /// AsyncView guarda su Future; cambiar la key lo obliga a volver a pedir el plan.
+  int _reloadKey = 0;
   @override
   void initState() {
     super.initState();
@@ -50,6 +52,42 @@ class _ProScreenState extends State<ProScreen> with WidgetsBindingObserver {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  /// Cancela la renovación en Mercado Pago. Pro sigue hasta el fin del mes ya pagado.
+  Future<void> _confirmCancel(String? expiresAt) async {
+    final until = expiresAt != null ? 'el ${formatDate(expiresAt)}' : 'el final del mes ya pagado';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancelar suscripción'),
+        content: Text(
+          'No se te volverá a cobrar. Sigues con Pro hasta $until; después dejarás de recibir las alertas por WhatsApp.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('No, seguir con Pro')),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AvColors.danger),
+            child: const Text('Sí, cancelar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await widget.session.api.cancelSubscription();
+      await widget.session.refreshUser();
+      if (!mounted) return;
+      setState(() => _reloadKey++);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Suscripción cancelada. No se te volverá a cobrar.')),
+      );
+    } on ApiError catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,6 +95,7 @@ class _ProScreenState extends State<ProScreen> with WidgetsBindingObserver {
       body: ListenableBuilder(
         listenable: widget.session,
         builder: (context, _) => AsyncView<Json>(
+          key: ValueKey(_reloadKey),
           load: widget.session.api.plan,
           builder: (context, data) {
             final pro = (data['plans'] as Json)['pro'] as Json;
@@ -80,13 +119,26 @@ class _ProScreenState extends State<ProScreen> with WidgetsBindingObserver {
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, height: 1.25),
                       ),
                       const SizedBox(height: 16),
-                      if (isPro)
+                      if (isPro) ...[
                         Text(
                           expiresAt != null ? 'Ya eres Pro · vigente hasta el ${formatDate(expiresAt)}' : 'Ya eres Pro',
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: AvColors.positive, fontWeight: FontWeight.w600),
-                        )
-                      else ...[
+                        ),
+                        if (data['mpSubscriptionActive'] == true) ...[
+                          const SizedBox(height: 14),
+                          const Muted('Se renueva sola cada mes con Mercado Pago.', size: 12),
+                          TextButton(
+                            onPressed: () => _confirmCancel(expiresAt),
+                            style: TextButton.styleFrom(foregroundColor: AvColors.danger),
+                            child: const Text('Cancelar suscripción'),
+                          ),
+                        ],
+                        if (data['mpSubscriptionCancelled'] == true) ...[
+                          const SizedBox(height: 8),
+                          const Muted('Cancelaste la renovación: no se te volverá a cobrar.', size: 12),
+                        ],
+                      ] else ...[
                         const Text(
                           '\$12.000',
                           style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, fontFeatures: tabular),

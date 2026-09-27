@@ -87,22 +87,27 @@ function buildThresholdMessage(alert, snapshot) {
  * Plantilla "agrovalor_resumen_mercado": resumen diario/semanal con pronóstico.
  * 5 variables fijas — mañana/semana/mes siempre van, con NO_DATA si falta el dato.
  */
-function buildDigestMessage(snapshot) {
+async function buildDigestMessage(snapshot) {
   const referenceLine = snapshot.isStale
     ? `${formatCop(snapshot.referencePrice)} (último dato disponible; la fuente no se ha actualizado hoy)`
     : formatCop(snapshot.referencePrice);
 
-  const forecasts = forecastService.getForecast();
+  const forecasts = await forecastService.getForecast();
   // El digest es un mensaje corto: solo el primer paso de cada granularidad
   // (mañana, la semana que viene, el mes que viene), no las 28 filas completas.
+  // Se muestra el rango (no solo el precio central) para no sugerir una certeza que no existe.
   const highlightLine = (granularity) => {
     const row = forecasts.find((f) => f.granularity === granularity && f.step === 1);
     if (!row || !snapshot.currentCents) return NO_DATA;
 
+    const impliedFor = (centsPerLb) => snapshot.referencePrice * (centsPerLb / snapshot.currentCents);
     const changePct = ((row.predictedPrice - snapshot.currentCents) / snapshot.currentCents) * 100;
-    const implied = snapshot.referencePrice * (1 + changePct / 100);
+    const implied = impliedFor(row.predictedPrice);
     const arrow = changePct >= 0 ? '▲' : '▼';
-    return `${arrow} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(1)}% → ${formatCop(implied)} por carga`;
+    const center = `${arrow} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(1)}% → ${formatCop(implied)} por carga`;
+
+    if (row.lowPrice == null || row.highPrice == null) return center;
+    return `${center} (rango probable: ${formatCop(impliedFor(row.lowPrice))} a ${formatCop(impliedFor(row.highPrice))})`;
   };
 
   const params = [referenceLine, bestPriceLine(snapshot.best), highlightLine('day'), highlightLine('week'), highlightLine('month')];
@@ -253,7 +258,7 @@ async function sendDigests(type) {
   if (!snapshot) return { evaluated: 0, sent: 0 };
 
   const alerts = alertRepository.findActiveByTypes([type]);
-  const built = buildDigestMessage(snapshot);
+  const built = await buildDigestMessage(snapshot);
   let sent = 0;
 
   for (const alert of alerts) {

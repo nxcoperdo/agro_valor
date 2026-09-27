@@ -898,6 +898,20 @@ button,
   margin-top: var(--av-space-1);
 }
 
+/* Rango probable (mínimo–máximo) bajo el precio central: letra chica a propósito, no
+   compite con el número principal pero deja ver que no es una cifra exacta. */
+.cal-cell-range-price {
+  font-size: 0.65rem;
+  color: var(--av-fg-muted);
+  margin-top: 2px;
+}
+
+.cal-range-legend {
+  font-size: 0.72rem;
+  color: var(--av-fg-muted);
+  margin-top: var(--av-space-2);
+}
+
 .cal-change {
   display: inline-block;
   font-size: 0.7rem;
@@ -1756,6 +1770,25 @@ body.nav-locked {
   border-radius: var(--av-radius-md);
   border: 1px solid var(--av-border);
   padding: var(--av-space-3);
+}
+
+.cancel-sub {
+  margin-top: var(--av-space-4);
+}
+
+.cancel-sub-confirm {
+  margin-top: var(--av-space-3);
+  border-radius: var(--av-radius-md);
+  border: 1px solid var(--av-border);
+  padding: var(--av-space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--av-space-2);
+}
+
+.cancel-sub-confirm p {
+  flex-basis: 100%;
+  margin: 0;
 }
 
 /* Paywall y planes -------------------------------------------------------- */

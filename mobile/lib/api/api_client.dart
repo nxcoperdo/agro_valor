@@ -91,6 +91,7 @@ class ApiClient {
   Future<void> registerDevice(String token, String platform) =>
       _request('POST', '/account/devices', {'token': token, 'platform': platform});
   Future<void> unregisterDevice(String token) => _request('DELETE', '/account/devices', {'token': token});
+  Future<void> cancelSubscription() => _request('POST', '/account/mercadopago/cancel');
   Future<void> deleteAccount(String password) => _request('DELETE', '/account', {'password': password});
 
   // Reportes de precio (gratis: alimentan el dato de todos)

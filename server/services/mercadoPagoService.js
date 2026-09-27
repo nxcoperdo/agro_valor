@@ -67,6 +67,12 @@ async function getPreapproval(id) {
   return { id: data.id, status: data.status, payerEmail: data.payer_email };
 }
 
+/** Cancela la suscripción: Mercado Pago deja de cobrar desde el próximo mes. No se puede reactivar. */
+async function cancelPreapproval(id) {
+  const data = await request('PUT', `/preapproval/${id}`, { status: 'cancelled' });
+  return { id: data.id, status: data.status };
+}
+
 /** Cobros ya hechos de una suscripción — el *poll* de reconciliación mientras no haya HTTPS para el webhook. */
 async function searchAuthorizedPayments(preapprovalId) {
   const data = await request('GET', `/authorized_payments/search?preapproval_id=${preapprovalId}`);
@@ -94,4 +100,4 @@ function verifyWebhookSignature(xSignatureHeader, xRequestIdHeader, dataId) {
   return hash === v1;
 }
 
-module.exports = { isConfigured, createPreapproval, getPreapproval, searchAuthorizedPayments, verifyWebhookSignature };
+module.exports = { isConfigured, createPreapproval, getPreapproval, cancelPreapproval, searchAuthorizedPayments, verifyWebhookSignature };

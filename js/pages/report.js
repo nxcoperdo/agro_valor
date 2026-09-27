@@ -29,7 +29,7 @@ export async function renderReport(container) {
             </div>
             <div class="field">
               <label for="priceCopCarga">Precio por carga (COP)</label>
-              <input type="number" id="priceCopCarga" name="priceCopCarga" min="1" step="1000" required inputmode="numeric" placeholder="2350000" />
+              <input type="number" id="priceCopCarga" name="priceCopCarga" min="1" step="1" required inputmode="numeric" placeholder="2350000" />
             </div>
             <div class="field">
               <label for="municipality">Municipio</label>

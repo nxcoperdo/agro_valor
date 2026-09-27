@@ -34,7 +34,7 @@ async function runOnStartup() {
   }
 
   try {
-    forecastService.recomputeAndCache();
+    await forecastService.recomputeAndCache();
   } catch (err) {
     logger.error('Error recalculando proyección al arrancar:', err);
   }
@@ -65,11 +65,7 @@ function start() {
   cron.schedule(
     env.forecastRefreshCron,
     () => {
-      try {
-        forecastService.recomputeAndCache();
-      } catch (err) {
-        logger.error('Cron proyección:', err);
-      }
+      forecastService.recomputeAndCache().catch((err) => logger.error('Cron proyección:', err));
     },
     CRON_OPTIONS
   );

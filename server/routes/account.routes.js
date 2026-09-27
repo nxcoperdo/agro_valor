@@ -24,6 +24,8 @@ function serialize(user) {
     notifyWhatsapp: user.notify_whatsapp !== 0,
     notifyPush: user.notify_push !== 0,
     mpSubscriptionPending: user.mp_preapproval_status === 'pending',
+    mpSubscriptionActive: user.mp_preapproval_status === 'authorized',
+    mpSubscriptionCancelled: user.mp_preapproval_status === 'cancelled',
     ...subscriptionService.describe(user),
   };
 }
@@ -104,6 +106,8 @@ router.delete('/devices', (req, res) => {
 router.get('/plan', (req, res) => {
   res.json({
     ...subscriptionService.describe(req.fullUser),
+    mpSubscriptionActive: req.fullUser.mp_preapproval_status === 'authorized',
+    mpSubscriptionCancelled: req.fullUser.mp_preapproval_status === 'cancelled',
     plans: subscriptionService.PLANS,
   });
 });
@@ -125,6 +129,16 @@ router.post('/mercadopago/subscribe', async (req, res, next) => {
 router.post('/mercadopago/confirm', async (req, res, next) => {
   try {
     const user = await mercadoPagoBillingService.confirmSubscription(req.user.id);
+    res.json(serialize(user));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Cancela la renovación automática. Pro sigue hasta el fin del periodo ya pagado. */
+router.post('/mercadopago/cancel', async (req, res, next) => {
+  try {
+    const user = await mercadoPagoBillingService.cancelSubscription(req.user.id);
     res.json(serialize(user));
   } catch (err) {
     next(err);

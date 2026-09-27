@@ -32,6 +32,12 @@ function changeBadge(changePct) {
   }${changePct.toFixed(1)}%</span>`;
 }
 
+/** Rango probable (mínimo–máximo), no solo el precio central: entre más lejos la fecha, más ancho. */
+function rangeLine(f, formatter) {
+  if (f.lowImpliedCopPerCarga == null || f.highImpliedCopPerCarga == null) return '';
+  return `<div class="cal-cell-range-price">${formatter(f.lowImpliedCopPerCarga)} – ${formatter(f.highImpliedCopPerCarga)}</div>`;
+}
+
 function renderDayView(daily) {
   if (!daily.length) return '<p class="empty-state">Sin datos suficientes todavía.</p>';
 
@@ -56,6 +62,7 @@ function renderDayView(daily) {
           <div class="cal-day-price tabular-nums">${
             f.impliedInternalCopPerCarga != null ? formatCopShort(f.impliedInternalCopPerCarga) : '—'
           }</div>
+          ${rangeLine(f, formatCopShort)}
         </div>
       `;
     })
@@ -66,6 +73,7 @@ function renderDayView(daily) {
       ${WEEKDAY_HEADERS.map((h) => `<div class="cal-weekday-header">${h}</div>`).join('')}
       ${leadingBlanks}${cells}
     </div>
+    <p class="cal-range-legend">El rango de abajo es lo probable, no una promesa: entre más lejos la fecha, más ancho.</p>
   `;
 }
 
@@ -85,12 +93,14 @@ function renderWeekView(weekly) {
           <div class="cal-cell-price tabular-nums">${
             f.impliedInternalCopPerCarga != null ? formatCop(f.impliedInternalCopPerCarga) : '—'
           }</div>
+          ${rangeLine(f, formatCop)}
         </div>
       `;
     })
     .join('');
 
-  return `<div class="cal-grid cal-grid-week">${cells}</div>`;
+  return `<div class="cal-grid cal-grid-week">${cells}</div>
+    <p class="cal-range-legend">El rango de abajo es lo probable, no una promesa: entre más lejos la fecha, más ancho.</p>`;
 }
 
 function renderMonthView(monthly) {
@@ -106,12 +116,14 @@ function renderMonthView(monthly) {
           <div class="cal-cell-price tabular-nums">${
             f.impliedInternalCopPerCarga != null ? formatCop(f.impliedInternalCopPerCarga) : '—'
           }</div>
+          ${rangeLine(f, formatCop)}
         </div>
       `;
     })
     .join('');
 
-  return `<div class="cal-grid cal-grid-month">${cells}</div>`;
+  return `<div class="cal-grid cal-grid-month">${cells}</div>
+    <p class="cal-range-legend">El rango de abajo es lo probable, no una promesa: entre más lejos la fecha, más ancho.</p>`;
 }
 
 const RENDERERS = { daily: renderDayView, weekly: renderWeekView, monthly: renderMonthView };

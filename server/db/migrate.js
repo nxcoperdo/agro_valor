@@ -29,6 +29,10 @@ const ADDED_COLUMNS = [
   // Suscripción de Mercado Pago (web y app).
   ['users', 'mp_preapproval_id', 'TEXT'],
   ['users', 'mp_preapproval_status', 'TEXT'],
+  // Rango probable de la proyección (curva de futuros + volatilidad histórica), además del
+  // precio central que ya existía.
+  ['forecast_cache', 'low_price', 'REAL'],
+  ['forecast_cache', 'high_price', 'REAL'],
 ];
 
 function columnExists(table, column) {

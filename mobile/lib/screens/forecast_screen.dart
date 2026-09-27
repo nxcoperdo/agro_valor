@@ -142,6 +142,13 @@ class _ForecastList extends StatelessWidget {
                             fontFeatures: tabular,
                           ),
                         ),
+                      // Rango probable (mínimo–máximo), no solo el precio central: entre
+                      // más lejos la fecha, más ancho — ver la nota al final de la lista.
+                      if (f['lowImpliedCopPerCarga'] != null && f['highImpliedCopPerCarga'] != null)
+                        Text(
+                          '${formatCop(f['lowImpliedCopPerCarga'] as num)} – ${formatCop(f['highImpliedCopPerCarga'] as num)}',
+                          style: const TextStyle(fontSize: 11, color: AvColors.fgFaint, fontFeatures: tabular),
+                        ),
                     ],
                   ),
                 ],
