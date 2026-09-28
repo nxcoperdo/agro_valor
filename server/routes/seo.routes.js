@@ -2,6 +2,7 @@ const express = require('express');
 const env = require('../config/env');
 const marketSummaryService = require('../services/marketSummaryService');
 const cooperativeService = require('../services/cooperativeService');
+const fncReferenceRepository = require('../repositories/fncReferenceRepository');
 
 /**
  * Páginas públicas renderizadas en el servidor, pensadas para Google.
@@ -38,6 +39,38 @@ function longDate(iso) {
   const date = iso ? new Date(iso) : new Date();
   return new Intl.DateTimeFormat('es-CO', { dateStyle: 'full', timeZone: env.timezone }).format(date);
 }
+
+const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+/** "28 sep": corto para que la fecha quepa en el título que muestra Google (~60 caracteres). */
+function shortDate(iso) {
+  const date = iso ? new Date(iso) : new Date();
+  const parts = new Intl.DateTimeFormat('en-CA', { day: 'numeric', month: 'numeric', timeZone: env.timezone })
+    .formatToParts(date)
+    .reduce((acc, p) => ({ ...acc, [p.type]: p.value }), {});
+  return `${parts.day} ${MONTHS_SHORT[Number(parts.month) - 1]}`;
+}
+
+/** "2026-09-25" → "viernes 25 de septiembre", para la frase de variación. */
+function dayName(day) {
+  return new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
+    .format(new Date(`${day}T12:00:00Z`))
+    .replace(',', '');
+}
+
+/** "2026-09-28" (fecha de un día, sin hora) → "lun, 28 sep 2026". */
+function dayLabel(day) {
+  return new Intl.DateTimeFormat('es-CO', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${day}T12:00:00Z`));
+}
+
+const KG_PER_CARGA = 125;
+const KG_PER_ARROBA = 12.5;
 
 /** JSON dentro de <script> no puede contener "</script>": se escapa el "<". */
 function jsonLd(data) {
@@ -134,7 +167,27 @@ function cooperativeRows(cooperatives) {
     .join('');
 }
 
-const FAQ = [
+function faqFor(fnc) {
+  const perKilo = fnc ? cop.format(fnc.priceCopCarga / KG_PER_CARGA) : null;
+  const perArroba = fnc ? cop.format((fnc.priceCopCarga / KG_PER_CARGA) * KG_PER_ARROBA) : null;
+  const priceFaq = fnc
+    ? [
+        {
+          q: '¿Cuánto está el precio del café hoy?',
+          a: `Hoy el precio interno de referencia de la Federación Nacional de Cafeteros es de ${cop.format(
+            fnc.priceCopCarga
+          )} por carga de 125 kg de café pergamino seco.`,
+        },
+        {
+          q: '¿Cuánto vale el kilo de café hoy?',
+          a: `Con el precio de referencia de hoy, el kilo de café pergamino seco queda en ${perKilo} y la arroba (12,5 kg) en ${perArroba}. Lo que te paguen a ti depende de tu factor de rendimiento y tu humedad.`,
+        },
+      ]
+    : [];
+  return [...priceFaq, ...FAQ_STATIC];
+}
+
+const FAQ_STATIC = [
   {
     q: '¿Qué es el precio de referencia del café de la FNC?',
     a: 'Es el precio interno que publica a diario la Federación Nacional de Cafeteros para la carga de 125 kg de café pergamino seco. Se calcula con la cotización de la Bolsa de Nueva York, el dólar y la prima del café colombiano, y sirve como base de compra en todo el país.',
@@ -152,6 +205,60 @@ const FAQ = [
     a: 'El precio de referencia se actualiza cada día hábil con el dato publicado por la Federación. La cotización de Nueva York y el dólar se consultan varias veces al día.',
   },
 ];
+
+function unitBlock(fnc) {
+  if (!fnc) return '';
+  const perKilo = fnc.priceCopCarga / KG_PER_CARGA;
+  return `
+    <section class="panel landing-panel">
+      <div class="panel-header"><h2>Precio del café hoy por kilo y por arroba</h2></div>
+      <div class="table-scroll">
+        <table class="coop-table">
+          <thead><tr><th>Unidad</th><th>Precio de referencia</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Unidad">Carga (125 kg)</td><td data-label="Precio" class="tabular-nums">${cop.format(fnc.priceCopCarga)}</td></tr>
+            <tr><td data-label="Unidad">Arroba (12,5 kg)</td><td data-label="Precio" class="tabular-nums">${cop.format(perKilo * KG_PER_ARROBA)}</td></tr>
+            <tr><td data-label="Unidad">Kilo</td><td data-label="Precio" class="tabular-nums">${cop.format(perKilo)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="disclaimer">Café pergamino seco, calculado sobre el precio interno de referencia de la FNC.</p>
+    </section>`;
+}
+
+function historyBlock(history) {
+  if (history.length < 2) return '';
+  const rows = history
+    .map((h, i) => {
+      const prev = history[i + 1];
+      const diff = prev ? h.price_cop_carga - prev.price_cop_carga : null;
+      const diffText = diff == null ? '—' : diff === 0 ? 'Sin cambio' : `${diff > 0 ? '+' : '−'}${cop.format(Math.abs(diff))}`;
+      return `<tr>
+            <td data-label="Fecha"><time datetime="${h.day}">${escapeHtml(dayLabel(h.day))}</time></td>
+            <td data-label="Precio por carga" class="tabular-nums">${cop.format(h.price_cop_carga)}</td>
+            <td data-label="Variación" class="tabular-nums">${diffText}</td>
+          </tr>`;
+    })
+    .join('');
+  return `
+    <section class="panel landing-panel">
+      <div class="panel-header"><h2>Histórico del precio del café: últimos días</h2></div>
+      <div class="table-scroll">
+        <table class="coop-table">
+          <thead><tr><th>Fecha</th><th>Precio por carga (125 kg)</th><th>Variación</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
+/** "Subió $12.000 frente a ayer" — lo primero que busca el caficultor además del precio. */
+function changeText(history) {
+  if (history.length < 2) return '';
+  const diff = history[0].price_cop_carga - history[1].price_cop_carga;
+  if (diff === 0) return `Sin cambio frente al ${dayName(history[1].day)}.`;
+  return `${diff > 0 ? 'Subió' : 'Bajó'} ${cop.format(Math.abs(diff))} frente al ${dayName(history[1].day)}.`;
+}
 
 function marketBlock(summary, fnc) {
   const intl = summary.international;
@@ -190,10 +297,14 @@ function renderPricePage({ region } = {}) {
   const priceText = fnc ? cop.format(fnc.priceCopCarga) : null;
   const dateText = longDate(fnc && fnc.scrapedAt);
   const best = cooperatives[0];
+  const history = fncReferenceRepository.dailyHistory(10);
+  const faq = faqFor(fnc);
 
+  // La fecha en el título le dice a Google (y a quien busca) que el dato es de hoy.
+  const titlePlace = region ? ` en ${place}` : '';
   const title = priceText
-    ? `Precio del café hoy en ${place}: ${priceText} la carga | AgroValor`
-    : `Precio del café hoy en ${place} | AgroValor`;
+    ? `Precio del café hoy${titlePlace} ${shortDate(fnc.scrapedAt)}: ${priceText} la carga | AgroValor`
+    : `Precio del café hoy${titlePlace} | AgroValor`;
 
   const description = priceText
     ? `Precio del café hoy en ${place}, ${dateText}: ${priceText} por carga de 125 kg según la FNC.${
@@ -217,9 +328,8 @@ function renderPricePage({ region } = {}) {
     <main>
       <section class="hero">
         <h1>Precio del café hoy en ${escapeHtml(place)}</h1>
-        <p class="hero-sub">
-          Precio de referencia de la Federación Nacional de Cafeteros, cotización de la Bolsa de Nueva York,
-          dólar y ranking de cooperativas${region ? ` en ${escapeHtml(place)}` : ''}. Actualizado ${escapeHtml(dateText)}.
+        <p class="hero-meta">
+          <time datetime="${escapeHtml(fnc ? fnc.scrapedAt : new Date().toISOString())}">${escapeHtml(dateText)}</time>
         </p>
         <div class="hero-price">
           ${
@@ -228,12 +338,20 @@ function renderPricePage({ region } = {}) {
               : 'Precio no disponible en este momento'
           }
         </div>
+        <p class="hero-sub">
+          ${priceText ? `El precio del café hoy es de ${priceText} por carga de 125 kg de café pergamino seco, según el precio interno de referencia de la Federación Nacional de Cafeteros (FNC). ${escapeHtml(changeText(history))}` : ''}
+          Aquí también ves la cotización de la Bolsa de Nueva York, el dólar y qué cooperativa paga mejor${
+            region ? ` en ${escapeHtml(place)}` : ''
+          }.
+        </p>
         <div class="hero-cta">
           <a class="btn-primary btn-lg" href="/#/registro">Calcula cuánto te queda a ti</a>
         </div>
       </section>
 
       ${marketBlock(summary, fnc)}
+
+      ${unitBlock(fnc)}
 
       <section class="panel landing-panel">
         <div class="panel-header"><h2>Qué cooperativa paga mejor el café hoy${region ? ` en ${escapeHtml(place)}` : ''}</h2></div>
@@ -250,11 +368,13 @@ function renderPricePage({ region } = {}) {
         <p class="disclaimer">${escapeHtml(comparison.disclaimer)}</p>
       </section>
 
+      ${historyBlock(history)}
+
       ${regionLinks}
 
       <section class="panel landing-panel">
         <div class="panel-header"><h2>Preguntas frecuentes</h2></div>
-        ${FAQ.map((f) => `<h3>${escapeHtml(f.q)}</h3><p class="panel-intro">${escapeHtml(f.a)}</p>`).join('')}
+        ${faq.map((f) => `<h3>${escapeHtml(f.q)}</h3><p class="panel-intro">${escapeHtml(f.a)}</p>`).join('')}
       </section>
     </main>`;
 
@@ -283,7 +403,7 @@ function renderPricePage({ region } = {}) {
     {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
-      mainEntity: FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+      mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
     },
   ];
 

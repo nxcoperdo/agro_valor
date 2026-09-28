@@ -92,10 +92,10 @@ export async function renderLanding(root) {
       </header>
 
       <section class="hero">
-        <h1>¿Cuánto puede valer tu café mañana?</h1>
+        <h1>Qué cooperativa paga mejor tu café hoy</h1>
         <p class="hero-sub">
-          Consulta el mercado, compara cuánto paga cada cooperativa y calcula
-          cuánta plata te queda realmente a ti. Mercados que mueven el campo.
+          Consulta el <a href="/precio-cafe-hoy">precio del café hoy</a>, compara cuánto paga cada cooperativa
+          y calcula cuánta plata te queda realmente a ti. Mercados que mueven el campo.
         </p>
         <div class="hero-price" id="hero-price">
           <span class="skeleton" style="width: 260px; height: 3rem;"></span>
@@ -128,7 +128,7 @@ export async function renderLanding(root) {
       </section>
 
       <section class="panel landing-panel">
-        <div class="panel-header"><h2>Quién está pagando mejor hoy</h2></div>
+        <div class="panel-header"><h2>Precio del café hoy por cooperativa</h2></div>
         <div class="table-scroll">
           <table class="coop-table">
             <thead>
@@ -166,7 +166,7 @@ export async function renderLanding(root) {
           garantía de precio de compra.
         </p>
         <p class="landing-legal-links">
-          <a href="/precio-cafe-hoy">Precio del café hoy</a> ·
+          <a href="/precio-cafe-hoy">Precio del café hoy en Colombia</a> ·
           <a href="#/privacidad">Política de privacidad</a> ·
           <a href="#/terminos">Términos de uso</a> ·
           <a href="#/cookies">Política de cookies</a>
