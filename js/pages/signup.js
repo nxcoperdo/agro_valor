@@ -1,5 +1,6 @@
 import { api } from '../services/api.js';
 import { setCachedUser } from '../services/auth.js';
+import { showTrialWelcomeModal } from '../ui/trialWelcomeModal.js';
 
 const ICONS = {
   mail: '<rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" />',
@@ -162,7 +163,13 @@ export function renderSignup(root) {
     try {
       const { user } = await api.signup({ email, phone, password });
       setCachedUser(user);
-      window.location.hash = '#/dashboard';
+      if (user.isTrialing) {
+        showTrialWelcomeModal(user, () => {
+          window.location.hash = '#/dashboard';
+        });
+      } else {
+        window.location.hash = '#/dashboard';
+      }
     } catch (err) {
       errorEl.textContent = err.message || 'No se pudo crear la cuenta';
       errorEl.hidden = false;

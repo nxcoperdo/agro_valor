@@ -32,14 +32,41 @@ function isPro(user) {
   return toEpoch(user.plan_expires_at) > Date.now();
 }
 
+const TRIAL_DAYS = 7;
+const TRIAL_MARGIN_MS = 60 * 1000;
+
+/**
+ * true solo mientras el Pro actual viene de la prueba gratis del registro, no de un pago
+ * real. No hace falta una columna aparte de "ya pagó": si el usuario paga Pro de verdad
+ * antes de que acabe el trial, activatePro empuja plan_expires_at mucho más allá de la
+ * ventana trial_granted_at + 7 días, y esto pasa a false solo.
+ */
+function isTrialing(user) {
+  if (!user || !user.trial_granted_at) return false;
+  if (!isPro(user)) return false;
+  const trialEnd = toEpoch(user.trial_granted_at) + TRIAL_DAYS * 24 * 60 * 60 * 1000;
+  return toEpoch(user.plan_expires_at) <= trialEnd + TRIAL_MARGIN_MS;
+}
+
 function describe(user) {
   const pro = isPro(user);
   return {
     plan: pro ? 'pro' : 'free',
     isPro: pro,
+    isTrialing: isTrialing(user),
     expiresAt: user ? toIso(user.plan_expires_at) : null,
     limits: pro ? PLANS.pro : PLANS.free,
   };
+}
+
+/** Prueba gratis de Pro al registrarse — ver auth.routes.js (POST /signup). */
+function startTrial(userId) {
+  const now = Date.now();
+  const expiresAt = new Date(now + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString().replace('T', ' ').slice(0, 19);
+  const grantedAt = new Date(now).toISOString().replace('T', ' ').slice(0, 19);
+
+  logger.info(`Prueba gratis de Pro (${TRIAL_DAYS} días) activada para el usuario ${userId} hasta ${expiresAt}`);
+  return userRepository.startTrial(userId, { expiresAt, grantedAt });
 }
 
 function activatePro(userId, months = 1) {
@@ -73,4 +100,4 @@ function setProUntil(userId, expiresAtIso) {
   return userRepository.setPlan(userId, 'pro', expiresAt);
 }
 
-module.exports = { PLANS, isPro, describe, activatePro, cancel, setProUntil };
+module.exports = { PLANS, isPro, isTrialing, describe, activatePro, startTrial, cancel, setProUntil };

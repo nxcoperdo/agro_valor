@@ -38,6 +38,8 @@ const ADDED_COLUMNS = [
   // precio central que ya existía.
   ['forecast_cache', 'low_price', 'REAL'],
   ['forecast_cache', 'high_price', 'REAL'],
+  // Prueba gratis de Pro por 7 días al registrarse (ver subscriptionService.startTrial/isTrialing).
+  ['users', 'trial_granted_at', 'TEXT'],
 ];
 
 function columnExists(table, column) {

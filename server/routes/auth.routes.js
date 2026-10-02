@@ -96,7 +96,7 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
       return res.status(409).json({ error: 'Ese correo ya está registrado' });
     }
 
-    const user = userRepository.create({
+    const created = userRepository.create({
       username: normalizedEmail,
       passwordHash: bcrypt.hashSync(String(password), 10),
       role: 'user',
@@ -105,6 +105,9 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
       municipality: municipality ? String(municipality).trim() : null,
       plan: 'free',
     });
+
+    // Toda cuenta nueva arranca con 7 días de Pro de regalo (ver subscriptionService.startTrial).
+    const user = subscriptionService.startTrial(created.id);
 
     const remember = wantsRemember(req);
     const result = authService.login(normalizedEmail, String(password), { remember });

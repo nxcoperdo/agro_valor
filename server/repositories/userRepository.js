@@ -68,6 +68,17 @@ function setPasswordHash(id, passwordHash) {
   return findPublicById(id);
 }
 
+/** Prueba gratis de Pro al registrarse (ver subscriptionService.startTrial). */
+function startTrial(id, { expiresAt, grantedAt }) {
+  db.prepare('UPDATE users SET plan = ?, plan_expires_at = ?, trial_granted_at = ? WHERE id = ?').run(
+    'pro',
+    expiresAt,
+    grantedAt,
+    id
+  );
+  return findById(id);
+}
+
 function setMpPayment(id, { paymentId, status }) {
   db.prepare('UPDATE users SET mp_payment_id = ?, mp_payment_status = ? WHERE id = ?').run(paymentId, status, id);
   return findPublicById(id);
@@ -100,6 +111,7 @@ module.exports = {
   updateProfile,
   setPlan,
   setPasswordHash,
+  startTrial,
   setMpPayment,
   findAllWithMpPaymentStatus,
   listAll,

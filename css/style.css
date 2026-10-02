@@ -1548,6 +1548,131 @@ body.nav-locked {
   flex-shrink: 0;
 }
 
+/* Modal de bienvenida al trial ------------------------------------------- */
+
+.trial-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--av-space-3);
+}
+
+.trial-modal-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 29, 22, 0.65);
+  opacity: 0;
+  transition: opacity var(--av-duration-lg) var(--av-ease-out);
+}
+
+.trial-modal {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: min(600px, 88dvh);
+  overflow-y: auto;
+  background: var(--av-surface);
+  border: 1px solid var(--av-border);
+  border-radius: var(--av-radius-lg);
+  padding: var(--av-space-4);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: scale(0.96) translateY(8px);
+  transition: opacity var(--av-duration-lg) var(--av-ease-out), transform var(--av-duration-lg) var(--av-ease-out);
+}
+
+.trial-modal-root.is-open .trial-modal-scrim {
+  opacity: 1;
+}
+
+.trial-modal-root.is-open .trial-modal {
+  opacity: 1;
+  transform: none;
+}
+
+.trial-modal-close {
+  position: absolute;
+  top: var(--av-space-2);
+  right: var(--av-space-2);
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--av-fg-muted);
+  cursor: pointer;
+}
+
+.trial-modal-close:hover {
+  background: var(--av-surface-alt);
+  color: var(--av-fg);
+}
+
+.trial-modal-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.trial-modal-title {
+  margin: var(--av-space-3) 0 var(--av-space-2);
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.2;
+  padding-right: var(--av-space-5);
+}
+
+.trial-modal-body {
+  margin: 0 0 var(--av-space-4);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--av-fg-muted);
+}
+
+.trial-modal-body strong {
+  color: var(--av-fg);
+}
+
+.trial-modal-features {
+  list-style: none;
+  margin: 0 0 var(--av-space-4);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--av-space-2);
+}
+
+.trial-modal-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--av-space-2);
+  font-size: 0.88rem;
+}
+
+.trial-modal-features svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--av-accent);
+}
+
+.trial-modal-cta {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trial-modal-scrim,
+  .trial-modal {
+    transition: none;
+  }
+}
+
 /* Formularios ----------------------------------------------------------- */
 
 .calc-form {
@@ -1961,6 +2086,30 @@ body.nav-locked {
   color: var(--av-accent);
 }
 
+/* Badge con borde + punto, distinto del .badge-pro plano que ya existe. */
+.pro2-eyebrow-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 160, 23, 0.3);
+  background: var(--av-accent-soft);
+  color: var(--av-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pro2-eyebrow-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--av-accent);
+}
+
 /* Hero: copy a la izquierda, tarjeta de precio a la derecha; apiladas en móvil. */
 .pro2-hero {
   display: grid;
@@ -1984,22 +2133,64 @@ body.nav-locked {
   grid-template-columns: 1fr;
 }
 
+/* Hero de venta (free sin trial): sin tarjeta propia, directo sobre el fondo de la
+   página, igual que la referencia — con un resplandor decorativo detrás. */
+.panel.pro2-hero--sell {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: var(--av-space-3) 0 var(--av-space-4);
+  position: relative;
+  overflow: visible;
+}
+
+.pro2-hero--sell::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  width: min(760px, 140%);
+  height: 420px;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(23, 102, 71, 0.35), transparent 72%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pro2-hero--sell > * {
+  position: relative;
+  z-index: 1;
+}
+
 .pro2-title {
   margin: var(--av-space-3) 0 var(--av-space-2);
-  font-size: clamp(1.5rem, 1.1rem + 2vw, 2.1rem);
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-size: clamp(1.75rem, 1.1rem + 3.2vw, 3rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.pro2-title-accent {
+  color: var(--av-accent);
 }
 
 .pro2-check-list {
   list-style: none;
-  margin: var(--av-space-3) 0 0;
+  margin: var(--av-space-4) 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: var(--av-space-2);
   font-size: 0.92rem;
   font-weight: 600;
+}
+
+@media (min-width: 540px) {
+  .pro2-check-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    column-gap: var(--av-space-4);
+  }
 }
 
 .pro2-check-list li {
@@ -2010,26 +2201,48 @@ body.nav-locked {
 
 .pro2-check {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  padding: 3px;
-  border-radius: 50%;
-  background: var(--av-positive-soft);
-  color: var(--av-positive-fg);
 }
 
-/* Tarjeta de precio: la pieza que convierte, por eso lleva su propio fondo y borde dorado. */
+/* Lista del hero: icono en círculo sólido, como la referencia. */
+.pro2-check-circle {
+  width: 20px;
+  height: 20px;
+  padding: 4px;
+  border-radius: 50%;
+  background: var(--av-positive);
+  color: #fff;
+}
+
+/* Lista de la tarjeta de precio: icono plano, sin círculo. */
+.pro2-check-plain {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--av-accent);
+}
+
+/* Tarjeta de precio: la pieza que convierte, con borde neutro (no dorado) y sombra marcada. */
 .pro2-price-card {
   background: var(--av-surface-alt);
-  border: 1px solid rgba(212, 160, 23, 0.35);
-  border-radius: var(--av-radius-lg);
+  border: 1px solid var(--av-border);
+  border-radius: 24px;
   padding: var(--av-space-4);
   position: relative;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+@media (min-width: 540px) {
+  .pro2-price-card {
+    padding: var(--av-space-5);
+  }
 }
 
 .pro2-price-tag {
+  position: absolute;
+  top: -14px;
+  right: 18px;
   display: inline-block;
-  padding: 0.3rem 0.8rem;
+  padding: 0.35rem 0.9rem;
   border-radius: 999px;
   background: var(--av-accent);
   color: var(--av-on-accent);
@@ -2037,6 +2250,7 @@ body.nav-locked {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 .pro2-price-eyebrow {
@@ -2100,10 +2314,6 @@ body.nav-locked {
   gap: var(--av-space-2);
   font-size: 0.88rem;
   color: var(--av-fg);
-}
-
-.pro2-feature-list .pro2-check {
-  margin-top: 2px;
 }
 
 .pro2-price-btn {
@@ -2214,6 +2424,7 @@ body.nav-locked {
   text-align: center;
   background: var(--av-accent);
   border-color: var(--av-accent);
+  border-radius: 24px;
 }
 
 .pro2-cta .pro2-eyebrow,

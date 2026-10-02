@@ -57,7 +57,7 @@ function priceCard(pro, { badgeLabel, buttonLabel, fineNote }) {
       <hr class="pro2-divider" />
       <p class="pro2-price-includes">Tu plan incluye:</p>
       <ul class="pro2-feature-list">
-        ${pro.features.map((f) => `<li>${icon('check', 'pro2-check')}<span>${f}</span></li>`).join('')}
+        ${pro.features.map((f) => `<li>${icon('check', 'pro2-check pro2-check-plain')}<span>${f}</span></li>`).join('')}
       </ul>
       <button type="button" class="btn-primary btn-lg pro2-price-btn" data-pay-btn>${buttonLabel}</button>
       <p class="pro2-price-secure">${icon('shield', 'pro2-shield')}Pago seguro con Mercado Pago</p>
@@ -85,17 +85,17 @@ function benefitsGrid() {
 
 function freeStateMarkup(pro) {
   return `
-    <div class="panel pro2-hero">
+    <div class="panel pro2-hero pro2-hero--sell">
       <div class="pro2-hero-copy">
-        <span class="badge badge-pro">AgroValor Pro · 1 año</span>
-        <h1 class="pro2-title">Vende tu café con más certeza y mejores decisiones</h1>
+        <span class="pro2-eyebrow-badge">AgroValor Pro · 1 año</span>
+        <h1 class="pro2-title">Vende tu café con más certeza y <span class="pro2-title-accent">mejores decisiones</span></h1>
         <p class="panel-intro">
           Convierte precios, factor y humedad en información útil para saber cuándo vender,
           dónde te conviene y cuánto recibirás.
         </p>
         <ul class="pro2-check-list">
           ${['Alertas por WhatsApp', 'Cálculo de precio neto', 'Comparación entre cooperativas']
-            .map((item) => `<li>${icon('check', 'pro2-check')}${item}</li>`)
+            .map((item) => `<li>${icon('check', 'pro2-check pro2-check-circle')}${item}</li>`)
             .join('')}
         </ul>
       </div>
