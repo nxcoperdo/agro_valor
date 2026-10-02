@@ -23,9 +23,7 @@ function serialize(user) {
     transportCostCopCarga: user.transport_cost_cop_carga,
     notifyWhatsapp: user.notify_whatsapp !== 0,
     notifyPush: user.notify_push !== 0,
-    mpSubscriptionPending: user.mp_preapproval_status === 'pending',
-    mpSubscriptionActive: user.mp_preapproval_status === 'authorized',
-    mpSubscriptionCancelled: user.mp_preapproval_status === 'cancelled',
+    mpPaymentPending: user.mp_payment_status === 'pending',
     ...subscriptionService.describe(user),
   };
 }
@@ -106,39 +104,27 @@ router.delete('/devices', (req, res) => {
 router.get('/plan', (req, res) => {
   res.json({
     ...subscriptionService.describe(req.fullUser),
-    mpSubscriptionActive: req.fullUser.mp_preapproval_status === 'authorized',
-    mpSubscriptionCancelled: req.fullUser.mp_preapproval_status === 'cancelled',
     plans: subscriptionService.PLANS,
   });
 });
 
 /**
- * Crea la suscripción de Mercado Pago y devuelve la URL de checkout. La web redirige el
- * navegador a esta URL; la app la abre en un WebView embebido dentro de la misma pantalla.
+ * Crea la preferencia de pago (Checkout Pro) y devuelve la URL de checkout. La web
+ * redirige el navegador a esta URL; la app abre esa misma URL en el navegador externo.
  */
-router.post('/mercadopago/subscribe', async (req, res, next) => {
+router.post('/mercadopago/pay', async (req, res, next) => {
   try {
-    const { initPoint } = await mercadoPagoBillingService.startSubscription(req.user.id);
+    const { initPoint } = await mercadoPagoBillingService.startPayment(req.user.id);
     res.json({ initPoint });
   } catch (err) {
     next(err);
   }
 });
 
-/** Se llama cuando el usuario vuelve del checkout de Mercado Pago (web o WebView de la app). */
+/** Se llama cuando el usuario vuelve del checkout de Mercado Pago (web o navegador de la app). */
 router.post('/mercadopago/confirm', async (req, res, next) => {
   try {
-    const user = await mercadoPagoBillingService.confirmSubscription(req.user.id);
-    res.json(serialize(user));
-  } catch (err) {
-    next(err);
-  }
-});
-
-/** Cancela la renovación automática. Pro sigue hasta el fin del periodo ya pagado. */
-router.post('/mercadopago/cancel', async (req, res, next) => {
-  try {
-    const user = await mercadoPagoBillingService.cancelSubscription(req.user.id);
+    const user = await mercadoPagoBillingService.confirmPayment(req.user.id);
     res.json(serialize(user));
   } catch (err) {
     next(err);

@@ -26,9 +26,14 @@ const ADDED_COLUMNS = [
   // migrar para borrarlas — SQLite no borra columnas fácil y no tiene costo dejarlas.
   ['users', 'play_purchase_token', 'TEXT'],
   ['users', 'play_product_id', 'TEXT'],
-  // Suscripción de Mercado Pago (web y app).
+  // Suscripción de Mercado Pago (web y app). Se dejó de usar al pasar a pago único anual
+  // (ver mp_payment_id/mp_payment_status) — se quedan sin tocar, mismo criterio que con
+  // play_purchase_token/play_product_id: no vale la pena migrar columnas en SQLite.
   ['users', 'mp_preapproval_id', 'TEXT'],
   ['users', 'mp_preapproval_status', 'TEXT'],
+  // Pago único de Mercado Pago (Checkout Pro) por el plan Pro anual.
+  ['users', 'mp_payment_id', 'TEXT'],
+  ['users', 'mp_payment_status', 'TEXT'],
   // Rango probable de la proyección (curva de futuros + volatilidad histórica), además del
   // precio central que ya existía.
   ['forecast_cache', 'low_price', 'REAL'],

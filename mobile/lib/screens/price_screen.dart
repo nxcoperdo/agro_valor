@@ -129,7 +129,31 @@ class _InternalCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text('por carga de ${internal['cargaKg']} kg de pergamino seco', style: _muted13),
+          Text(
+            'por carga de ${internal['cargaKg']} kg de pergamino seco, factor de rendimiento $referenceFactor',
+            style: _muted13,
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, thickness: 1, color: AvColors.border),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Factor $referenceFactor', style: _muted13),
+              Text('${_int.format(internal['copPerCarga'] as num)} \$', style: mono(size: 13)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Factor 88', style: _muted13),
+              Text(
+                '${_int.format(copPerCargaAtFactor(internal['copPerCarga'] as num, 88))} \$',
+                style: mono(size: 13),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
           const Divider(height: 1, thickness: 1, color: AvColors.border),
           const SizedBox(height: 10),

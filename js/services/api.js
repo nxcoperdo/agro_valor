@@ -49,9 +49,8 @@ export const api = {
   changePassword: (currentPassword, newPassword) =>
     request('/account/password', { method: 'PUT', ...body({ currentPassword, newPassword }) }),
   deleteAccount: (password) => request('/account', { method: 'DELETE', ...body({ password }) }),
-  mpSubscribe: () => request('/account/mercadopago/subscribe', { method: 'POST' }),
+  mpPay: () => request('/account/mercadopago/pay', { method: 'POST' }),
   mpConfirm: () => request('/account/mercadopago/confirm', { method: 'POST' }),
-  mpCancel: () => request('/account/mercadopago/cancel', { method: 'POST' }),
 
   // Mercado (con cuenta)
   currentPrice: () => request('/prices/current'),

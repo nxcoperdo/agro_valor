@@ -49,36 +49,15 @@ export async function renderAccount(container) {
           !profile.isPro
             ? `<div class="notice notice-info upgrade-note">
                  ${
-                   profile.mpSubscriptionPending
-                     ? `<p><strong>Tu pago está en proceso.</strong> Si ya autorizaste el cobro en Mercado Pago, confirma aquí.</p>
+                   profile.mpPaymentPending
+                     ? `<p><strong>Tu pago está en proceso.</strong> Si ya pagaste en Mercado Pago, confirma aquí.</p>
                         <button type="button" class="btn-primary" id="mp-confirm-btn">Ya pagué, confirmar</button>`
-                     : `<a class="btn-primary" href="#/pro">Ver todos los beneficios y suscribirme</a>`
+                     : `<a class="btn-primary" href="#/pro">Ver todos los beneficios y pagar</a>`
                  }
                  <p class="disclaimer">
                    ¿Prefieres pagar por Nequi o Daviplata? Escríbenos por WhatsApp y te activamos el plan a mano.
                  </p>
                </div>`
-            : ''
-        }
-        ${
-          profile.isPro && profile.mpSubscriptionActive
-            ? `<div class="cancel-sub">
-                 <p class="disclaimer">
-                   Tu suscripción se renueva sola cada mes con Mercado Pago. Si la cancelas, no se
-                   te vuelve a cobrar y sigues con Pro hasta el ${expiry || 'final del mes ya pagado'}.
-                 </p>
-                 <button type="button" class="btn-ghost" id="mp-cancel-btn">Cancelar suscripción</button>
-                 <div class="cancel-sub-confirm" id="mp-cancel-confirm" hidden>
-                   <p><strong>¿Seguro que quieres cancelar?</strong> Dejarás de recibir las alertas por WhatsApp cuando se acabe el mes pagado.</p>
-                   <button type="button" class="btn-danger" id="mp-cancel-yes">Sí, cancelar</button>
-                   <button type="button" class="btn-ghost" id="mp-cancel-no">No, seguir con Pro</button>
-                 </div>
-               </div>`
-            : ''
-        }
-        ${
-          profile.isPro && profile.mpSubscriptionCancelled
-            ? `<p class="disclaimer">Cancelaste la renovación: no se te volverá a cobrar. Puedes volver a suscribirte cuando quieras desde <a href="#/pro">el plan Pro</a>.</p>`
             : ''
         }
         <p class="form-error" id="mp-error" role="alert" hidden></p>
@@ -169,7 +148,7 @@ export async function renderAccount(container) {
 
     // Si el usuario acaba de volver del checkout de Mercado Pago, se intenta confirmar
     // solo, sin que tenga que darle clic al botón de "Ya pagué".
-    if (profile.mpSubscriptionPending) {
+    if (profile.mpPaymentPending) {
       api
         .mpConfirm()
         .then((updated) => {
@@ -188,33 +167,6 @@ export async function renderAccount(container) {
         mpErrorEl.textContent = err.message;
         mpErrorEl.hidden = false;
         mpConfirmBtn.disabled = false;
-      }
-    });
-
-    const cancelBtn = container.querySelector('#mp-cancel-btn');
-    const cancelConfirm = container.querySelector('#mp-cancel-confirm');
-
-    cancelBtn?.addEventListener('click', () => {
-      cancelBtn.hidden = true;
-      cancelConfirm.hidden = false;
-    });
-
-    container.querySelector('#mp-cancel-no')?.addEventListener('click', () => {
-      cancelConfirm.hidden = true;
-      cancelBtn.hidden = false;
-    });
-
-    const cancelYesBtn = container.querySelector('#mp-cancel-yes');
-    cancelYesBtn?.addEventListener('click', async () => {
-      mpErrorEl.hidden = true;
-      cancelYesBtn.disabled = true;
-      try {
-        await api.mpCancel();
-        await renderAccount(container);
-      } catch (err) {
-        mpErrorEl.textContent = err.message;
-        mpErrorEl.hidden = false;
-        cancelYesBtn.disabled = false;
       }
     });
 

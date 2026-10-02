@@ -16,6 +16,16 @@ const TZ = 'America/Bogota';
 const fmtInt = (value) => new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(value);
 const fmt2 = (value) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 
+/**
+ * El precio interno de la FNC está definido para factor de rendimiento 94 (ver
+ * server/services/netPriceService.js). A menor factor, mejor rendimiento y más valor,
+ * en proporción inversa: basta con escalar por 94/factor.
+ */
+const REFERENCE_FACTOR = 94;
+function copPerCargaAtFactor(basePriceAtFactor94, factor) {
+  return basePriceAtFactor94 * (REFERENCE_FACTOR / factor);
+}
+
 function timeAgo(iso) {
   if (!iso) return '';
   const diffMin = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -44,13 +54,19 @@ function renderInternal(el, internal) {
   }
   el.hidden = false;
   const date = new Date(internal.scrapedAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: TZ });
+  const price94 = internal.copPerCarga;
+  const price88 = copPerCargaAtFactor(internal.copPerCarga, 88);
   el.innerHTML = `
     <p class="pv-label">Lo que le pagan al caficultor</p>
     <div class="pv-hero">
-      <span class="pv-mono pv-hero-value">${fmtInt(internal.copPerCarga)}</span>
+      <span class="pv-mono pv-hero-value">${fmtInt(price94)}</span>
       <span class="pv-hero-unit">$</span>
     </div>
-    <p class="pv-sub">por carga de ${internal.cargaKg} kg de pergamino seco</p>
+    <p class="pv-sub">por carga de ${internal.cargaKg} kg de pergamino seco, factor de rendimiento ${REFERENCE_FACTOR}</p>
+    <div class="pv-factors">
+      <div class="pv-kv"><span>Factor ${REFERENCE_FACTOR}</span><span class="pv-mono">${fmtInt(price94)} $</span></div>
+      <div class="pv-kv"><span>Factor 88</span><span class="pv-mono">${fmtInt(price88)} $</span></div>
+    </div>
     <div class="pv-foot">
       <span class="pv-pill pv-pill-gold">FNC</span>
       <span class="pv-sub">${internal.label} · ${date}</span>

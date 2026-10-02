@@ -14,12 +14,12 @@ export async function renderProPlan(container) {
       <div class="panel pro-hero">
         <span class="badge badge-pro">AgroValor Pro</span>
         <h1 class="pro-hero-title">Todo lo que necesitas para vender mejor tu café</h1>
-        <p class="pro-price"><span class="pro-price-amount">$12.000</span><span class="pro-price-period">COP / mes</span></p>
+        <p class="pro-price"><span class="pro-price-amount">$150.000</span><span class="pro-price-period">COP / año</span></p>
         ${
           info.isPro
             ? `<p class="panel-intro">Ya eres Pro. Tu plan está activo${expiry ? ` hasta el <strong>${expiry}</strong>` : ''}.</p>`
-            : `<button type="button" id="pro-subscribe-btn" class="btn-primary btn-lg">Suscribirme ahora</button>
-               <p class="disclaimer">Se cobra automático cada mes por Mercado Pago. Cancelas cuando quieras.</p>`
+            : `<button type="button" id="pro-subscribe-btn" class="btn-primary btn-lg">Pagar ahora</button>
+               <p class="disclaimer">Pago único por Mercado Pago, válido por 1 año. No se renueva sola.</p>`
         }
         <p class="form-error" id="pro-error" role="alert" hidden></p>
       </div>
@@ -51,13 +51,13 @@ export async function renderProPlan(container) {
       btn.disabled = true;
       btn.textContent = 'Redirigiendo…';
       try {
-        const { initPoint } = await api.mpSubscribe();
+        const { initPoint } = await api.mpPay();
         window.location.href = initPoint;
       } catch (err) {
         errorEl.textContent = err.message;
         errorEl.hidden = false;
         btn.disabled = false;
-        btn.textContent = 'Suscribirme ahora';
+        btn.textContent = 'Pagar ahora';
       }
     });
   } catch (err) {

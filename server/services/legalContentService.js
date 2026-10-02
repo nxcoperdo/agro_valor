@@ -97,13 +97,12 @@ const TERMS_SECTIONS = [
     heading: 'Plan Pro y pagos',
     body:
       'El plan gratis incluye el precio de referencia, el dólar y el ranking general de cooperativas. Pro ' +
-      'agrega alertas por WhatsApp, calculadora personalizada, historial de ventas y proyección. En la web, ' +
-      'Pro se paga por Nequi o Daviplata y se activa a mano tras confirmar el pago. En la app, Pro se cobra ' +
-      'como suscripción mensual dentro de Google Play: se renueva automáticamente cada mes al mismo precio ' +
-      'hasta que la canceles, y el cobro y la renovación los administra Google Play, no AgroValor. Puedes ' +
-      'cancelar en cualquier momento desde la propia Google Play Store (Suscripciones); la cancelación ' +
-      'aplica al final del período ya pagado, no da lugar a un reembolso proporcional salvo que la política ' +
-      'de reembolsos de Google Play indique lo contrario.',
+      'agrega alertas por WhatsApp, calculadora personalizada, historial de ventas y proyección. Pro se paga ' +
+      'con un pago único anual a través del checkout de Mercado Pago, tanto en la web como en la app (la app ' +
+      'abre el checkout en el navegador). No es una suscripción: no se renueva ni se te cobra de nuevo ' +
+      'automáticamente, y el plan queda activo durante un año desde el pago. Al vencerse, puedes volver a ' +
+      'pagar cuando quieras para renovarlo. Si prefieres pagar por Nequi o Daviplata, puedes escribirnos por ' +
+      'WhatsApp para que te activemos el plan a mano.',
   },
   {
     heading: 'Disponibilidad del servicio',

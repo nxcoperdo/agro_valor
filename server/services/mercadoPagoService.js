@@ -4,7 +4,7 @@ const fetchWithTimeout = require('../utils/fetchWithTimeout');
 const logger = require('../utils/logger');
 
 /**
- * Cliente delgado sobre la API de Mercado Pago (Suscripciones / Preapproval). Igual que
+ * Cliente delgado sobre la API de Mercado Pago (Checkout Pro / pagos únicos). Igual que
  * whatsappService: si no hay credenciales, isConfigured() da falso y el resto de la app
  * sigue funcionando, solo esta pieza queda inactiva.
  */
@@ -40,48 +40,61 @@ async function request(method, path, body) {
 }
 
 /**
- * Suscripción sin plan asociado, con pago autorizado: se crea una vez y Mercado Pago
- * cobra automáticamente cada mes por su cuenta, sin que este server tenga que guardar
- * ni volver a cobrar la tarjeta.
+ * Checkout Pro: preferencia de pago único (no recurrente). El usuario paga una vez en
+ * el checkout de Mercado Pago y vuelve a back_url; no hay cobro automático después, a
+ * diferencia del antiguo modelo de Preapproval (suscripción mensual).
  */
-async function createPreapproval({ userId, payerEmail, reason }) {
-  const data = await request('POST', '/preapproval', {
-    reason: reason || 'AgroValor Pro',
+async function createPreference({ userId, payerEmail, reason }) {
+  const notificationUrl = `${env.publicBaseUrl}/api/public/webhooks/mercadopago`;
+
+  const data = await request('POST', '/checkout/preferences', {
+    items: [
+      {
+        title: reason || 'AgroValor Pro (1 año)',
+        quantity: 1,
+        currency_id: 'COP',
+        unit_price: env.mpProAnnualAmountCop,
+      },
+    ],
+    payer: { email: payerEmail },
     external_reference: String(userId),
-    payer_email: payerEmail,
-    back_url: env.mpBackUrl,
-    status: 'pending',
-    auto_recurring: {
-      frequency: 1,
-      frequency_type: 'months',
-      transaction_amount: env.mpProAmountCop,
-      currency_id: 'COP',
+    back_urls: {
+      success: env.mpBackUrl,
+      pending: env.mpBackUrl,
+      failure: env.mpBackUrl,
     },
+    auto_return: 'approved',
+    notification_url: notificationUrl,
   });
 
-  return { id: data.id, initPoint: data.init_point, status: data.status };
+  return { id: data.id, initPoint: data.init_point };
 }
 
-async function getPreapproval(id) {
-  const data = await request('GET', `/preapproval/${id}`);
-  return { id: data.id, status: data.status, payerEmail: data.payer_email };
-}
-
-/** Cancela la suscripción: Mercado Pago deja de cobrar desde el próximo mes. No se puede reactivar. */
-async function cancelPreapproval(id) {
-  const data = await request('PUT', `/preapproval/${id}`, { status: 'cancelled' });
-  return { id: data.id, status: data.status };
-}
-
-/** Cobros ya hechos de una suscripción — el *poll* de reconciliación mientras no haya HTTPS para el webhook. */
-async function searchAuthorizedPayments(preapprovalId) {
-  const data = await request('GET', `/authorized_payments/search?preapproval_id=${preapprovalId}`);
+/** Pagos de un usuario, el más reciente primero — así se confirma el pago sin depender del webhook. */
+async function searchPayments(externalReference) {
+  const data = await request(
+    'GET',
+    `/v1/payments/search?external_reference=${encodeURIComponent(externalReference)}&sort=date_created&criteria=desc`
+  );
   return (data.results || []).map((p) => ({
     id: String(p.id),
     status: p.status,
     amount: p.transaction_amount,
-    date: p.date_created,
+    date: p.date_approved || p.date_created,
+    externalReference: p.external_reference,
   }));
+}
+
+/** Un pago puntual por su id, para cuando llega el webhook con "type": "payment". */
+async function getPayment(paymentId) {
+  const data = await request('GET', `/v1/payments/${paymentId}`);
+  return {
+    id: String(data.id),
+    status: data.status,
+    amount: data.transaction_amount,
+    date: data.date_approved || data.date_created,
+    externalReference: data.external_reference,
+  };
 }
 
 /** Firma HMAC-SHA256 de los webhooks (header x-signature: "ts=...,v1=..."). */
@@ -100,4 +113,4 @@ function verifyWebhookSignature(xSignatureHeader, xRequestIdHeader, dataId) {
   return hash === v1;
 }
 
-module.exports = { isConfigured, createPreapproval, getPreapproval, cancelPreapproval, searchAuthorizedPayments, verifyWebhookSignature };
+module.exports = { isConfigured, createPreference, searchPayments, getPayment, verifyWebhookSignature };

@@ -57,13 +57,14 @@ const env = {
   // Dominio público canónico: lo usan las páginas de SEO, el sitemap y las etiquetas canonical/og.
   publicBaseUrl: (process.env.PUBLIC_BASE_URL || 'https://agrovalor.tech').replace(/\/$/, ''),
 
-  // Cobro de Pro vía Mercado Pago Suscripciones (Preapproval), tanto en la web (redirección)
-  // como en la app (WebView embebido con la misma URL de checkout).
+  // Cobro de Pro vía Mercado Pago Checkout Pro: pago único anual, no suscripción recurrente.
+  // Tanto la web (redirección) como la app (abre el navegador externo) usan la misma URL.
   mpAccessToken: process.env.MP_ACCESS_TOKEN || '',
   mpPublicKey: process.env.MP_PUBLIC_KEY || '',
   mpWebhookSecret: process.env.MP_WEBHOOK_SECRET || '',
-  mpProAmountCop: Number(process.env.MP_PRO_AMOUNT_COP || 12000),
+  mpProAnnualAmountCop: Number(process.env.MP_PRO_ANNUAL_AMOUNT_COP || 150000),
   mpBackUrl: process.env.MP_BACK_URL || 'https://agrovalor.tech/#/cuenta',
+  // Respaldo del webhook (por si no llega): revisa pagos "pending" que ya se hayan aprobado.
   mpPollCron: process.env.MP_POLL_CRON || '0 8 * * *',
 
   dailyDigestCron: process.env.DAILY_DIGEST_CRON || '0 6 * * *',

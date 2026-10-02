@@ -86,8 +86,7 @@ function start() {
     CRON_OPTIONS
   );
 
-  // Cobros de Mercado Pago (web y app): ellos cobran solos cada mes, esto solo revisa si ya
-  // hicieron un cobro nuevo (sustituye al webhook mientras no haya HTTPS).
+  // Respaldo del webhook de Mercado Pago: revisa si un pago que quedó "pending" ya se aprobó.
   cron.schedule(
     env.mpPollCron,
     () => {

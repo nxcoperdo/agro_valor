@@ -2,7 +2,6 @@ const mercadoPagoService = require('./mercadoPagoService');
 const subscriptionService = require('./subscriptionService');
 const userRepository = require('../repositories/userRepository');
 const mpPaymentRepository = require('../repositories/mpPaymentRepository');
-const env = require('../config/env');
 const logger = require('../utils/logger');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -21,96 +20,91 @@ function payerEmailFor(user) {
   return `${user.username}@pagos.agrovalor.co`;
 }
 
-/** Crea la suscripción y devuelve la URL de checkout de Mercado Pago para redirigir al usuario. */
-async function startSubscription(userId) {
+/** Crea la preferencia de pago único (Checkout Pro) y devuelve la URL de checkout. */
+async function startPayment(userId) {
   if (!mercadoPagoService.isConfigured()) {
     throw Object.assign(new Error('Mercado Pago no está configurado en el servidor'), { status: 503 });
   }
 
   const user = userRepository.findById(userId);
-  const { id, initPoint } = await mercadoPagoService.createPreapproval({
+  const { id, initPoint } = await mercadoPagoService.createPreference({
     userId,
     payerEmail: payerEmailFor(user),
   });
 
-  userRepository.setMpPreapproval(userId, { preapprovalId: id, status: 'pending' });
+  userRepository.setMpPayment(userId, { paymentId: id, status: 'pending' });
   return { initPoint };
 }
 
-/** Se llama cuando el usuario vuelve del checkout de Mercado Pago (back_url). */
-async function confirmSubscription(userId) {
-  const user = userRepository.findById(userId);
-
-  if (!user.mp_preapproval_id) {
-    throw Object.assign(new Error('No tienes una suscripción de Mercado Pago en curso'), { status: 400 });
-  }
-
-  const { status } = await mercadoPagoService.getPreapproval(user.mp_preapproval_id);
-  userRepository.setMpPreapproval(userId, { preapprovalId: user.mp_preapproval_id, status });
-
-  if (status === 'authorized') {
-    subscriptionService.activatePro(userId, 1);
-  }
-
-  return userRepository.findById(userId);
-}
-
 /**
- * El usuario cancela la renovación. Pro sigue hasta que vence el mes ya pagado
- * (plan_expires_at no se toca): lo que cambia es que Mercado Pago no vuelve a cobrar y
- * reconcile() ya no la extiende, porque solo mira suscripciones 'authorized'.
+ * Registra un pago aprobado si todavía no se había contado (idempotencia por mp_payment_id)
+ * y extiende Pro un año. Se usa desde confirmPayment (cuando el usuario vuelve del checkout),
+ * desde reconcile (cron de respaldo) y desde el webhook.
  */
-async function cancelSubscription(userId) {
+function applyApprovedPayment(user, payment) {
+  if (mpPaymentRepository.exists(payment.id)) return false;
+
+  mpPaymentRepository.create({
+    userId: user.id,
+    mpPaymentId: payment.id,
+    status: payment.status,
+    amountCop: Math.round(payment.amount),
+    billingPeriodStart: payment.date,
+  });
+  subscriptionService.activatePro(user.id, 12);
+  logger.info(`Pago de Mercado Pago aprobado para ${user.username}: Pro activado por 1 año (pago ${payment.id})`);
+  return true;
+}
+
+/** Busca el pago más reciente del usuario y, si ya está aprobado, activa Pro. */
+async function confirmPayment(userId) {
   const user = userRepository.findById(userId);
+  const payments = await mercadoPagoService.searchPayments(userId);
+  const approved = payments.find((p) => p.status === 'approved');
 
-  if (!user.mp_preapproval_id || user.mp_preapproval_status === 'cancelled') {
-    throw Object.assign(new Error('No tienes una suscripción activa para cancelar'), { status: 400 });
+  if (approved) {
+    applyApprovedPayment(user, approved);
+    userRepository.setMpPayment(userId, { paymentId: approved.id, status: 'approved' });
+  } else if (payments[0]) {
+    userRepository.setMpPayment(userId, { paymentId: payments[0].id, status: payments[0].status });
   }
-
-  const { status } = await mercadoPagoService.cancelPreapproval(user.mp_preapproval_id);
-  userRepository.setMpPreapproval(userId, { preapprovalId: user.mp_preapproval_id, status: status || 'cancelled' });
-  logger.info(`Suscripción de Mercado Pago cancelada por el usuario ${user.username}`);
 
   return userRepository.findById(userId);
 }
 
 /**
- * Cron diario: para cada usuario con una suscripción autorizada, revisa si Mercado Pago
- * ya hizo un cobro nuevo (que ellos disparan solos cada mes) y extiende Pro. Esto es lo
- * que reemplaza al webhook mientras el server no tenga HTTPS para recibirlo.
+ * Cron de respaldo: para quien se quedó con un pago "pending" (p. ej. cerró el navegador
+ * antes de volver a la web), revisa si Mercado Pago ya lo aprobó. El webhook cubre el caso
+ * normal en tiempo real; esto es por si ese webhook no llegó.
  */
 async function reconcile() {
   if (!mercadoPagoService.isConfigured()) return;
 
-  const users = userRepository.findAllWithMpPreapproval('authorized');
+  const users = userRepository.findAllWithMpPaymentStatus('pending');
 
   for (const user of users) {
     try {
-      const payments = await mercadoPagoService.searchAuthorizedPayments(user.mp_preapproval_id);
-
-      for (const payment of payments) {
-        if (payment.status !== 'approved') continue;
-        if (mpPaymentRepository.exists(payment.id)) continue;
-
-        mpPaymentRepository.create({
-          userId: user.id,
-          mpPaymentId: payment.id,
-          status: payment.status,
-          amountCop: Math.round(payment.amount),
-          billingPeriodStart: payment.date,
-        });
-        subscriptionService.activatePro(user.id, 1);
-      }
+      await confirmPayment(user.id);
     } catch (err) {
-      logger.error(`mercadoPagoBillingService: error reconciliando la suscripción del usuario ${user.id}:`, err);
+      logger.error(`mercadoPagoBillingService: error reconciliando el pago del usuario ${user.id}:`, err);
     }
   }
 }
 
-/** Procesa una notificación de webhook (cuando exista HTTPS). Reusa la misma lógica de reconcile. */
+/** Procesa una notificación de webhook ("type": "payment"). */
 async function handleWebhookEvent(payload) {
-  if (payload.type !== 'subscription_authorized_payment' && payload.type !== 'subscription_preapproval') return;
-  await reconcile();
+  if (payload.type !== 'payment' || !payload.data || !payload.data.id) return;
+
+  const payment = await mercadoPagoService.getPayment(payload.data.id);
+  if (!payment.externalReference) return;
+
+  const user = userRepository.findById(parseInt(payment.externalReference, 10));
+  if (!user) return;
+
+  if (payment.status === 'approved') {
+    applyApprovedPayment(user, payment);
+  }
+  userRepository.setMpPayment(user.id, { paymentId: payment.id, status: payment.status });
 }
 
-module.exports = { startSubscription, confirmSubscription, cancelSubscription, reconcile, handleWebhookEvent, payerEmailFor };
+module.exports = { startPayment, confirmPayment, reconcile, handleWebhookEvent, payerEmailFor };

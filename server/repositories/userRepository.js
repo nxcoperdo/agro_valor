@@ -68,17 +68,13 @@ function setPasswordHash(id, passwordHash) {
   return findPublicById(id);
 }
 
-function setMpPreapproval(id, { preapprovalId, status }) {
-  db.prepare('UPDATE users SET mp_preapproval_id = ?, mp_preapproval_status = ? WHERE id = ?').run(
-    preapprovalId,
-    status,
-    id
-  );
+function setMpPayment(id, { paymentId, status }) {
+  db.prepare('UPDATE users SET mp_payment_id = ?, mp_payment_status = ? WHERE id = ?').run(paymentId, status, id);
   return findPublicById(id);
 }
 
-function findAllWithMpPreapproval(status) {
-  return db.prepare('SELECT * FROM users WHERE mp_preapproval_status = ?').all(status);
+function findAllWithMpPaymentStatus(status) {
+  return db.prepare('SELECT * FROM users WHERE mp_payment_status = ?').all(status);
 }
 
 function listAll(limit = 200) {
@@ -104,8 +100,8 @@ module.exports = {
   updateProfile,
   setPlan,
   setPasswordHash,
-  setMpPreapproval,
-  findAllWithMpPreapproval,
+  setMpPayment,
+  findAllWithMpPaymentStatus,
   listAll,
   deleteById,
 };

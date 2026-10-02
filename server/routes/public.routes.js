@@ -43,10 +43,8 @@ router.get('/legal/cookies', (req, res) => {
 });
 
 /**
- * Notificación de Mercado Pago. En la práctica queda inactiva hasta que el server tenga
- * HTTPS (Mercado Pago no entrega webhooks a HTTP) — la reconciliación real hoy la hace
- * el cron diario (mercadoPagoBillingService.reconcile), esto es solo para cuando haya
- * HTTPS y llegue en tiempo real.
+ * Notificación de Mercado Pago (pago único de Checkout Pro). El cron diario
+ * (mercadoPagoBillingService.reconcile) es el respaldo por si esta notificación no llega.
  */
 router.post('/webhooks/mercadopago', async (req, res) => {
   const dataId = req.query['data.id'];

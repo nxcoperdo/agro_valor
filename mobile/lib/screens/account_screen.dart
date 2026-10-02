@@ -103,7 +103,7 @@ class AccountScreen extends StatelessWidget {
                     _MenuTile(
                       icon: Icons.workspace_premium_rounded,
                       title: session.isPro ? 'Plan Pro' : 'Ver plan Pro',
-                      subtitle: session.isPro ? 'Beneficios de tu suscripción' : 'Beneficios y cómo suscribirte',
+                      subtitle: session.isPro ? 'Beneficios de tu plan Pro' : 'Beneficios y cómo activarlo',
                       open: () => ProScreen(session: session),
                     ),
                     _MenuTile(

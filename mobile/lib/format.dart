@@ -7,6 +7,12 @@ const lbPerCarga = cargaKg * lbPerKg;
 /// La cotización internacional llega por libra; en la app siempre se muestra por carga.
 double usdPerLbToCarga(num usdPerLb) => usdPerLb * lbPerCarga;
 
+/// El precio interno de la FNC está definido para factor de rendimiento 94 (ver
+/// server/services/netPriceService.js). A menor factor, mejor rendimiento y más valor,
+/// en proporción inversa: basta con escalar por 94/factor.
+const referenceFactor = 94;
+double copPerCargaAtFactor(num basePriceAtFactor94, num factor) => basePriceAtFactor94 * (referenceFactor / factor);
+
 final _cop = NumberFormat.currency(locale: 'es_CO', symbol: r'$ ', decimalDigits: 0);
 final _usd = NumberFormat.currency(locale: 'en_US', symbol: r'US$ ', decimalDigits: 2);
 

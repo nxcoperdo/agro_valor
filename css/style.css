@@ -1818,25 +1818,6 @@ body.nav-locked {
   padding: var(--av-space-3);
 }
 
-.cancel-sub {
-  margin-top: var(--av-space-4);
-}
-
-.cancel-sub-confirm {
-  margin-top: var(--av-space-3);
-  border-radius: var(--av-radius-md);
-  border: 1px solid var(--av-border);
-  padding: var(--av-space-3);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--av-space-2);
-}
-
-.cancel-sub-confirm p {
-  flex-basis: 100%;
-  margin: 0;
-}
-
 /* Paywall y planes -------------------------------------------------------- */
 
 .paywall {
@@ -2338,6 +2319,7 @@ body.nav-locked {
 .pv-hero { margin-top: 8px; display: flex; align-items: baseline; gap: 6px; }
 .pv-hero-value { font-size: 36px; font-weight: 700; letter-spacing: -1px; }
 .pv-hero-unit { font-size: 18px; font-weight: 500; color: var(--pv-muted); }
+.pv-factors { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--pv-border); }
 .pv-foot {
   margin-top: 10px;
   padding-top: 10px;
