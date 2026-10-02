@@ -58,9 +58,9 @@ function createApp() {
 
   // Vista previa gratis, cálculo/detalle completo requiere Pro (ver gating dentro de la ruta).
   app.use('/api/forecast', authMiddleware, loadUser, forecastRoutes);
-  app.use('/api/calculator', authMiddleware, loadUser, calculatorRoutes);
 
   // Requiere plan Pro.
+  app.use('/api/calculator', authMiddleware, loadUser, requirePro, calculatorRoutes);
   app.use('/api/alerts', authMiddleware, loadUser, requirePro, alertsRoutes);
   app.use('/api/sales', authMiddleware, loadUser, requirePro, salesRoutes);
 

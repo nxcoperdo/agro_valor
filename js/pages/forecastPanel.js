@@ -65,8 +65,8 @@ function renderDayView(daily) {
             <span class="cal-day-weekday">${weekday}</span>${dayNumFmt.format(date)}
           </div>
           <div class="cal-day-price-group">
-            ${changeBadge(f.changePct)}
             <div class="cal-cell-range-price tabular-nums">${rangeLine(f, formatCopShort)}</div>
+            ${changeBadge(f.changePct)}
           </div>
         </div>
       `;
@@ -94,8 +94,8 @@ function renderWeekView(weekly) {
         <div class="cal-cell cal-week-cell">
           <div class="cal-cell-label">Semana ${f.step}</div>
           <div class="cal-cell-range">${dayMonthFmt.format(startDate)} – ${dayMonthFmt.format(endDate)}</div>
-          ${changeBadge(f.changePct)}
           <div class="cal-cell-range-price tabular-nums">${rangeLine(f, formatCop, { withLabel: true })}</div>
+          ${changeBadge(f.changePct)}
         </div>
       `;
     })
@@ -114,8 +114,8 @@ function renderMonthView(monthly) {
       return `
         <div class="cal-cell cal-month-cell">
           <div class="cal-cell-label">${monthYearFmt.format(date)}</div>
-          ${changeBadge(f.changePct)}
           <div class="cal-cell-range-price tabular-nums">${rangeLine(f, formatCop, { withLabel: true })}</div>
+          ${changeBadge(f.changePct)}
         </div>
       `;
     })

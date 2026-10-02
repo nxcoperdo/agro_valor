@@ -133,6 +133,13 @@ class _ForecastList extends StatelessWidget {
                             : formatUsd(usdPerLbToCarga(f['usdPerLb'] as num)),
                         style: const TextStyle(fontWeight: FontWeight.w700, fontFeatures: tabular),
                       ),
+                      // Rango probable (mínimo–máximo), no solo el precio central: entre
+                      // más lejos la fecha, más ancho — ver la nota al final de la lista.
+                      if (f['lowImpliedCopPerCarga'] != null && f['highImpliedCopPerCarga'] != null)
+                        Text(
+                          '${formatCop(f['lowImpliedCopPerCarga'] as num)} – ${formatCop(f['highImpliedCopPerCarga'] as num)}',
+                          style: const TextStyle(fontSize: 11, color: AvColors.fgFaint, fontFeatures: tabular),
+                        ),
                       if (f['changePct'] != null)
                         Text(
                           formatPct(f['changePct'] as num),
@@ -141,13 +148,6 @@ class _ForecastList extends StatelessWidget {
                             color: (f['changePct'] as num) >= 0 ? AvColors.positive : AvColors.danger,
                             fontFeatures: tabular,
                           ),
-                        ),
-                      // Rango probable (mínimo–máximo), no solo el precio central: entre
-                      // más lejos la fecha, más ancho — ver la nota al final de la lista.
-                      if (f['lowImpliedCopPerCarga'] != null && f['highImpliedCopPerCarga'] != null)
-                        Text(
-                          '${formatCop(f['lowImpliedCopPerCarga'] as num)} – ${formatCop(f['highImpliedCopPerCarga'] as num)}',
-                          style: const TextStyle(fontSize: 11, color: AvColors.fgFaint, fontFeatures: tabular),
                         ),
                     ],
                   ),

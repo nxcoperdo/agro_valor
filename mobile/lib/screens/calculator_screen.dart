@@ -9,6 +9,7 @@ import '../widgets/forms.dart';
 import 'pro_screen.dart';
 
 /// Cuánto le queda realmente al caficultor por carga según su café, y en qué cooperativa le conviene vender.
+/// Exclusivo de Pro (el gating real está en el middleware requirePro del servidor).
 class CalculatorScreen extends StatelessWidget {
   const CalculatorScreen({super.key, required this.session});
 
@@ -16,6 +17,16 @@ class CalculatorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!session.isPro) {
+      return ProUpsell(
+        title: 'Calculadora de precio neto',
+        body: 'Calcula cuánto te queda realmente por carga según tu factor, humedad y transporte, y en qué '
+            'cooperativa te conviene más vender.',
+        icon: Icons.calculate_rounded,
+        onUpgrade: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProScreen(session: session))),
+      );
+    }
+
     return AsyncView<Json>(
       load: session.api.profile,
       builder: (context, profile) => _Calculator(session: session, profile: profile),
@@ -130,7 +141,6 @@ class _CalculatorState extends State<_Calculator> {
   List<Widget> _results(Json result) {
     final ref = result['againstReference'] as Json;
     final coops = (result['byCooperative'] as List<dynamic>? ?? const []).cast<Json>();
-    final locked = result['locked'] == true;
     final cargas = (ref['inputs'] as Json)['cargas'] as num;
     final diffPct = ref['differenceVsBasePct'] as num;
 
@@ -158,38 +168,7 @@ class _CalculatorState extends State<_Calculator> {
           ],
         ),
       ),
-      if (locked) ...[
-        const SectionLabel('¿Dónde te queda más plata?'),
-        LockedTeaser(
-          height: 220,
-          preview: Column(
-            children: [
-              for (var i = 0; i < ((result['cooperativesCount'] as num?)?.toInt() ?? 3); i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _CoopResult(
-                    coop: const {
-                      'rank': 1,
-                      'name': 'Cooperativa •••••••',
-                      'isBest': false,
-                      'lostVsBest': 999999,
-                      'netPerCarga': 9999999,
-                      'total': 9999999,
-                    },
-                    showTotal: false,
-                  ),
-                ),
-            ],
-          ),
-          title: '¿Dónde te queda más plata?',
-          body: result['maxDifferenceCop'] != null
-              ? 'Hay ${formatCop(result['maxDifferenceCop'] as num)} de diferencia entre la mejor y la peor '
-                  'de las ${result['cooperativesCount']} cooperativas para tu café.'
-              : 'Activa Pro para ver en qué cooperativa te conviene vender.',
-          onUpgrade: () =>
-              Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProScreen(session: widget.session))),
-        ),
-      ] else if (coops.isNotEmpty) ...[
+      if (coops.isNotEmpty) ...[
         const SectionLabel('¿Dónde te queda más plata?'),
         for (final c in coops) ...[_CoopResult(coop: c, showTotal: cargas != 1), const SizedBox(height: 8)],
       ],

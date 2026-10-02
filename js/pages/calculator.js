@@ -1,4 +1,6 @@
 import { api } from '../services/api.js';
+import { isPro } from '../services/auth.js';
+import { paywall } from '../ui/shell.js';
 import { formatCop } from '../utils/currency.js';
 
 function breakdownRow(step) {
@@ -61,41 +63,15 @@ function fullComparisonPanel(data, r) {
   `;
 }
 
-/** Sin Pro se muestra cuánto hay en juego, pero no en cuál cooperativa: eso es lo que se paga. */
-function lockedComparisonPanel(data) {
-  return `
-    <div class="locked-teaser">
-      <div class="locked-teaser-blur">
-        <div class="table-scroll">
-          <table class="coop-table">
-            <thead>
-              <tr><th>#</th><th>Cooperativa</th><th>Neto por carga</th><th>Total</th><th>Dejas de ganar</th></tr>
-            </thead>
-            <tbody>
-              ${Array.from({ length: Math.min(data.cooperativesCount || 3, 4) })
-                .map(
-                  (_, i) => `
-                <tr><td>${i + 1}</td><td>Cooperativa •••</td><td>$•,•••,•••</td><td>$•,•••,•••</td><td>−$•••,•••</td></tr>
-              `
-                )
-                .join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="locked-teaser-cta">
-        <span class="badge badge-pro">AgroValor Pro</span>
-        <p class="highlight-note">
-          Hay una diferencia de <strong>${formatCop(data.maxDifferenceCop || 0)}</strong> entre la mejor y la
-          peor de las ${data.cooperativesCount} cooperativas para tu café.
-        </p>
-        <a class="btn-primary" href="#/pro">Ver cuál me conviene</a>
-      </div>
-    </div>
-  `;
-}
-
 export async function renderCalculator(container) {
+  if (!isPro()) {
+    container.innerHTML = paywall(
+      'Calculadora de precio neto',
+      'Calcula cuánto te queda realmente por carga según tu factor, humedad y transporte, y en qué cooperativa te conviene más vender.'
+    );
+    return;
+  }
+
   container.innerHTML = `
     <div class="panel">
       <div class="panel-header">
@@ -171,10 +147,10 @@ export async function renderCalculator(container) {
         </div>
 
         ${
-          data.locked || data.byCooperative
+          data.byCooperative && data.byCooperative.length > 0
             ? `<div class="panel av-fade-in">
                 <div class="panel-header"><h2>¿A quién le vendo?</h2></div>
-                ${data.locked ? lockedComparisonPanel(data) : fullComparisonPanel(data, r)}
+                ${fullComparisonPanel(data, r)}
               </div>`
             : ''
         }

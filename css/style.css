@@ -1936,34 +1936,312 @@ body.nav-locked {
 
 /* Página del plan Pro -------------------------------------------------------- */
 
-.pro-hero {
-  text-align: center;
-}
-
-.pro-hero-title {
-  margin: var(--av-space-3) 0 var(--av-space-2);
-  font-size: 1.6rem;
-}
-
-.pro-price {
-  margin: 0 0 var(--av-space-4);
-}
-
-.pro-price-amount {
-  font-size: 2.4rem;
-  font-weight: 700;
-  font-feature-settings: "tnum";
-}
-
-.pro-price-period {
-  margin-left: var(--av-space-2);
-  color: var(--av-fg-muted);
-  font-size: 0.95rem;
-}
-
 .pro-features-list li {
   font-size: 0.95rem;
   padding-left: 1.6em;
+}
+
+.panel-header-centered {
+  text-align: center;
+  max-width: 560px;
+  margin: 0 auto var(--av-space-4);
+}
+
+.panel-header-centered h2 {
+  margin: var(--av-space-2) 0;
+  font-size: 1.4rem;
+}
+
+.pro2-eyebrow {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--av-accent);
+}
+
+/* Hero: copy a la izquierda, tarjeta de precio a la derecha; apiladas en móvil. */
+.pro2-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--av-space-5);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .pro2-hero {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+}
+
+.pro2-hero--trial,
+.pro2-hero--done {
+  text-align: center;
+}
+
+.pro2-hero--done {
+  grid-template-columns: 1fr;
+}
+
+.pro2-title {
+  margin: var(--av-space-3) 0 var(--av-space-2);
+  font-size: clamp(1.5rem, 1.1rem + 2vw, 2.1rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.pro2-check-list {
+  list-style: none;
+  margin: var(--av-space-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--av-space-2);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.pro2-check-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--av-space-2);
+}
+
+.pro2-check {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--av-positive-soft);
+  color: var(--av-positive-fg);
+}
+
+/* Tarjeta de precio: la pieza que convierte, por eso lleva su propio fondo y borde dorado. */
+.pro2-price-card {
+  background: var(--av-surface-alt);
+  border: 1px solid rgba(212, 160, 23, 0.35);
+  border-radius: var(--av-radius-lg);
+  padding: var(--av-space-4);
+  position: relative;
+}
+
+.pro2-price-tag {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: var(--av-accent);
+  color: var(--av-on-accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pro2-price-eyebrow {
+  margin: var(--av-space-3) 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--av-fg-muted);
+}
+
+.pro2-price {
+  margin: var(--av-space-2) 0 0;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--av-space-2);
+}
+
+.pro2-price-amount {
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-feature-settings: "tnum";
+}
+
+.pro2-price-period {
+  margin-bottom: 0.3rem;
+  color: var(--av-fg-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pro2-price-note {
+  margin: var(--av-space-1) 0 0;
+  font-size: 0.85rem;
+  color: var(--av-fg-muted);
+}
+
+.pro2-divider {
+  border: none;
+  border-top: 1px solid var(--av-border);
+  margin: var(--av-space-4) 0;
+}
+
+.pro2-price-includes {
+  margin: 0 0 var(--av-space-2);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.pro2-feature-list {
+  list-style: none;
+  margin: 0 0 var(--av-space-4);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--av-space-2);
+}
+
+.pro2-feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--av-space-2);
+  font-size: 0.88rem;
+  color: var(--av-fg);
+}
+
+.pro2-feature-list .pro2-check {
+  margin-top: 2px;
+}
+
+.pro2-price-btn {
+  width: 100%;
+}
+
+.pro2-price-secure {
+  margin: var(--av-space-3) 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--av-fg-muted);
+}
+
+.pro2-shield {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.pro2-price-fine {
+  margin: var(--av-space-1) 0 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--av-fg-muted);
+}
+
+/* Grid de beneficios: mismas tarjetas de .value-card, con un ícono arriba del título. */
+.pro2-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--av-radius-md);
+  background: var(--av-accent-soft);
+  color: var(--av-accent);
+  margin-bottom: var(--av-space-2);
+}
+
+.pro2-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Cómo funciona: copy a un lado, pasos numerados al otro; apilados en móvil. */
+.pro2-howto {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--av-space-4);
+}
+
+@media (min-width: 768px) {
+  .pro2-howto {
+    grid-template-columns: 0.9fr 1.1fr;
+    align-items: center;
+  }
+}
+
+.pro2-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--av-space-3);
+}
+
+.pro2-steps li {
+  background: var(--av-surface-alt);
+  border-radius: var(--av-radius-md);
+  padding: var(--av-space-3);
+}
+
+.pro2-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--av-accent);
+  color: var(--av-on-accent);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.pro2-steps h3 {
+  margin: var(--av-space-2) 0 var(--av-space-1);
+  font-size: 0.95rem;
+}
+
+.pro2-steps p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--av-fg-muted);
+}
+
+.pro2-faq {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+/* Banner final: el único bloque que invierte la paleta (fondo dorado, texto oscuro). */
+.pro2-cta {
+  text-align: center;
+  background: var(--av-accent);
+  border-color: var(--av-accent);
+}
+
+.pro2-cta .pro2-eyebrow,
+.pro2-cta h2,
+.pro2-cta .pro2-cta-fine {
+  color: var(--av-on-accent);
+}
+
+.pro2-cta h2 {
+  margin: var(--av-space-2) auto var(--av-space-4);
+  max-width: 32ch;
+  font-size: 1.3rem;
+}
+
+.pro2-cta-btn {
+  background: var(--av-bg);
+  color: var(--av-fg);
+}
+
+.pro2-cta-btn:hover {
+  background: var(--av-surface);
+}
+
+.pro2-cta-fine {
+  margin: var(--av-space-2) 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0.85;
 }
 
 /* Panel admin -------------------------------------------------------------- */
