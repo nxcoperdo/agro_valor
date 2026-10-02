@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../session.dart';
 import '../theme.dart';
+import '../widgets/trial_welcome_dialog.dart';
 import 'account_screen.dart';
 import 'alerts_screen.dart';
 import 'calculator_screen.dart';
@@ -22,6 +23,18 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final s = widget.session;
+    if (s.pendingTrialWelcome && s.user != null) {
+      s.pendingTrialWelcome = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showTrialWelcomeDialog(context, s.user!);
+      });
+    }
+  }
 
   static const _tabs = [
     (title: 'Precio del café', label: 'Precio', icon: Icons.show_chart_rounded),

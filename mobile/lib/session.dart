@@ -49,7 +49,11 @@ class Session extends ChangeNotifier {
 
   Future<void> login(String username, String password) => _start(api.login(username, password));
 
-  Future<void> signup(Json payload) => _start(api.signup(payload));
+  /// True justo después de crear la cuenta (la prueba gratis solo se otorga en el registro);
+  /// HomeShell lo consume una vez para mostrar el modal de bienvenida.
+  bool pendingTrialWelcome = false;
+
+  Future<void> signup(Json payload) => _start(api.signup(payload), isSignup: true);
 
   Future<void> refreshUser() async {
     user = (await api.me())['user'] as Json;
@@ -70,7 +74,7 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _start(Future<Json> call) async {
+  Future<void> _start(Future<Json> call, {bool isSignup = false}) async {
     final res = await call;
     final token = res['token'] as String?;
     if (token == null) {
@@ -79,6 +83,7 @@ class Session extends ChangeNotifier {
     }
     api.token = token;
     user = res['user'] as Json;
+    pendingTrialWelcome = isSignup && user?['isTrialing'] == true;
     await _storage.write(key: _tokenKey, value: token);
     notifyListeners();
     unawaited(push.register());
