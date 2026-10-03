@@ -8,6 +8,7 @@ import 'legal_screen.dart';
 import 'pro_screen.dart';
 import 'profile_screen.dart';
 import 'report_screen.dart';
+import 'coffee/coffee_hub_screen.dart';
 import 'sales_screen.dart';
 
 class AccountScreen extends StatelessWidget {
@@ -118,6 +119,13 @@ class AccountScreen extends StatelessWidget {
                       subtitle: 'Historial frente al precio de referencia',
                       pro: !session.isPro,
                       open: () => SalesScreen(session: session),
+                    ),
+                    _MenuTile(
+                      icon: Icons.coffee_rounded,
+                      title: 'Compras de café',
+                      subtitle: 'Compras, calculadora, inventario y panel',
+                      pro: !session.isPro,
+                      open: () => CoffeeHubScreen(session: session),
                     ),
                     _MenuTile(
                       icon: Icons.campaign_rounded,

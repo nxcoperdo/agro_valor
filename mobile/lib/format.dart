@@ -48,3 +48,16 @@ String timeAgo(String? iso) {
 
 /// Fecha como la espera el API ("2026-09-25").
 String isoDay(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
+
+final _kg = NumberFormat.decimalPattern('es_CO');
+
+/// Kilos con hasta 2 decimales: 1.000 kg, 920 kg, 12,5 kg.
+String formatKg(num? value) {
+  if (value == null) return '—';
+  _kg.maximumFractionDigits = 2;
+  _kg.minimumFractionDigits = 0;
+  return '${_kg.format(value)} kg';
+}
+
+/// El factor de rendimiento NO es un porcentaje: se muestra como "Factor 88".
+String formatFactor(num value) => 'Factor ${value == value.roundToDouble() ? value.round() : value}';

@@ -111,4 +111,19 @@ class ApiClient {
   Future<Json> sales() async => await _request('GET', '/sales') as Json;
   Future<Json> createSale(Json payload) async => await _request('POST', '/sales', payload) as Json;
   Future<void> deleteSale(int id) => _request('DELETE', '/sales/$id');
+
+  // Módulo de café (compras, lotes, inventario, ventas). Mismo API que la web: /api/coffee.
+  Future<Json> coffeeDashboard() async => await _request('GET', '/coffee/dashboard') as Json;
+  Future<Json> coffeePurchases() async => await _request('GET', '/coffee/purchases') as Json;
+  Future<Json> coffeeCreatePurchase(Json payload) async => await _request('POST', '/coffee/purchases', payload) as Json;
+  Future<Json> coffeeVoidPurchase(int id, String reason) async =>
+      await _request('POST', '/coffee/purchases/$id/void', {'reason': reason}) as Json;
+  Future<Json> coffeeSearchSuppliers(String q) async =>
+      await _request('GET', '/coffee/suppliers?q=${Uri.encodeQueryComponent(q)}') as Json;
+  Future<Json> coffeeCurrentWorkday() async => await _request('GET', '/coffee/workdays/current') as Json;
+  Future<Json> coffeeQuickCalc(Json payload) async => await _request('POST', '/coffee/calculator', payload) as Json;
+  Future<Json> coffeeCompareFactors(Json payload) async =>
+      await _request('POST', '/coffee/calculator/compare', payload) as Json;
+  Future<Json> coffeeInventory() async => await _request('GET', '/coffee/inventory') as Json;
+  Future<Json> coffeeLots() async => await _request('GET', '/coffee/lots') as Json;
 }
