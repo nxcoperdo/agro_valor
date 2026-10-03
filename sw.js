@@ -8,7 +8,7 @@
  */
 
 // Subir esta versión invalida las cachés viejas en el próximo despliegue.
-const VERSION = 'v3';
+const VERSION = 'v4';
 const SHELL_CACHE = `agrovalor-shell-${VERSION}`;
 const DATA_CACHE = `agrovalor-data-${VERSION}`;
 
@@ -18,6 +18,15 @@ const SHELL_ASSETS = [
   './css/style.css',
   './css/login.css',
   './js/app.js',
+  './fonts/inter-latin-400-normal.woff2',
+  './fonts/inter-latin-500-normal.woff2',
+  './fonts/inter-latin-600-normal.woff2',
+  './fonts/inter-latin-700-normal.woff2',
+  './fonts/poppins-latin-600-normal.woff2',
+  './fonts/poppins-latin-700-normal.woff2',
+  './fonts/montserrat-latin-400-normal.woff2',
+  './fonts/montserrat-latin-500-normal.woff2',
+  './fonts/montserrat-latin-600-normal.woff2',
   './site.webmanifest',
   './img/logo-full.png',
   './img/logo-icon.png',

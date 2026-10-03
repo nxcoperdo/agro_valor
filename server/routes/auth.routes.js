@@ -34,6 +34,21 @@ function tokenForClient(req, token) {
   return isMobile(req) ? { token } : {};
 }
 
+const MIN_AGE = 18;
+
+/** Edad cumplida a hoy según 'YYYY-MM-DD'; null si la fecha no existe. */
+function ageFromBirthDate(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+  if (!m) return null;
+  const [, y, mo, d] = m.map(Number);
+  const birth = new Date(Date.UTC(y, mo - 1, d));
+  if (birth.getUTCFullYear() !== y || birth.getUTCMonth() !== mo - 1 || birth.getUTCDate() !== d) return null;
+  const now = new Date();
+  let age = now.getUTCFullYear() - y;
+  if (now.getUTCMonth() + 1 < mo || (now.getUTCMonth() + 1 === mo && now.getUTCDate() < d)) age -= 1;
+  return age;
+}
+
 const REMEMBER_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** La app siempre recuerda la sesión; en la web solo si marcaron "Recordarme". */
@@ -63,7 +78,17 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
       return res.status(403).json({ error: 'El registro público está desactivado' });
     }
 
-    const { email, password, phone, fullName, municipality } = req.body || {};
+    const { email, password, phone, fullName, municipality, birthDate } = req.body || {};
+
+    // Verificación de edad (COPPA / Ley 1581): solo mayores de edad. La fecha NO se guarda,
+    // solo la constancia de que se verificó (users.age_verified_at).
+    const age = ageFromBirthDate(birthDate);
+    if (age === null || age < 0 || age > 120) {
+      return res.status(400).json({ error: 'Indica tu fecha de nacimiento' });
+    }
+    if (age < MIN_AGE) {
+      return res.status(403).json({ error: `Debes tener al menos ${MIN_AGE} años para crear una cuenta` });
+    }
 
     if (!password) {
       return res.status(400).json({ error: 'La contraseña es requerida' });
@@ -104,6 +129,7 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
       fullName: fullName ? String(fullName).trim() : null,
       municipality: municipality ? String(municipality).trim() : null,
       plan: 'free',
+      ageVerified: true,
     });
 
     // Toda cuenta nueva arranca con 7 días de Pro de regalo (ver subscriptionService.startTrial).

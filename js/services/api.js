@@ -32,6 +32,7 @@ export const api = {
   privacyPolicy: () => request('/public/legal/privacy'),
   termsOfService: () => request('/public/legal/terms'),
   cookiePolicy: () => request('/public/legal/cookies'),
+  dmcaPolicy: () => request('/public/legal/dmca'),
 
   // Sesión
   signup: (payload) => request('/auth/signup', { method: 'POST', ...body(payload) }),

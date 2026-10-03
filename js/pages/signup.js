@@ -15,6 +15,19 @@ const ICONS = {
 
 const icon = (name) => `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none">${ICONS[name]}</svg>`;
 
+const MIN_AGE = 18;
+
+/** Edad cumplida a hoy a partir de 'YYYY-MM-DD'; null si la fecha no es válida. */
+function ageFrom(isoDate) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate || '');
+  if (!m) return null;
+  const [, y, mo, d] = m.map(Number);
+  const now = new Date();
+  let age = now.getFullYear() - y;
+  if (now.getMonth() + 1 < mo || (now.getMonth() + 1 === mo && now.getDate() < d)) age -= 1;
+  return age;
+}
+
 const SUBMIT_LABEL = `<span>Crear mi cuenta</span>${icon('arrow')}`;
 
 export function renderSignup(root) {
@@ -103,6 +116,14 @@ export function renderSignup(root) {
               </span>
             </label>
 
+            <label class="lg-field">
+              <span>Fecha de nacimiento</span>
+              <span class="lg-input">
+                <input type="date" name="birthDate" autocomplete="bday" required />
+              </span>
+              <small>Debes tener 18 años o más. No guardamos tu fecha, solo que ya eres mayor de edad.</small>
+            </label>
+
             <label class="lg-check">
               <input type="checkbox" name="acceptTerms" id="accept-terms" />
               <span>
@@ -151,6 +172,19 @@ export function renderSignup(root) {
       return;
     }
 
+    const birthDate = form.birthDate.value;
+    const age = ageFrom(birthDate);
+    if (age === null || age < 0 || age > 120) {
+      errorEl.textContent = 'Indica tu fecha de nacimiento.';
+      errorEl.hidden = false;
+      return;
+    }
+    if (age < MIN_AGE) {
+      errorEl.textContent = `Debes tener al menos ${MIN_AGE} años para crear una cuenta.`;
+      errorEl.hidden = false;
+      return;
+    }
+
     if (!form.acceptTerms.checked) {
       errorEl.textContent = 'Debes aceptar los términos de uso y la política de privacidad.';
       errorEl.hidden = false;
@@ -161,7 +195,7 @@ export function renderSignup(root) {
     submitBtn.innerHTML = '<span>Creando cuenta…</span>';
 
     try {
-      const { user } = await api.signup({ email, phone, password });
+      const { user } = await api.signup({ email, phone, password, birthDate });
       setCachedUser(user);
       if (user.isTrialing) {
         showTrialWelcomeModal(user, () => {

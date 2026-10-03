@@ -19,12 +19,12 @@ function findPublicById(id) {
   return db.prepare(`SELECT ${PUBLIC_FIELDS} FROM users WHERE id = ?`).get(id);
 }
 
-function create({ username, passwordHash, role = 'user', phone = null, fullName = null, municipality = null, plan = 'free' }) {
+function create({ username, passwordHash, role = 'user', phone = null, fullName = null, municipality = null, plan = 'free', ageVerified = false }) {
   const info = db
     .prepare(
-      'INSERT INTO users (username, password_hash, role, phone, full_name, municipality, plan) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      "INSERT INTO users (username, password_hash, role, phone, full_name, municipality, plan, age_verified_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     )
-    .run(username, passwordHash, role, phone, fullName, municipality, plan);
+    .run(username, passwordHash, role, phone, fullName, municipality, plan, ageVerified ? new Date().toISOString().replace('T', ' ').slice(0, 19) : null);
   return findById(info.lastInsertRowid);
 }
 

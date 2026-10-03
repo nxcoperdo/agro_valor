@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../session.dart';
 import 'legal_screen.dart';
@@ -52,6 +51,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   bool _busy = false;
   bool _showPassword = false;
   bool _acceptedTerms = false;
+  DateTime? _birthDate;
   String? _error;
 
   @override
@@ -69,6 +69,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       setState(() => _error = 'Debes aceptar los términos de uso y la política de privacidad');
       return;
     }
+    if (_signup && (_birthDate == null || !_isAdult(_birthDate!))) {
+      setState(() => _error = _birthDate == null
+          ? 'Indica tu fecha de nacimiento'
+          : 'Debes tener al menos 18 años para crear una cuenta');
+      return;
+    }
     FocusScope.of(context).unfocus();
     setState(() {
       _busy = true;
@@ -80,6 +86,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           'password': _password.text,
           'email': _email.text.trim(),
           'phone': _phone.text.trim(),
+          'birthDate': _birthDate!.toIso8601String().substring(0, 10),
         });
       } else {
         await widget.session.login(_username.text.trim(), _password.text);
@@ -91,15 +98,52 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
   }
 
+  /// Verificación de edad del registro: AgroValor es solo para mayores de 18 años (también cubre COPPA).
+  static bool _isAdult(DateTime birth) {
+    final now = DateTime.now();
+    var age = now.year - birth.year;
+    if (now.month < birth.month || (now.month == birth.month && now.day < birth.day)) age -= 1;
+    return age >= 18;
+  }
+
+  Future<void> _pickBirthDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _birthDate ?? DateTime(now.year - 30, now.month, now.day),
+      firstDate: DateTime(now.year - 100),
+      lastDate: now,
+      helpText: 'Fecha de nacimiento',
+    );
+    if (picked != null) setState(() => _birthDate = picked);
+  }
+
+  Widget _birthRow() {
+    final d = _birthDate;
+    final label = d == null
+        ? 'Fecha de nacimiento (debes ser mayor de 18 años)'
+        : '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: OutlinedButton.icon(
+        onPressed: _busy ? null : _pickBirthDate,
+        icon: const Icon(Icons.cake_outlined, size: 20),
+        label: Align(alignment: Alignment.centerLeft, child: Text(label, style: const TextStyle(fontSize: 14))),
+        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52), foregroundColor: _C.focus),
+      ),
+    );
+  }
+
   void _toggleMode() => setState(() {
     _signup = !_signup;
     _error = null;
     _acceptedTerms = false;
+    _birthDate = null;
   });
 
   @override
   Widget build(BuildContext context) {
-    final text = GoogleFonts.interTextTheme();
+    final text = ThemeData().textTheme.apply(fontFamily: 'Inter');
     return AnnotatedRegion<SystemUiOverlayStyle>(
       // Íconos claros sobre la franja verde de arriba.
       value: SystemUiOverlayStyle.light,
@@ -289,6 +333,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   },
                 ),
               ),
+              if (_signup) _birthRow(),
               if (_signup) _termsRow(),
               if (!_signup)
                 AnimatedSize(
@@ -523,7 +568,7 @@ class _SubmitButton extends StatelessWidget {
           disabledBackgroundColor: _C.gold.withValues(alpha: 0.75),
           disabledForegroundColor: _C.onGold,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w800),
         ),
         child: busy
             ? const SizedBox(

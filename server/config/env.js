@@ -73,6 +73,13 @@ const env = {
   // configurado el reloj del servidor: "las 6 de la mañana" son las 6 en Colombia.
   timezone: process.env.TZ_APP || 'America/Bogota',
 
+  // Datos de contacto legal que se publican en Privacidad, Términos y la página DMCA.
+  // Si faltan, las páginas muestran un aviso visible de "pendiente" en vez de inventar datos.
+  legalContactEmail: process.env.LEGAL_CONTACT_EMAIL || '',
+  legalPostalAddress: process.env.LEGAL_POSTAL_ADDRESS || '',
+  dmcaAgentName: process.env.DMCA_AGENT_NAME || '',
+  dmcaAgentEmail: process.env.DMCA_AGENT_EMAIL || process.env.LEGAL_CONTACT_EMAIL || '',
+  dmcaAgentPhone: process.env.DMCA_AGENT_PHONE || '',
   allowPublicSignup: process.env.ALLOW_PUBLIC_SIGNUP !== 'false',
 };
 

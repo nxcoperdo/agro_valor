@@ -12,7 +12,7 @@ import { renderReport } from './pages/report.js';
 import { renderAccount } from './pages/account.js';
 import { renderAdmin } from './pages/admin.js';
 import { renderPasswordReset } from './pages/reset-password.js';
-import { renderPrivacyPolicy, renderTermsOfService, renderCookiePolicy } from './pages/legal.js';
+import { renderPrivacyPolicy, renderTermsOfService, renderCookiePolicy, renderDmcaPolicy } from './pages/legal.js';
 import { renderProPlan } from './pages/pro.js';
 
 /**
@@ -25,6 +25,7 @@ const ROUTES = {
   '#/privacidad': { render: renderPrivacyPolicy },
   '#/terminos': { render: renderTermsOfService },
   '#/cookies': { render: renderCookiePolicy },
+  '#/dmca': { render: renderDmcaPolicy },
   '#/login': { render: renderLogin, guestOnly: true },
   '#/registro': { render: renderSignup, guestOnly: true },
   '#/recuperar': { render: renderPasswordReset, guestOnly: true },

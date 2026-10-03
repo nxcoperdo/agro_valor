@@ -38,6 +38,10 @@ router.get('/legal/terms', (req, res) => {
   res.json(legalContentService.getTermsOfService());
 });
 
+router.get('/legal/dmca', (req, res) => {
+  res.json(legalContentService.getDmcaPolicy());
+});
+
 router.get('/legal/cookies', (req, res) => {
   res.json(legalContentService.getCookiePolicy());
 });

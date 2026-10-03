@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../session.dart';
 
@@ -112,7 +111,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Theme(
-      data: Theme.of(context).copyWith(textTheme: GoogleFonts.interTextTheme()),
+      data: Theme.of(context).copyWith(textTheme: ThemeData().textTheme.apply(fontFamily: 'Inter')),
       child: Scaffold(
         backgroundColor: _C.page,
         body: Stack(
@@ -392,7 +391,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           disabledBackgroundColor: _C.gold.withValues(alpha: 0.75),
           disabledForegroundColor: _C.onGold,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w800),
         ),
         child: _busy
             ? const SizedBox(

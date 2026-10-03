@@ -80,6 +80,7 @@ class ApiClient {
   Future<Json> plan() async => await _request('GET', '/account/plan') as Json;
   Future<Json> privacyPolicy() async => await _request('GET', '/public/legal/privacy') as Json;
   Future<Json> termsOfService() async => await _request('GET', '/public/legal/terms') as Json;
+  Future<Json> dmcaPolicy() async => await _request('GET', '/public/legal/dmca') as Json;
 
   // Cuenta
   Future<Json> profile() async => await _request('GET', '/account/profile') as Json;
