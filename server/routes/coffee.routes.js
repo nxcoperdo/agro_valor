@@ -11,6 +11,8 @@ const inventoryService = require('../services/inventoryService');
 const customerService = require('../services/customerService');
 const tradeSaleService = require('../services/tradeSaleService');
 const profitabilityService = require('../services/profitabilityService');
+const dashboardService = require('../services/dashboardService');
+const reportService = require('../services/reportService');
 const receiptService = require('../services/receiptService');
 const workdayService = require('../services/workdayService');
 
@@ -76,6 +78,15 @@ router.get('/sales/:id/receipt.pdf', async (req, res, next) => {
 });
 router.get('/profitability', wrap((req) => ({ overall: profitabilityService.overall(ctxOf(req), req.query), lots: profitabilityService.lots(ctxOf(req)) })));
 router.get('/profitability/lots/:id', wrap((req) => profitabilityService.byLot(ctxOf(req), req.params.id)));
+router.get('/dashboard', wrap((req) => dashboardService.get(ctxOf(req))));
+router.get('/reports/:type', wrap((req) => reportService.build(ctxOf(req), req.params.type, req.query)));
+router.get('/reports/:type/pdf', async (req, res, next) => {
+  try {
+    const buffer = await reportService.pdf(ctxOf(req), req.params.type, req.query);
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `${req.query.download ? 'attachment' : 'inline'}; filename="reporte-${req.params.type}.pdf"` });
+    res.send(buffer);
+  } catch (err) { next(err); }
+});
 router.get('/business', wrap((req) => receiptService.businessInfo(req.business.businessId)));
 router.put('/business', requirePermission('gestionar_equipo'), wrap((req) => receiptService.updateBusiness(ctxOf(req), req.body || {})));
 router.get('/purchases/:id/receipt', wrap((req) => receiptService.build(ctxOf(req), req.params.id)));

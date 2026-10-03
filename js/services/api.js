@@ -104,6 +104,8 @@ export const api = {
   createTradeSale: (payload) => request('/coffee/sales', { method: 'POST', ...body(payload) }),
   voidTradeSale: (id, reason) => request(`/coffee/sales/${id}/void`, { method: 'POST', ...body({ reason }) }),
   profitability: (params = {}) => request(`/coffee/profitability?${new URLSearchParams(params)}`),
+  coffeeDashboard: () => request('/coffee/dashboard'),
+  coffeeReport: (type, params = {}) => request(`/coffee/reports/${type}?${new URLSearchParams(params)}`),
   receipt: (id) => request(`/coffee/purchases/${id}/receipt`),
   business: () => request('/coffee/business'),
   updateBusiness: (payload) => request('/coffee/business', { method: 'PUT', ...body(payload) }),
