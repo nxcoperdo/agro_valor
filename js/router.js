@@ -8,6 +8,17 @@ import { renderDashboard } from './pages/dashboard.js';
 import { renderCalculator } from './pages/calculator.js';
 import { renderAlerts } from './pages/alerts.js';
 import { renderSales } from './pages/sales.js';
+import { renderPurchases } from './pages/coffee/purchases.js';
+import { renderPurchaseDetail } from './pages/coffee/purchaseDetail.js';
+import { renderQuickCalc } from './pages/coffee/quickCalc.js';
+import { renderDaySummary } from './pages/coffee/daySummary.js';
+import { renderLots, renderLotDetail } from './pages/coffee/lots.js';
+import { renderInventory } from './pages/coffee/inventory.js';
+import { renderTradeSales } from './pages/coffee/sales.js';
+import { renderProfitability } from './pages/coffee/profitability.js';
+import { renderCoffeeDashboard } from './pages/coffee/dashboard.js';
+import { renderCoffeeReports } from './pages/coffee/reports.js';
+import { renderReceipt } from './pages/coffee/receipt.js';
 import { renderReport } from './pages/report.js';
 import { renderAccount } from './pages/account.js';
 import { renderAdmin } from './pages/admin.js';
@@ -33,6 +44,18 @@ const ROUTES = {
   '#/calculadora': { render: renderCalculator, shell: true },
   '#/alertas': { render: renderAlerts, shell: true },
   '#/ventas': { render: renderSales, shell: true },
+  '#/compras': { render: renderPurchases, shell: true },
+  '#/compra': { render: renderPurchaseDetail, shell: true },
+  '#/calculadora-rapida': { render: renderQuickCalc, shell: true },
+  '#/resumen-dia': { render: renderDaySummary, shell: true },
+  '#/lotes': { render: renderLots, shell: true },
+  '#/lote': { render: renderLotDetail, shell: true },
+  '#/inventario': { render: renderInventory, shell: true },
+  '#/ventas-cafe': { render: renderTradeSales, shell: true },
+  '#/rentabilidad': { render: renderProfitability, shell: true },
+  '#/panel-cafe': { render: renderCoffeeDashboard, shell: true },
+  '#/reportes-cafe': { render: renderCoffeeReports, shell: true },
+  '#/comprobante': { render: renderReceipt, shell: true },
   '#/reportar': { render: renderReport, shell: true },
   '#/cuenta': { render: renderAccount, shell: true },
   '#/pro': { render: renderProPlan, shell: true },
@@ -42,7 +65,9 @@ const ROUTES = {
 const DEFAULT_ROUTE = '#/';
 
 function resolve(hash) {
-  return ROUTES[hash] ? hash : DEFAULT_ROUTE;
+  // Los parámetros van tras '?', p. ej. #/comprobante?id=3; la ruta es lo que está antes.
+  const path = hash.split('?')[0];
+  return ROUTES[path] ? path : DEFAULT_ROUTE;
 }
 
 async function handleRoute() {

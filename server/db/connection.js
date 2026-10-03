@@ -9,15 +9,25 @@ const db = new DatabaseSync(env.sqliteDbPath);
 db.exec('PRAGMA journal_mode = WAL');
 db.exec('PRAGMA foreign_keys = ON');
 
-/** Polyfill al estilo better-sqlite3: envuelve fn en BEGIN/COMMIT con rollback en caso de error. */
+/**
+ * Polyfill al estilo better-sqlite3: envuelve fn en BEGIN/COMMIT con rollback en caso de error.
+ * Es reentrante: una transacción dentro de otra usa SAVEPOINT, así un servicio puede llamar a otro
+ * que también abre transacción sin romperse.
+ */
+let txDepth = 0;
 db.transaction = (fn) => (...args) => {
-  db.exec('BEGIN');
+  const nested = txDepth > 0;
+  const savepoint = `sp_${txDepth}`;
+  db.exec(nested ? `SAVEPOINT ${savepoint}` : 'BEGIN IMMEDIATE');
+  txDepth += 1;
   try {
     const result = fn(...args);
-    db.exec('COMMIT');
+    txDepth -= 1;
+    db.exec(nested ? `RELEASE ${savepoint}` : 'COMMIT');
     return result;
   } catch (err) {
-    db.exec('ROLLBACK');
+    txDepth -= 1;
+    db.exec(nested ? `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}` : 'ROLLBACK');
     throw err;
   }
 };

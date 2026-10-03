@@ -17,6 +17,7 @@ const SHELL_ASSETS = [
   './index.html',
   './css/style.css',
   './css/login.css',
+  './css/coffee.css',
   './js/app.js',
   './fonts/inter-latin-400-normal.woff2',
   './fonts/inter-latin-500-normal.woff2',

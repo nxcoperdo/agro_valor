@@ -19,7 +19,7 @@
     "seed": "node server/db/seed.js",
     "set-password": "node server/db/setPassword.js",
     "fnc:scrape-and-push": "node scripts/fnc-scrape-and-push.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test \"server/test/**/*.test.js\""
   },
   "engines": {
     "node": ">=22.5.0"
@@ -35,7 +35,8 @@
     "firebase-admin": "^14.5.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "node-cron": "^3.0.3"
+    "node-cron": "^3.0.3",
+    "pdfkit": "^0.20.2"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

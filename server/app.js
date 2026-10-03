@@ -14,6 +14,8 @@ const alertsRoutes = require('./routes/alerts.routes');
 const calculatorRoutes = require('./routes/calculator.routes');
 const reportsRoutes = require('./routes/reports.routes');
 const salesRoutes = require('./routes/sales.routes');
+const coffeeRoutes = require('./routes/coffee.routes');
+const { requireBusiness } = require('./middleware/requireBusiness');
 const adminRoutes = require('./routes/admin.routes');
 const internalRoutes = require('./routes/internal.routes');
 const seoRoutes = require('./routes/seo.routes');
@@ -63,6 +65,7 @@ function createApp() {
   app.use('/api/calculator', authMiddleware, loadUser, requirePro, calculatorRoutes);
   app.use('/api/alerts', authMiddleware, loadUser, requirePro, alertsRoutes);
   app.use('/api/sales', authMiddleware, loadUser, requirePro, salesRoutes);
+  app.use('/api/coffee', authMiddleware, loadUser, requirePro, requireBusiness, coffeeRoutes);
 
   app.use('/api/admin', authMiddleware, requireAdmin, adminRoutes);
 

@@ -1,0 +1,48 @@
+/* Módulo de compras de café. Usa los tokens --av-* de style.css. */
+.stepper { display: flex; gap: var(--av-space-2); list-style: none; margin: 0 0 var(--av-space-4); padding: 0; overflow-x: auto; }
+.stepper-item { display: flex; align-items: center; gap: var(--av-space-2); color: var(--av-fg-muted); font-size: .875rem; white-space: nowrap; }
+.stepper-num { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--av-border); font-weight: 600; }
+.stepper-item.is-current { color: var(--av-fg); }
+.stepper-item.is-current .stepper-num { background: var(--av-accent); border-color: var(--av-accent); color: var(--av-on-accent); }
+.stepper-item.is-done .stepper-num { border-color: var(--av-positive); color: var(--av-positive); }
+.stepper-actions { display: flex; justify-content: space-between; gap: var(--av-space-3); margin-top: var(--av-space-4); }
+.stepper-actions .btn-primary { margin-left: auto; }
+.weighing-row { display: grid; grid-template-columns: 1fr auto; gap: var(--av-space-2); align-items: end; margin-bottom: var(--av-space-3); }
+.weighing-row label { grid-column: 1 / -1; font-size: .875rem; color: var(--av-fg-muted); }
+.pick-list { list-style: none; margin: var(--av-space-2) 0 0; padding: 0; }
+.pick { width: 100%; text-align: left; min-height: 44px; padding: var(--av-space-2) var(--av-space-3); background: var(--av-surface-alt); color: var(--av-fg); border: 1px solid var(--av-border); border-radius: var(--av-radius-sm); cursor: pointer; }
+.pick small { color: var(--av-fg-muted); margin-left: var(--av-space-2); }
+.inline-new { margin-top: var(--av-space-3); }
+.inline-new summary { cursor: pointer; padding: var(--av-space-2) 0; color: var(--av-accent); }
+.summary-card.highlight { border-color: var(--av-accent); }
+.summary-card.highlight strong { font-size: 1.5rem; color: var(--av-accent); }
+.row-voided { opacity: .55; text-decoration: line-through; }
+.row-voided td:last-child, .row-voided td[data-label="Estado"] { text-decoration: none; }
+@media print { .app-topbar, .app-nav, .app-drawer, .stepper-actions, .btn-primary, .btn-ghost, .btn-danger { display: none !important; } }
+
+/* Comprobante */
+.rc-actions { display: flex; gap: var(--av-space-2); flex-wrap: wrap; margin-bottom: var(--av-space-3); }
+.receipt { max-width: 640px; margin: 0 auto; }
+.rc-head { display: flex; justify-content: space-between; gap: var(--av-space-3); flex-wrap: wrap; border-bottom: 1px solid var(--av-border); padding-bottom: var(--av-space-3); margin-bottom: var(--av-space-3); }
+.rc-head h2 { margin: 0; }
+.rc-head p { margin: var(--av-space-1) 0 0; color: var(--av-fg-muted); font-size: .875rem; }
+.rc-code { text-align: right; display: flex; flex-direction: column; gap: var(--av-space-1); align-items: flex-end; }
+.rc-row { display: flex; justify-content: space-between; gap: var(--av-space-3); padding: var(--av-space-1) 0; }
+.rc-row span:first-child { color: var(--av-fg-muted); }
+.rc-row.is-strong { font-weight: 700; font-size: 1.125rem; }
+.rc-row.is-strong span:first-child { color: var(--av-fg); }
+.rc-sign { display: grid; grid-template-columns: 1fr 1fr; gap: var(--av-space-5); margin-top: var(--av-space-6); text-align: center; font-size: .875rem; }
+.rc-sign div { border-top: 1px solid var(--av-fg-muted); padding-top: var(--av-space-1); }
+.row-actions { display: flex; gap: var(--av-space-1); flex-wrap: wrap; }
+.row-actions a { text-decoration: none; padding: var(--av-space-1) var(--av-space-2); min-height: 36px; display: inline-flex; align-items: center; }
+@media print {
+  body, .panel { background: #fff !important; color: #000 !important; }
+  .rc-actions { display: none !important; }
+  .receipt { border: 0; box-shadow: none; max-width: none; }
+  .rc-row span:first-child { color: #333; }
+}
+
+.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--av-space-2); margin-bottom: var(--av-space-3); }
+.pick-check { display: flex; gap: var(--av-space-2); align-items: flex-start; padding: var(--av-space-2) var(--av-space-3); border: 1px solid var(--av-border); border-radius: var(--av-radius-sm); cursor: pointer; min-height: 44px; }
+.pick-check input { margin-top: 4px; width: 20px; height: 20px; }
+.pick-check small { color: var(--av-fg-muted); }
