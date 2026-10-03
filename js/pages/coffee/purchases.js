@@ -2,6 +2,7 @@ import { api } from '../../services/api.js';
 import { isPro } from '../../services/auth.js';
 import { paywall } from '../../ui/shell.js';
 import { mountStepper } from '../../ui/stepper.js';
+import { askConfirm, askReason } from '../../ui/confirm.js';
 import { CARGA_KG, escapeHtml, formatKg, formatCopValue, formatPct, formatDateTime, parseNumber } from '../../utils/format.js';
 
 const COFFEE_TYPES = {
@@ -111,7 +112,11 @@ const stepWeighings = {
     });
     el.querySelector('#merma').addEventListener('input', (e) => { s.merma = e.target.value; live(); });
     el.querySelectorAll('[data-i]').forEach((i) => i.addEventListener('input', (e) => { s.weighings[Number(e.target.dataset.i)] = e.target.value; live(); }));
-    el.querySelector('#add-weighing').addEventListener('click', () => { s.weighings.push(''); s.rerender(); });
+    el.querySelector('#add-weighing').addEventListener('click', () => {
+      s.weighings.push('');
+      s.rerender();
+      document.getElementById(`w-${s.weighings.length - 1}`)?.focus(); // la nueva pesada lista para escribir
+    });
     el.querySelectorAll('[data-remove]').forEach((b) => b.addEventListener('click', () => { s.weighings.splice(Number(b.dataset.remove), 1); s.rerender(); }));
   },
   validate: (s) => {
@@ -192,22 +197,14 @@ export function consolidatedCards(s) {
 function historyRow(p) {
   const voided = p.status === 'ANULADA';
   return `<tr class="${voided ? 'row-voided' : ''}">
-    <td data-label="Compra">${escapeHtml(p.code)}</td>
-    <td data-label="Fecha">${formatDateTime(p.purchasedAt)}</td>
+    <td data-label="Compra">${escapeHtml(p.code)}<br /><small>${formatDateTime(p.purchasedAt)}</small></td>
     <td data-label="Proveedor">${escapeHtml(p.supplier.name)}</td>
-    <td data-label="Tipo">${escapeHtml(COFFEE_TYPES[p.coffeeType]?.label || p.coffeeType)}</td>
-    <td data-label="Pesadas" class="tabular-nums">${p.weighingsCount}</td>
-    <td data-label="Kg recibidos" class="tabular-nums">${formatKg(p.pesoTotalCompra)}</td>
     <td data-label="Kg pagables" class="tabular-nums">${formatKg(p.pesoPagable)}</td>
-    <td data-label="Precio carga" class="tabular-nums">${formatCopValue(p.precioCarga)}</td>
     <td data-label="Total" class="tabular-nums">${formatCopValue(p.totalCompra)}</td>
-    <td data-label="Lote">${p.lot ? `<a href="#/lote?id=${p.lot.id}">${escapeHtml(p.lot.code)}</a>` : '—'}</td>
     <td data-label="Estado"><span class="badge ${voided ? 'badge-stale' : 'badge-real'}">${p.status}</span></td>
     <td data-label="Acciones" class="row-actions">
-      <a class="btn-ghost" href="#/compra?id=${p.id}">Ver compra</a>
+      <a class="btn-ghost" href="#/compra?id=${p.id}">Ver detalle</a>
       <a class="btn-ghost" href="#/comprobante?id=${p.id}">Comprobante</a>
-      <a class="btn-ghost" href="/api/coffee/purchases/${p.id}/receipt.pdf?download=1">PDF</a>
-      <a class="btn-ghost" href="#/comprobante?id=${p.id}&print=1">Imprimir</a>
       ${voided ? '' : `<button type="button" class="btn-danger" data-void="${p.id}">Anular</button>`}</td>
   </tr>`;
 }
@@ -228,13 +225,22 @@ export async function renderPurchases(container) {
       return;
     }
     container.innerHTML = `
+      <div class="panel"><div class="panel-header"><h2>Nueva compra</h2></div><div id="stepper-root"></div></div>
       <div class="panel"><div class="panel-header"><h2>Jornada actual · ${escapeHtml(workday.code)}</h2>
         <span class="badge badge-real">${workday.status}</span></div>
         ${consolidatedCards(workday.summary)}
-        <button type="button" class="btn-ghost" id="close-workday">Cerrar jornada</button>
-        <a class="btn-ghost" href="#/resumen-dia">Resumen del día</a>
+        <div class="purchase-actions">
+          <a class="btn-ghost" href="#/resumen-dia">Resumen del día</a>
+          <button type="button" class="btn-ghost" id="close-workday">Cerrar jornada</button>
+        </div>
         <p class="form-error" id="workday-error" role="alert" hidden></p></div>
-      <div class="panel"><div class="panel-header"><h2>Nueva compra</h2></div><div id="stepper-root"></div></div>
+      <div class="panel"><div class="panel-header"><h2>Historial de compras</h2></div>
+        ${purchases.length ? `<div class="table-scroll"><table class="coop-table"><thead><tr>
+          <th>Compra</th><th>Proveedor</th><th>Kg pagables</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>${purchases.map(historyRow).join('')}</tbody></table></div>`
+          : `<div class="empty-cta"><p class="empty-state">Aún no hay compras. Registra la primera con el formulario de arriba: proveedor, pesadas, precio por carga y listo.</p>
+              <button type="button" class="btn-primary" id="go-new-purchase">Registrar primera compra</button></div>`}
+        <p class="form-error" id="history-error" role="alert" hidden></p></div>
       <details class="panel" id="business-panel"><summary>Datos del negocio (salen en el comprobante)</summary>
         <form class="calc-form" id="business-form">
           <div class="field"><label for="b-name">Negocio</label><input id="b-name" name="name" value="${escapeHtml(business.name)}" required /></div>
@@ -242,14 +248,7 @@ export async function renderPurchases(container) {
           <div class="field"><label for="b-addr">Dirección</label><input id="b-addr" name="address" value="${escapeHtml(business.address)}" /></div>
           <div class="field"><label for="b-phone">Teléfono</label><input id="b-phone" name="phone" inputmode="tel" value="${escapeHtml(business.phone)}" /></div>
           <button type="submit" class="btn-primary">Guardar</button>
-        </form><p class="form-hint" id="business-msg" role="status"></p></details>
-      <div class="panel"><div class="panel-header"><h2>Historial de compras</h2></div>
-        ${purchases.length ? `<div class="table-scroll"><table class="coop-table"><thead><tr>
-          <th>Compra</th><th>Fecha</th><th>Proveedor</th><th>Tipo</th><th>Pesadas</th><th>Kg recibidos</th><th>Kg pagables</th>
-          <th>Precio carga</th><th>Total</th><th>Lote</th><th>Estado</th><th>Acciones</th></tr></thead>
-          <tbody>${purchases.map(historyRow).join('')}</tbody></table></div>`
-          : '<p class="empty-state">Aún no hay compras registradas.</p>'}
-        <p class="form-error" id="history-error" role="alert" hidden></p></div>`;
+        </form><p class="form-hint" id="business-msg" role="status"></p></details>`;
 
     const state = freshState();
     const root = container.querySelector('#stepper-root');
@@ -264,15 +263,19 @@ export async function renderPurchases(container) {
       catch (err) { msg.textContent = err.message; }
     });
     container.querySelector('#close-workday').addEventListener('click', async () => {
-      if (!window.confirm(`¿Cerrar la jornada ${workday.code}? Las nuevas compras irán a una jornada nueva.`)) return;
+      const ok = await askConfirm({ title: `Cerrar la jornada ${workday.code}`, message: 'Las nuevas compras irán a una jornada nueva. Las de esta jornada ya no se podrán modificar.', confirmLabel: 'Cerrar jornada' });
+      if (!ok) return;
       try { await api.closeWorkday(workday.id); await load(); }
       catch (err) { const e = container.querySelector('#workday-error'); e.textContent = err.message; e.hidden = false; }
     });
 
+    const goNew = container.querySelector('#go-new-purchase');
+    if (goNew) goNew.addEventListener('click', () => { const i = root.querySelector('input'); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); if (i) i.focus({ preventScroll: true }); });
+
     container.querySelectorAll('[data-void]').forEach((btn) => btn.addEventListener('click', async () => {
-      const reason = window.prompt('Motivo de la anulación (obligatorio):');
-      if (!reason || !reason.trim()) return;
-      try { await api.voidPurchase(btn.dataset.void, reason.trim()); await load(); }
+      const reason = await askReason({ title: 'Anular compra', message: 'La compra no se borra: queda anulada y registrada en la auditoría.', label: 'Motivo de la anulación', confirmLabel: 'Anular compra', danger: true });
+      if (!reason) return;
+      try { await api.voidPurchase(btn.dataset.void, reason); await load(); }
       catch (err) { const e = container.querySelector('#history-error'); e.textContent = err.message; e.hidden = false; }
     }));
   }

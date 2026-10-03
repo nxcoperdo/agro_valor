@@ -1,6 +1,7 @@
 import { api } from '../../services/api.js';
 import { isPro } from '../../services/auth.js';
 import { paywall } from '../../ui/shell.js';
+import { askReason } from '../../ui/confirm.js';
 import { escapeHtml, formatKg, formatCopValue, formatFactor, parseNumber } from '../../utils/format.js';
 
 const PAYMENTS = { efectivo: 'Efectivo', transferencia: 'Transferencia', credito: 'Crédito', otro: 'Otro' };
@@ -55,9 +56,9 @@ export async function renderTradeSales(container) {
     const form = container.querySelector('#sale-form');
     const err = (m) => { const e = container.querySelector('#sale-error'); e.textContent = m; e.hidden = !m; };
     container.querySelectorAll('[data-void]').forEach((b) => b.addEventListener('click', async () => {
-      const reason = window.prompt('Motivo de la anulación (obligatorio):');
-      if (!reason || !reason.trim()) return;
-      try { await api.voidTradeSale(b.dataset.void, reason.trim()); await load(); } catch (e) { err(e.message); }
+      const reason = await askReason({ title: 'Anular venta', message: 'La venta no se borra: queda anulada y el inventario vuelve a estar disponible.', label: 'Motivo de la anulación', confirmLabel: 'Anular venta', danger: true });
+      if (!reason) return;
+      try { await api.voidTradeSale(b.dataset.void, reason); await load(); } catch (e) { err(e.message); }
     }));
     if (!form) return;
 

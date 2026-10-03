@@ -6,9 +6,14 @@ import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/forms.dart';
+import 'coffee/coffee_dashboard_tab.dart';
+import 'coffee/coffee_inventory_tab.dart';
+import 'coffee/coffee_purchases_tab.dart';
+import 'coffee/coffee_quick_calc_tab.dart';
 import 'pro_screen.dart';
 
 /// Cuánto le queda realmente al caficultor por carga según su café, y en qué cooperativa le conviene vender.
+/// Dentro de la misma sección viven la calculadora rápida y el módulo de compras de café, en pestañas.
 /// Exclusivo de Pro (el gating real está en el middleware requirePro del servidor).
 class CalculatorScreen extends StatelessWidget {
   const CalculatorScreen({super.key, required this.session});
@@ -27,9 +32,37 @@ class CalculatorScreen extends StatelessWidget {
       );
     }
 
-    return AsyncView<Json>(
-      load: session.api.profile,
-      builder: (context, profile) => _Calculator(session: session, profile: profile),
+    return DefaultTabController(
+      length: 5,
+      child: Column(
+        children: [
+          const TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            tabs: [
+              Tab(text: 'Precio neto'),
+              Tab(text: 'Cuánto vale mi café'),
+              Tab(text: 'Comprar café'),
+              Tab(text: 'Inventario'),
+              Tab(text: 'Resumen'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                AsyncView<Json>(
+                  load: session.api.profile,
+                  builder: (context, profile) => _Calculator(session: session, profile: profile),
+                ),
+                CoffeeQuickCalcTab(session: session),
+                CoffeePurchasesTab(session: session),
+                CoffeeInventoryTab(session: session),
+                CoffeeDashboardTab(session: session),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -44,7 +77,7 @@ class _Calculator extends StatefulWidget {
   State<_Calculator> createState() => _CalculatorState();
 }
 
-class _CalculatorState extends State<_Calculator> {
+class _CalculatorState extends State<_Calculator> with AutomaticKeepAliveClientMixin {
   final _form = GlobalKey<FormState>();
   late final _cargas = TextEditingController(text: '1');
   late final _factor = TextEditingController(text: decimalInputText(widget.profile['defaultFactor'] as num?));
@@ -83,8 +116,13 @@ class _CalculatorState extends State<_Calculator> {
     }
   }
 
+  // Al cambiar de pestaña no se pierde lo que ya escribió ni el resultado.
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final result = _result;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),

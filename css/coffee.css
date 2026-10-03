@@ -46,3 +46,23 @@
 .pick-check { display: flex; gap: var(--av-space-2); align-items: flex-start; padding: var(--av-space-2) var(--av-space-3); border: 1px solid var(--av-border); border-radius: var(--av-radius-sm); cursor: pointer; min-height: 44px; }
 .pick-check input { margin-top: 4px; width: 20px; height: 20px; }
 .pick-check small { color: var(--av-fg-muted); }
+
+/* Pestañas de la sección Calculadora (precio neto + módulo de café) */
+.calc-tabs { display: flex; gap: var(--av-space-2); margin-bottom: var(--av-space-4); overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.calc-tabs::-webkit-scrollbar { display: none; }
+.calc-tab { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 40px; padding: var(--av-space-1) var(--av-space-3); border: 1px solid var(--av-border); border-radius: var(--av-radius-sm); color: var(--av-fg-muted); font-size: .85rem; font-weight: 600; text-decoration: none; white-space: nowrap; transition: background var(--av-duration) var(--av-ease-out), color var(--av-duration) var(--av-ease-out), border-color var(--av-duration) var(--av-ease-out); }
+@media (hover: hover) { .calc-tab:hover { border-color: var(--av-accent); color: var(--av-fg); } }
+.calc-tab.is-active { background: var(--av-accent-soft); border-color: var(--av-accent); color: var(--av-accent); }
+@media print { .calc-tabs { display: none !important; } }
+
+/* Diálogo de confirmación (reemplaza confirm/prompt nativos) */
+.av-dialog { max-width: min(92vw, 420px); width: 100%; padding: var(--av-space-4); border: 1px solid var(--av-border); border-radius: var(--av-radius-sm); background: var(--av-surface); color: var(--av-fg); }
+.av-dialog::backdrop { background: rgba(0, 0, 0, .45); }
+.av-dialog h3 { margin: 0 0 var(--av-space-2); }
+.av-dialog p { margin: 0 0 var(--av-space-3); color: var(--av-fg-muted); }
+.av-dialog-actions { display: flex; justify-content: flex-end; gap: var(--av-space-2); margin-top: var(--av-space-3); }
+
+/* Barra de acciones fija arriba de una pantalla y estados vacíos con siguiente paso */
+.empty-cta { display: flex; flex-direction: column; align-items: flex-start; gap: var(--av-space-2); }
+.purchase-actions { display: flex; gap: var(--av-space-2); flex-wrap: wrap; margin-top: var(--av-space-3); }
+.cmp-subtitle { font-size: .95rem; margin: var(--av-space-3) 0 var(--av-space-2); }
