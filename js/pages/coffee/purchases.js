@@ -203,7 +203,11 @@ function historyRow(p) {
     <td data-label="Total" class="tabular-nums">${formatCopValue(p.totalCompra)}</td>
     <td data-label="Lote">${p.lot ? escapeHtml(p.lot.code) : '—'}</td>
     <td data-label="Estado"><span class="badge ${voided ? 'badge-stale' : 'badge-real'}">${p.status}</span></td>
-    <td data-label="Acciones">${voided ? '' : `<button type="button" class="btn-danger" data-void="${p.id}">Anular</button>`}</td>
+    <td data-label="Acciones" class="row-actions">
+      <a class="btn-ghost" href="#/comprobante?id=${p.id}">Comprobante</a>
+      <a class="btn-ghost" href="/api/coffee/purchases/${p.id}/receipt.pdf?download=1">PDF</a>
+      <a class="btn-ghost" href="#/comprobante?id=${p.id}&print=1">Imprimir</a>
+      ${voided ? '' : `<button type="button" class="btn-danger" data-void="${p.id}">Anular</button>`}</td>
   </tr>`;
 }
 
@@ -215,9 +219,9 @@ export async function renderPurchases(container) {
 
   async function load() {
     container.innerHTML = '<div class="panel"><span class="skeleton" style="width:100%;height:120px;"></span></div>';
-    let purchases, workday;
+    let purchases, workday, business;
     try {
-      [{ purchases }, workday] = await Promise.all([api.purchases(), api.currentWorkday()]);
+      [{ purchases }, workday, business] = await Promise.all([api.purchases(), api.currentWorkday(), api.business()]);
     } catch (err) {
       container.innerHTML = `<div class="panel"><p class="panel-error">${escapeHtml(err.message)}</p></div>`;
       return;
@@ -229,6 +233,14 @@ export async function renderPurchases(container) {
         <button type="button" class="btn-ghost" id="close-workday">Cerrar jornada</button>
         <p class="form-error" id="workday-error" role="alert" hidden></p></div>
       <div class="panel"><div class="panel-header"><h2>Nueva compra</h2></div><div id="stepper-root"></div></div>
+      <details class="panel" id="business-panel"><summary>Datos del negocio (salen en el comprobante)</summary>
+        <form class="calc-form" id="business-form">
+          <div class="field"><label for="b-name">Negocio</label><input id="b-name" name="name" value="${escapeHtml(business.name)}" required /></div>
+          <div class="field"><label for="b-nit">NIT</label><input id="b-nit" name="nit" value="${escapeHtml(business.nit)}" /></div>
+          <div class="field"><label for="b-addr">Dirección</label><input id="b-addr" name="address" value="${escapeHtml(business.address)}" /></div>
+          <div class="field"><label for="b-phone">Teléfono</label><input id="b-phone" name="phone" inputmode="tel" value="${escapeHtml(business.phone)}" /></div>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </form><p class="form-hint" id="business-msg" role="status"></p></details>
       <div class="panel"><div class="panel-header"><h2>Historial de compras</h2></div>
         ${purchases.length ? `<div class="table-scroll"><table class="coop-table"><thead><tr>
           <th>Compra</th><th>Fecha</th><th>Proveedor</th><th>Tipo</th><th>Pesadas</th><th>Kg recibidos</th><th>Kg pagables</th>
@@ -243,6 +255,12 @@ export async function renderPurchases(container) {
     const stepper = mountStepper(root, { steps, state, finishLabel: 'Registrar compra', onFinish: async (s) => { await api.createPurchase(toPayload(s)); await load(); } });
     state.rerender = () => stepper.redraw();
 
+    container.querySelector('#business-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = container.querySelector('#business-msg');
+      try { await api.updateBusiness(Object.fromEntries(new FormData(e.target))); msg.textContent = 'Datos guardados'; }
+      catch (err) { msg.textContent = err.message; }
+    });
     container.querySelector('#close-workday').addEventListener('click', async () => {
       if (!window.confirm(`¿Cerrar la jornada ${workday.code}? Las nuevas compras irán a una jornada nueva.`)) return;
       try { await api.closeWorkday(workday.id); await load(); }

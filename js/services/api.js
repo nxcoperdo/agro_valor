@@ -79,6 +79,9 @@ export const api = {
   workdays: () => request('/coffee/workdays'),
   closeWorkday: (id) => request(`/coffee/workdays/${id}/close`, { method: 'POST' }),
   daySummary: (date) => request(`/coffee/day-summary${date ? `?date=${date}` : ''}`),
+  receipt: (id) => request(`/coffee/purchases/${id}/receipt`),
+  business: () => request('/coffee/business'),
+  updateBusiness: (payload) => request('/coffee/business', { method: 'PUT', ...body(payload) }),
   voidPurchase: (id, reason) => request(`/coffee/purchases/${id}/void`, { method: 'POST', ...body({ reason }) }),
 
   // Reportes colaborativos (disponible para cualquier cuenta)

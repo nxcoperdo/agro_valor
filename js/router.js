@@ -9,6 +9,7 @@ import { renderCalculator } from './pages/calculator.js';
 import { renderAlerts } from './pages/alerts.js';
 import { renderSales } from './pages/sales.js';
 import { renderPurchases } from './pages/coffee/purchases.js';
+import { renderReceipt } from './pages/coffee/receipt.js';
 import { renderReport } from './pages/report.js';
 import { renderAccount } from './pages/account.js';
 import { renderAdmin } from './pages/admin.js';
@@ -34,6 +35,7 @@ const ROUTES = {
   '#/alertas': { render: renderAlerts, shell: true },
   '#/ventas': { render: renderSales, shell: true },
   '#/compras': { render: renderPurchases, shell: true },
+  '#/comprobante': { render: renderReceipt, shell: true },
   '#/reportar': { render: renderReport, shell: true },
   '#/cuenta': { render: renderAccount, shell: true },
   '#/pro': { render: renderProPlan, shell: true },
@@ -43,7 +45,9 @@ const ROUTES = {
 const DEFAULT_ROUTE = '#/';
 
 function resolve(hash) {
-  return ROUTES[hash] ? hash : DEFAULT_ROUTE;
+  // Los parámetros van tras '?', p. ej. #/comprobante?id=3; la ruta es lo que está antes.
+  const path = hash.split('?')[0];
+  return ROUTES[path] ? path : DEFAULT_ROUTE;
 }
 
 async function handleRoute() {

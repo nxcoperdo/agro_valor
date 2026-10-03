@@ -19,3 +19,25 @@
 .row-voided { opacity: .55; text-decoration: line-through; }
 .row-voided td:last-child, .row-voided td[data-label="Estado"] { text-decoration: none; }
 @media print { .app-topbar, .app-nav, .app-drawer, .stepper-actions, .btn-primary, .btn-ghost, .btn-danger { display: none !important; } }
+
+/* Comprobante */
+.rc-actions { display: flex; gap: var(--av-space-2); flex-wrap: wrap; margin-bottom: var(--av-space-3); }
+.receipt { max-width: 640px; margin: 0 auto; }
+.rc-head { display: flex; justify-content: space-between; gap: var(--av-space-3); flex-wrap: wrap; border-bottom: 1px solid var(--av-border); padding-bottom: var(--av-space-3); margin-bottom: var(--av-space-3); }
+.rc-head h2 { margin: 0; }
+.rc-head p { margin: var(--av-space-1) 0 0; color: var(--av-fg-muted); font-size: .875rem; }
+.rc-code { text-align: right; display: flex; flex-direction: column; gap: var(--av-space-1); align-items: flex-end; }
+.rc-row { display: flex; justify-content: space-between; gap: var(--av-space-3); padding: var(--av-space-1) 0; }
+.rc-row span:first-child { color: var(--av-fg-muted); }
+.rc-row.is-strong { font-weight: 700; font-size: 1.125rem; }
+.rc-row.is-strong span:first-child { color: var(--av-fg); }
+.rc-sign { display: grid; grid-template-columns: 1fr 1fr; gap: var(--av-space-5); margin-top: var(--av-space-6); text-align: center; font-size: .875rem; }
+.rc-sign div { border-top: 1px solid var(--av-fg-muted); padding-top: var(--av-space-1); }
+.row-actions { display: flex; gap: var(--av-space-1); flex-wrap: wrap; }
+.row-actions a { text-decoration: none; padding: var(--av-space-1) var(--av-space-2); min-height: 36px; display: inline-flex; align-items: center; }
+@media print {
+  body, .panel { background: #fff !important; color: #000 !important; }
+  .rc-actions { display: none !important; }
+  .receipt { border: 0; box-shadow: none; max-width: none; }
+  .rc-row span:first-child { color: #333; }
+}

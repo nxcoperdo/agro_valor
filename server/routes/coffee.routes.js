@@ -2,6 +2,7 @@ const express = require('express');
 const { requirePermission } = require('../middleware/requireBusiness');
 const supplierService = require('../services/supplierService');
 const purchaseService = require('../services/purchaseService');
+const receiptService = require('../services/receiptService');
 const workdayService = require('../services/workdayService');
 
 const router = express.Router();
@@ -28,6 +29,21 @@ router.get('/purchases', wrap((req) => ({ purchases: purchaseService.list(ctxOf(
 router.post('/purchases', requirePermission('registrar'), wrap(created((req) => purchaseService.create(ctxOf(req), req.body || {}))));
 router.get('/purchases/:id', wrap((req) => purchaseService.get(ctxOf(req), req.params.id)));
 router.post('/purchases/:id/void', wrap((req) => purchaseService.voidPurchase(ctxOf(req), req.params.id, (req.body || {}).reason)));
+
+router.get('/business', wrap((req) => receiptService.businessInfo(req.business.businessId)));
+router.put('/business', requirePermission('gestionar_equipo'), wrap((req) => receiptService.updateBusiness(ctxOf(req), req.body || {})));
+router.get('/purchases/:id/receipt', wrap((req) => receiptService.build(ctxOf(req), req.params.id)));
+router.get('/purchases/:id/receipt.pdf', async (req, res, next) => {
+  try {
+    const buffer = await receiptService.pdf(ctxOf(req), req.params.id);
+    const code = receiptService.build(ctxOf(req), req.params.id).code;
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `${req.query.download ? 'attachment' : 'inline'}; filename="${code}.pdf"`,
+    });
+    res.send(buffer);
+  } catch (err) { next(err); }
+});
 
 router.get('/workdays', wrap((req) => ({ workdays: workdayService.list(ctxOf(req)) })));
 router.get('/workdays/current', wrap((req) => workdayService.current(ctxOf(req))));
