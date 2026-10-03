@@ -46,6 +46,9 @@ export async function renderProcessing(el, lot, reload) {
         <div class="field"><label for="f-secos">Kilos secos reales</label><input id="f-secos" name="kilosSecosReales" inputmode="decimal" required /></div>
         <div class="field"><label for="f-destare">Destare real (kg)</label><input id="f-destare" name="destareRealKg" inputmode="decimal" value="0" /></div>
         <button type="submit" class="btn-primary">Registrar salida</button></form>` : ''}
+      ${lot.status === 'SECADO_FINALIZADO' ? `<h3>Entrada a inventario</h3><form class="calc-form" id="inv-form">
+        <div class="field"><label for="i-loc">Ubicación</label><input id="i-loc" name="ubicacion" placeholder="Bodega" /></div>
+        <button type="submit" class="btn-primary">Enviar a inventario</button></form>` : ''}
       <p class="form-error" id="proc-error" role="alert" hidden></p>
       ${r ? `<div class="summary-cards">${card('Kg secos reales', formatKg(r.kilosSecosReales))}${card('Rendimiento real', formatPct(r.rendimientoReal), true)}
         ${card('Kg netos reales', formatKg(r.kilosNetosReales))}${card('Costo real total', formatCopValue(r.costoRealTotal))}
@@ -64,6 +67,10 @@ export async function renderProcessing(el, lot, reload) {
     try { await api.addLotCost(lot.id, { concepto: f.concepto.value, valor: parseNumber(f.valor.value) }); await reload(); } catch (err) { fail(err); }
   });
   el.querySelectorAll('[data-rm-cost]').forEach((b) => b.addEventListener('click', async () => { try { await api.removeLotCost(lot.id, b.dataset.rmCost); await reload(); } catch (err) { fail(err); } }));
+  el.querySelector('#inv-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try { await api.enterInventory(lot.id, { ubicacion: e.target.ubicacion.value }); await reload(); } catch (err) { fail(err); }
+  });
   el.querySelector('#finish-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = e.target;

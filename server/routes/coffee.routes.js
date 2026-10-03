@@ -7,6 +7,7 @@ const projectionService = require('../services/projectionService');
 const quickCalcService = require('../services/quickCalcService');
 const lotService = require('../services/lotService');
 const processingService = require('../services/processingService');
+const inventoryService = require('../services/inventoryService');
 const receiptService = require('../services/receiptService');
 const workdayService = require('../services/workdayService');
 
@@ -52,6 +53,9 @@ router.put('/lots/:id/processing', wrap((req) => processingService.saveShipment(
 router.post('/lots/:id/processing/costs', wrap(created((req) => processingService.addCost(ctxOf(req), req.params.id, req.body || {}))));
 router.delete('/lots/:id/processing/costs/:costId', wrap((req) => processingService.removeCost(ctxOf(req), req.params.id, req.params.costId)));
 router.post('/lots/:id/processing/finish', wrap((req) => processingService.finish(ctxOf(req), req.params.id, req.body || {})));
+router.get('/inventory', wrap((req) => inventoryService.list(ctxOf(req), { onlyAvailable: req.query.available === '1' })));
+router.get('/inventory/:id/movements', wrap((req) => ({ movements: inventoryService.movements(ctxOf(req), req.params.id) })));
+router.post('/lots/:id/inventory', wrap(created((req) => inventoryService.enter(ctxOf(req), req.params.id, req.body || {}))));
 router.get('/business', wrap((req) => receiptService.businessInfo(req.business.businessId)));
 router.put('/business', requirePermission('gestionar_equipo'), wrap((req) => receiptService.updateBusiness(ctxOf(req), req.body || {})));
 router.get('/purchases/:id/receipt', wrap((req) => receiptService.build(ctxOf(req), req.params.id)));
