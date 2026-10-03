@@ -8,6 +8,8 @@ const quickCalcService = require('../services/quickCalcService');
 const lotService = require('../services/lotService');
 const processingService = require('../services/processingService');
 const inventoryService = require('../services/inventoryService');
+const customerService = require('../services/customerService');
+const tradeSaleService = require('../services/tradeSaleService');
 const receiptService = require('../services/receiptService');
 const workdayService = require('../services/workdayService');
 
@@ -56,6 +58,21 @@ router.post('/lots/:id/processing/finish', wrap((req) => processingService.finis
 router.get('/inventory', wrap((req) => inventoryService.list(ctxOf(req), { onlyAvailable: req.query.available === '1' })));
 router.get('/inventory/:id/movements', wrap((req) => ({ movements: inventoryService.movements(ctxOf(req), req.params.id) })));
 router.post('/lots/:id/inventory', wrap(created((req) => inventoryService.enter(ctxOf(req), req.params.id, req.body || {}))));
+router.get('/customers', wrap((req) => ({ customers: customerService.search(ctxOf(req), req.query.q) })));
+router.post('/customers', requirePermission('vender'), wrap(created((req) => customerService.create(ctxOf(req), req.body || {}))));
+router.get('/sales', wrap((req) => ({ sales: tradeSaleService.list(ctxOf(req), req.query) })));
+router.post('/sales', wrap(created((req) => tradeSaleService.create(ctxOf(req), req.body || {}))));
+router.get('/sales/:id', wrap((req) => tradeSaleService.get(ctxOf(req), req.params.id)));
+router.post('/sales/:id/void', wrap((req) => tradeSaleService.voidSale(ctxOf(req), req.params.id, (req.body || {}).reason)));
+router.get('/sales/:id/receipt', wrap((req) => tradeSaleService.receipt(ctxOf(req), req.params.id)));
+router.get('/sales/:id/receipt.pdf', async (req, res, next) => {
+  try {
+    const buffer = await tradeSaleService.receiptPdf(ctxOf(req), req.params.id);
+    const code = tradeSaleService.receipt(ctxOf(req), req.params.id).code;
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `${req.query.download ? 'attachment' : 'inline'}; filename="${code}.pdf"` });
+    res.send(buffer);
+  } catch (err) { next(err); }
+});
 router.get('/business', wrap((req) => receiptService.businessInfo(req.business.businessId)));
 router.put('/business', requirePermission('gestionar_equipo'), wrap((req) => receiptService.updateBusiness(ctxOf(req), req.body || {})));
 router.get('/purchases/:id/receipt', wrap((req) => receiptService.build(ctxOf(req), req.params.id)));
