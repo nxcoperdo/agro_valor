@@ -8,6 +8,7 @@ const BASE_NAV_ITEMS = [
   { hash: '#/lotes', label: 'Lotes' },
   { hash: '#/inventario', label: 'Inventario' },
   { hash: '#/ventas-cafe', label: 'Ventas de café' },
+  { hash: '#/rentabilidad', label: 'Rentabilidad' },
   { hash: '#/calculadora-rapida', label: 'Calculadora rápida' },
   { hash: '#/ventas', label: 'Mis ventas' },
   { hash: '#/reportar', label: 'Reportar precio' },

@@ -10,6 +10,7 @@ const processingService = require('../services/processingService');
 const inventoryService = require('../services/inventoryService');
 const customerService = require('../services/customerService');
 const tradeSaleService = require('../services/tradeSaleService');
+const profitabilityService = require('../services/profitabilityService');
 const receiptService = require('../services/receiptService');
 const workdayService = require('../services/workdayService');
 
@@ -73,6 +74,8 @@ router.get('/sales/:id/receipt.pdf', async (req, res, next) => {
     res.send(buffer);
   } catch (err) { next(err); }
 });
+router.get('/profitability', wrap((req) => ({ overall: profitabilityService.overall(ctxOf(req), req.query), lots: profitabilityService.lots(ctxOf(req)) })));
+router.get('/profitability/lots/:id', wrap((req) => profitabilityService.byLot(ctxOf(req), req.params.id)));
 router.get('/business', wrap((req) => receiptService.businessInfo(req.business.businessId)));
 router.put('/business', requirePermission('gestionar_equipo'), wrap((req) => receiptService.updateBusiness(ctxOf(req), req.body || {})));
 router.get('/purchases/:id/receipt', wrap((req) => receiptService.build(ctxOf(req), req.params.id)));

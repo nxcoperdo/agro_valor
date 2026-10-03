@@ -15,6 +15,7 @@ import { renderDaySummary } from './pages/coffee/daySummary.js';
 import { renderLots, renderLotDetail } from './pages/coffee/lots.js';
 import { renderInventory } from './pages/coffee/inventory.js';
 import { renderTradeSales } from './pages/coffee/sales.js';
+import { renderProfitability } from './pages/coffee/profitability.js';
 import { renderReceipt } from './pages/coffee/receipt.js';
 import { renderReport } from './pages/report.js';
 import { renderAccount } from './pages/account.js';
@@ -48,6 +49,7 @@ const ROUTES = {
   '#/lote': { render: renderLotDetail, shell: true },
   '#/inventario': { render: renderInventory, shell: true },
   '#/ventas-cafe': { render: renderTradeSales, shell: true },
+  '#/rentabilidad': { render: renderProfitability, shell: true },
   '#/comprobante': { render: renderReceipt, shell: true },
   '#/reportar': { render: renderReport, shell: true },
   '#/cuenta': { render: renderAccount, shell: true },
