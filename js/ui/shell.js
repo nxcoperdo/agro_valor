@@ -4,6 +4,7 @@ const BASE_NAV_ITEMS = [
   { hash: '#/dashboard', label: 'Mercado' },
   { hash: '#/calculadora', label: 'Calculadora' },
   { hash: '#/alertas', label: 'Alertas' },
+  { hash: '#/compras', label: 'Compras de café' },
   { hash: '#/ventas', label: 'Mis ventas' },
   { hash: '#/reportar', label: 'Reportar precio' },
   { hash: '#/pro', label: 'Plan Pro' },

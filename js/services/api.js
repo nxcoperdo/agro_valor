@@ -69,6 +69,14 @@ export const api = {
   createSale: (payload) => request('/sales', { method: 'POST', ...body(payload) }),
   deleteSale: (id) => request(`/sales/${id}`, { method: 'DELETE' }),
 
+  // Compras de café
+  coffeeMe: () => request('/coffee/me'),
+  searchSuppliers: (q) => request(`/coffee/suppliers?q=${encodeURIComponent(q || '')}`),
+  purchases: (params = {}) => request(`/coffee/purchases?${new URLSearchParams(params)}`),
+  purchase: (id) => request(`/coffee/purchases/${id}`),
+  createPurchase: (payload) => request('/coffee/purchases', { method: 'POST', ...body(payload) }),
+  voidPurchase: (id, reason) => request(`/coffee/purchases/${id}/void`, { method: 'POST', ...body({ reason }) }),
+
   // Reportes colaborativos (disponible para cualquier cuenta)
   createReport: (payload) => request('/reports', { method: 'POST', ...body(payload) }),
   myReports: () => request('/reports/mine'),

@@ -8,6 +8,7 @@ import { renderDashboard } from './pages/dashboard.js';
 import { renderCalculator } from './pages/calculator.js';
 import { renderAlerts } from './pages/alerts.js';
 import { renderSales } from './pages/sales.js';
+import { renderPurchases } from './pages/coffee/purchases.js';
 import { renderReport } from './pages/report.js';
 import { renderAccount } from './pages/account.js';
 import { renderAdmin } from './pages/admin.js';
@@ -32,6 +33,7 @@ const ROUTES = {
   '#/calculadora': { render: renderCalculator, shell: true },
   '#/alertas': { render: renderAlerts, shell: true },
   '#/ventas': { render: renderSales, shell: true },
+  '#/compras': { render: renderPurchases, shell: true },
   '#/reportar': { render: renderReport, shell: true },
   '#/cuenta': { render: renderAccount, shell: true },
   '#/pro': { render: renderProPlan, shell: true },
