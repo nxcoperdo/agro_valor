@@ -1,6 +1,6 @@
 /** Permisos por rol del negocio. El operador registra compras y pesadas pero no ve costos ni utilidad. */
 const PERMISSIONS = {
-  admin: ['registrar', 'ver_costos', 'ver_margenes', 'ver_rentabilidad', 'anular', 'cerrar_jornada', 'gestionar_lotes', 'vender', 'gestionar_equipo'],
+  admin: ['registrar', 'ver_costos', 'ver_margenes', 'ver_rentabilidad', 'anular', 'cerrar_jornada', 'gestionar_lotes', 'vender', 'gestionar_equipo', 'gestionar_costos'],
   operador: ['registrar'],
   contador: ['ver_costos', 'ver_margenes', 'ver_rentabilidad'],
 };

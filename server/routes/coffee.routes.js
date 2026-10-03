@@ -2,6 +2,8 @@ const express = require('express');
 const { requirePermission } = require('../middleware/requireBusiness');
 const supplierService = require('../services/supplierService');
 const purchaseService = require('../services/purchaseService');
+const purchaseCostService = require('../services/purchaseCostService');
+const projectionService = require('../services/projectionService');
 const receiptService = require('../services/receiptService');
 const workdayService = require('../services/workdayService');
 
@@ -30,6 +32,11 @@ router.post('/purchases', requirePermission('registrar'), wrap(created((req) => 
 router.get('/purchases/:id', wrap((req) => purchaseService.get(ctxOf(req), req.params.id)));
 router.post('/purchases/:id/void', wrap((req) => purchaseService.voidPurchase(ctxOf(req), req.params.id, (req.body || {}).reason)));
 
+router.get('/purchases/:id/costs', wrap((req) => purchaseCostService.list(ctxOf(req), req.params.id)));
+router.post('/purchases/:id/costs', wrap(created((req) => purchaseCostService.add(ctxOf(req), req.params.id, req.body || {}))));
+router.delete('/purchases/:id/costs/:costId', wrap((req) => purchaseCostService.remove(ctxOf(req), req.params.id, req.params.costId)));
+router.get('/purchases/:id/projection', wrap((req) => projectionService.get(ctxOf(req), req.params.id)));
+router.put('/purchases/:id/projection', wrap((req) => projectionService.save(ctxOf(req), req.params.id, req.body || {})));
 router.get('/business', wrap((req) => receiptService.businessInfo(req.business.businessId)));
 router.put('/business', requirePermission('gestionar_equipo'), wrap((req) => receiptService.updateBusiness(ctxOf(req), req.body || {})));
 router.get('/purchases/:id/receipt', wrap((req) => receiptService.build(ctxOf(req), req.params.id)));

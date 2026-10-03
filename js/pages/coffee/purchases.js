@@ -204,6 +204,7 @@ function historyRow(p) {
     <td data-label="Lote">${p.lot ? escapeHtml(p.lot.code) : '—'}</td>
     <td data-label="Estado"><span class="badge ${voided ? 'badge-stale' : 'badge-real'}">${p.status}</span></td>
     <td data-label="Acciones" class="row-actions">
+      <a class="btn-ghost" href="#/compra?id=${p.id}">Ver compra</a>
       <a class="btn-ghost" href="#/comprobante?id=${p.id}">Comprobante</a>
       <a class="btn-ghost" href="/api/coffee/purchases/${p.id}/receipt.pdf?download=1">PDF</a>
       <a class="btn-ghost" href="#/comprobante?id=${p.id}&print=1">Imprimir</a>
