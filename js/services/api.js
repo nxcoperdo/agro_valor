@@ -75,6 +75,10 @@ export const api = {
   purchases: (params = {}) => request(`/coffee/purchases?${new URLSearchParams(params)}`),
   purchase: (id) => request(`/coffee/purchases/${id}`),
   createPurchase: (payload) => request('/coffee/purchases', { method: 'POST', ...body(payload) }),
+  currentWorkday: () => request('/coffee/workdays/current'),
+  workdays: () => request('/coffee/workdays'),
+  closeWorkday: (id) => request(`/coffee/workdays/${id}/close`, { method: 'POST' }),
+  daySummary: (date) => request(`/coffee/day-summary${date ? `?date=${date}` : ''}`),
   voidPurchase: (id, reason) => request(`/coffee/purchases/${id}/void`, { method: 'POST', ...body({ reason }) }),
 
   // Reportes colaborativos (disponible para cualquier cuenta)

@@ -2,6 +2,7 @@ const db = require('../db/connection');
 const coffeeMath = require('../domain/coffeeMath');
 const purchaseRepository = require('../repositories/purchaseRepository');
 const supplierService = require('./supplierService');
+const workdayService = require('./workdayService');
 const sequenceService = require('./sequenceService');
 const auditService = require('./auditService');
 const permissionService = require('./permissionService');
@@ -84,7 +85,7 @@ function create(ctx, body) {
       businessId: ctx.businessId,
       code,
       supplierId: supplier.id,
-      workdayId: body.workdayId || null,
+      workdayId: workdayService.resolveForPurchase(ctx, body.workdayId),
       coffeeType,
       mermaPct,
       pesoTotal: calc.pesoTotalCompra,

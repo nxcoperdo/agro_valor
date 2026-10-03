@@ -2,6 +2,7 @@ const express = require('express');
 const { requirePermission } = require('../middleware/requireBusiness');
 const supplierService = require('../services/supplierService');
 const purchaseService = require('../services/purchaseService');
+const workdayService = require('../services/workdayService');
 
 const router = express.Router();
 
@@ -27,5 +28,11 @@ router.get('/purchases', wrap((req) => ({ purchases: purchaseService.list(ctxOf(
 router.post('/purchases', requirePermission('registrar'), wrap(created((req) => purchaseService.create(ctxOf(req), req.body || {}))));
 router.get('/purchases/:id', wrap((req) => purchaseService.get(ctxOf(req), req.params.id)));
 router.post('/purchases/:id/void', wrap((req) => purchaseService.voidPurchase(ctxOf(req), req.params.id, (req.body || {}).reason)));
+
+router.get('/workdays', wrap((req) => ({ workdays: workdayService.list(ctxOf(req)) })));
+router.get('/workdays/current', wrap((req) => workdayService.current(ctxOf(req))));
+router.get('/workdays/:id', wrap((req) => workdayService.get(ctxOf(req), req.params.id)));
+router.post('/workdays/:id/close', wrap((req) => workdayService.closeWorkday(ctxOf(req), req.params.id)));
+router.get('/day-summary', wrap((req) => workdayService.daySummary(ctxOf(req), req.query.date)));
 
 module.exports = router;

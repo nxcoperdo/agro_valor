@@ -176,6 +176,19 @@ function toPayload(s) {
   return payload;
 }
 
+/** Tarjetas de consolidado (jornada o día). Los costos internos solo llegan si el rol los puede ver. */
+export function consolidatedCards(s) {
+  const card = (t, v) => `<div class="summary-card"><h3>${t}</h3><strong class="tabular-nums">${v}</strong></div>`;
+  return `<div class="summary-cards">
+    ${card('Compras', s.compras)}${card('Proveedores', s.proveedores)}${card('Pesadas', s.pesadas)}
+    ${card('Kg recibidos', formatKg(s.kgRecibidos))}${card('Kg pagables', formatKg(s.kgPagables))}${card('Kg descontados', formatKg(s.kgDescontados))}
+    ${card('Total pagado', formatCopValue(s.totalPagado))}
+    ${s.costosInternos != null ? card('Costos internos', formatCopValue(s.costosInternos)) : ''}
+    ${card('Kg secos proyectados', formatKg(s.kgSecosProyectados))}
+    ${card('Precio carga promedio', formatCopValue(s.precioCargaPromedio))}${card('Merma promedio', formatPct(s.mermaPromedio))}
+  </div>`;
+}
+
 function historyRow(p) {
   const voided = p.status === 'ANULADA';
   return `<tr class="${voided ? 'row-voided' : ''}">
@@ -202,14 +215,19 @@ export async function renderPurchases(container) {
 
   async function load() {
     container.innerHTML = '<div class="panel"><span class="skeleton" style="width:100%;height:120px;"></span></div>';
-    let purchases;
+    let purchases, workday;
     try {
-      ({ purchases } = await api.purchases());
+      [{ purchases }, workday] = await Promise.all([api.purchases(), api.currentWorkday()]);
     } catch (err) {
       container.innerHTML = `<div class="panel"><p class="panel-error">${escapeHtml(err.message)}</p></div>`;
       return;
     }
     container.innerHTML = `
+      <div class="panel"><div class="panel-header"><h2>Jornada actual · ${escapeHtml(workday.code)}</h2>
+        <span class="badge badge-real">${workday.status}</span></div>
+        ${consolidatedCards(workday.summary)}
+        <button type="button" class="btn-ghost" id="close-workday">Cerrar jornada</button>
+        <p class="form-error" id="workday-error" role="alert" hidden></p></div>
       <div class="panel"><div class="panel-header"><h2>Nueva compra</h2></div><div id="stepper-root"></div></div>
       <div class="panel"><div class="panel-header"><h2>Historial de compras</h2></div>
         ${purchases.length ? `<div class="table-scroll"><table class="coop-table"><thead><tr>
@@ -224,6 +242,12 @@ export async function renderPurchases(container) {
     const steps = [stepSupplier, stepWeighings, stepPrice, stepConfirm];
     const stepper = mountStepper(root, { steps, state, finishLabel: 'Registrar compra', onFinish: async (s) => { await api.createPurchase(toPayload(s)); await load(); } });
     state.rerender = () => stepper.redraw();
+
+    container.querySelector('#close-workday').addEventListener('click', async () => {
+      if (!window.confirm(`¿Cerrar la jornada ${workday.code}? Las nuevas compras irán a una jornada nueva.`)) return;
+      try { await api.closeWorkday(workday.id); await load(); }
+      catch (err) { const e = container.querySelector('#workday-error'); e.textContent = err.message; e.hidden = false; }
+    });
 
     container.querySelectorAll('[data-void]').forEach((btn) => btn.addEventListener('click', async () => {
       const reason = window.prompt('Motivo de la anulación (obligatorio):');
