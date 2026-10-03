@@ -41,3 +41,8 @@
   .receipt { border: 0; box-shadow: none; max-width: none; }
   .rc-row span:first-child { color: #333; }
 }
+
+.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--av-space-2); margin-bottom: var(--av-space-3); }
+.pick-check { display: flex; gap: var(--av-space-2); align-items: flex-start; padding: var(--av-space-2) var(--av-space-3); border: 1px solid var(--av-border); border-radius: var(--av-radius-sm); cursor: pointer; min-height: 44px; }
+.pick-check input { margin-top: 4px; width: 20px; height: 20px; }
+.pick-check small { color: var(--av-fg-muted); }

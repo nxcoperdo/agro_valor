@@ -122,6 +122,8 @@ function list(ctx, filters = {}) {
       to: filters.to,
       supplierId: filters.supplierId ? Number(filters.supplierId) : null,
       status: filters.status === 'ACTIVA' || filters.status === 'ANULADA' ? filters.status : null,
+      noLot: filters.noLot === '1' || filters.noLot === true,
+      lotId: filters.lotId ? Number(filters.lotId) : null,
     })
     .map((r) => serialize(r));
 }

@@ -12,6 +12,7 @@ import { renderPurchases } from './pages/coffee/purchases.js';
 import { renderPurchaseDetail } from './pages/coffee/purchaseDetail.js';
 import { renderQuickCalc } from './pages/coffee/quickCalc.js';
 import { renderDaySummary } from './pages/coffee/daySummary.js';
+import { renderLots, renderLotDetail } from './pages/coffee/lots.js';
 import { renderReceipt } from './pages/coffee/receipt.js';
 import { renderReport } from './pages/report.js';
 import { renderAccount } from './pages/account.js';
@@ -41,6 +42,8 @@ const ROUTES = {
   '#/compra': { render: renderPurchaseDetail, shell: true },
   '#/calculadora-rapida': { render: renderQuickCalc, shell: true },
   '#/resumen-dia': { render: renderDaySummary, shell: true },
+  '#/lotes': { render: renderLots, shell: true },
+  '#/lote': { render: renderLotDetail, shell: true },
   '#/comprobante': { render: renderReceipt, shell: true },
   '#/reportar': { render: renderReport, shell: true },
   '#/cuenta': { render: renderAccount, shell: true },

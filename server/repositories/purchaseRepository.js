@@ -33,13 +33,15 @@ function weighings(purchaseId) {
   return db.prepare('SELECT * FROM purchase_weighings WHERE purchase_id = ? ORDER BY id').all(purchaseId);
 }
 
-function list(businessId, { from, to, supplierId, status, limit = 200 }) {
+function list(businessId, { from, to, supplierId, status, noLot, lotId, limit = 200 }) {
   const where = ['p.business_id = ?'];
   const params = [businessId];
   if (from) { where.push('date(p.purchased_at) >= ?'); params.push(from); }
   if (to) { where.push('date(p.purchased_at) <= ?'); params.push(to); }
   if (supplierId) { where.push('p.supplier_id = ?'); params.push(supplierId); }
   if (status) { where.push('p.status = ?'); params.push(status); }
+  if (noLot) where.push('p.lot_id IS NULL');
+  if (lotId) { where.push('p.lot_id = ?'); params.push(lotId); }
   params.push(limit);
   return db.prepare(`${SELECT} WHERE ${where.join(' AND ')} ORDER BY p.id DESC LIMIT ?`).all(...params);
 }

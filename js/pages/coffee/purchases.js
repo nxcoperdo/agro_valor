@@ -201,7 +201,7 @@ function historyRow(p) {
     <td data-label="Kg pagables" class="tabular-nums">${formatKg(p.pesoPagable)}</td>
     <td data-label="Precio carga" class="tabular-nums">${formatCopValue(p.precioCarga)}</td>
     <td data-label="Total" class="tabular-nums">${formatCopValue(p.totalCompra)}</td>
-    <td data-label="Lote">${p.lot ? escapeHtml(p.lot.code) : '—'}</td>
+    <td data-label="Lote">${p.lot ? `<a href="#/lote?id=${p.lot.id}">${escapeHtml(p.lot.code)}</a>` : '—'}</td>
     <td data-label="Estado"><span class="badge ${voided ? 'badge-stale' : 'badge-real'}">${p.status}</span></td>
     <td data-label="Acciones" class="row-actions">
       <a class="btn-ghost" href="#/compra?id=${p.id}">Ver compra</a>
