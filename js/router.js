@@ -1,5 +1,6 @@
 import { refreshUser, getCachedUser } from './services/auth.js';
 import { renderShell } from './ui/shell.js';
+import { calcTabsHtml, isCalcRoute, revealActiveTab } from './ui/calcTabs.js';
 
 import { renderLanding } from './pages/landing.js';
 import { renderLogin } from './pages/login.js';
@@ -99,8 +100,17 @@ async function handleRoute() {
   // Cada página pinta un elemento raíz nuevo, así que la animación se reinicia sola.
   if (route.shell) {
     const content = renderShell(root, hash);
-    await route.render(content);
-    content.firstElementChild?.classList.add('av-fade-in');
+    if (isCalcRoute(hash)) {
+      // Calculadora y módulo de café comparten una barra de pestañas; cada página pinta debajo.
+      content.innerHTML = `${calcTabsHtml(hash)}<div id="calc-body"></div>`;
+      revealActiveTab(content);
+      const body = content.querySelector('#calc-body');
+      await route.render(body);
+      body.firstElementChild?.classList.add('av-fade-in');
+    } else {
+      await route.render(content);
+      content.firstElementChild?.classList.add('av-fade-in');
+    }
   } else {
     await route.render(root);
     root.firstElementChild?.classList.add('av-fade-in');

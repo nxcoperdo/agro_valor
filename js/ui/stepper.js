@@ -7,7 +7,8 @@ import { escapeHtml } from '../utils/format.js';
 export function mountStepper(root, { steps, state, onChange, onFinish, finishLabel = 'Guardar' }) {
   let current = 0;
 
-  function draw() {
+  /** focus: al cambiar de paso el foco va al primer campo; en el dibujo inicial no, para no mover la página. */
+  function draw(focus = false) {
     const step = steps[current];
     root.innerHTML = `
       <ol class="stepper" aria-label="Pasos">
@@ -21,19 +22,20 @@ export function mountStepper(root, { steps, state, onChange, onFinish, finishLab
         <button type="button" class="btn-primary" id="step-next">${current === steps.length - 1 ? finishLabel : 'Siguiente'}</button>
       </div>`;
     if (step.afterRender) step.afterRender(root.querySelector('#stepper-body'), state, () => { onChange && onChange(); });
+    if (focus) root.querySelector('#stepper-body input, #stepper-body select')?.focus({ preventScroll: true });
 
-    root.querySelector('#step-back').addEventListener('click', () => { current -= 1; draw(); });
+    root.querySelector('#step-back').addEventListener('click', () => { current -= 1; draw(true); });
     root.querySelector('#step-next').addEventListener('click', async () => {
       const error = root.querySelector('#stepper-error');
       const problem = step.validate ? step.validate(state, root) : null;
       if (problem) { error.textContent = problem; error.hidden = false; return; }
       error.hidden = true;
-      if (current < steps.length - 1) { current += 1; draw(); return; }
+      if (current < steps.length - 1) { current += 1; draw(true); return; }
       const btn = root.querySelector('#step-next');
       btn.disabled = true;
       try { await onFinish(state); } catch (err) { error.textContent = err.message; error.hidden = false; btn.disabled = false; }
     });
   }
   draw();
-  return { redraw: draw };
+  return { redraw: () => draw(false) };
 }

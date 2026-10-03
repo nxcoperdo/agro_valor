@@ -1,17 +1,10 @@
 import { getCachedUser, logout } from '../services/auth.js';
+import { isCalcRoute } from './calcTabs.js';
 
 const BASE_NAV_ITEMS = [
   { hash: '#/dashboard', label: 'Mercado' },
   { hash: '#/calculadora', label: 'Calculadora' },
   { hash: '#/alertas', label: 'Alertas' },
-  { hash: '#/panel-cafe', label: 'Panel de café' },
-  { hash: '#/compras', label: 'Compras de café' },
-  { hash: '#/lotes', label: 'Lotes' },
-  { hash: '#/inventario', label: 'Inventario' },
-  { hash: '#/ventas-cafe', label: 'Ventas de café' },
-  { hash: '#/rentabilidad', label: 'Rentabilidad' },
-  { hash: '#/reportes-cafe', label: 'Reportes de café' },
-  { hash: '#/calculadora-rapida', label: 'Calculadora rápida' },
   { hash: '#/ventas', label: 'Mis ventas' },
   { hash: '#/reportar', label: 'Reportar precio' },
   { hash: '#/pro', label: 'Plan Pro' },
@@ -25,11 +18,17 @@ function navItemsFor(user) {
   return BASE_NAV_ITEMS;
 }
 
+/** Todo el grupo de la calculadora (café incluido) deja marcado el ítem "Calculadora". */
+function activeNavHash(hash) {
+  return isCalcRoute(hash) ? '#/calculadora' : hash;
+}
+
 function navLinks(activeHash, linkClass, user) {
+  const active = activeNavHash(activeHash);
   return navItemsFor(user).map(
     (item) => `
-      <a href="${item.hash}" class="${linkClass} ${item.hash === activeHash ? 'is-active' : ''}"
-         ${item.hash === activeHash ? 'aria-current="page"' : ''}>${item.label}</a>
+      <a href="${item.hash}" class="${linkClass} ${item.hash === active ? 'is-active' : ''}"
+         ${item.hash === active ? 'aria-current="page"' : ''}>${item.label}</a>
     `
   ).join('');
 }
