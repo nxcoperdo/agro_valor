@@ -37,7 +37,6 @@ dependencies:
   http: ^1.6.0
   flutter_secure_storage: ^11.2.0
   intl: ^0.20.3
-  google_fonts: ^8.2.1
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
   video_player: ^2.14.0
@@ -62,6 +61,25 @@ flutter:
     - assets/branding/logo.png
     - assets/branding/intro.mp4
     - assets/branding/intro_fallback.jpg
+
+  # Fuentes empaquetadas en la app (licencia OFL): no se descargan de Google en tiempo de ejecución.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter_400Regular.ttf
+        - asset: assets/fonts/Inter_500Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter_700Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Inter_800ExtraBold.ttf
+          weight: 800
+    - family: DMMono
+      fonts:
+        - asset: assets/fonts/DMMono_400Regular.ttf
+        - asset: assets/fonts/DMMono_500Medium.ttf
+          weight: 500
 
 # Ícono y pantalla de arranque: `dart run flutter_launcher_icons` y `dart run flutter_native_splash:create`
 flutter_launcher_icons:

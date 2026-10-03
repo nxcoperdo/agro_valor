@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Paleta del diseño de la sección de precio, compartida con la web (clase .pv en css/style.css).
 class AvColors {
@@ -20,7 +19,8 @@ class AvColors {
 
 /// Cifras en DM Mono con dígitos de ancho fijo, como en el diseño.
 TextStyle mono({double size = 14, FontWeight weight = FontWeight.w500, Color color = AvColors.fg, double? spacing}) =>
-    GoogleFonts.dmMono(
+    TextStyle(
+      fontFamily: 'DMMono',
       fontSize: size,
       fontWeight: weight,
       color: color,
@@ -54,7 +54,7 @@ ThemeData buildTheme() {
     useMaterial3: true,
     colorScheme: scheme,
     scaffoldBackgroundColor: AvColors.bg,
-    textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(bodyColor: AvColors.fg, displayColor: AvColors.fg),
+    textTheme: base.textTheme.apply(fontFamily: 'Inter', bodyColor: AvColors.fg, displayColor: AvColors.fg),
     appBarTheme: const AppBarTheme(
       backgroundColor: AvColors.bg,
       foregroundColor: AvColors.fg,

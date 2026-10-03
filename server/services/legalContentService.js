@@ -1,4 +1,12 @@
-const LEGAL_UPDATED_AT = '2026-09-27';
+const env = require('../config/env');
+
+const LEGAL_UPDATED_AT = '2026-10-03';
+
+const PENDING = '[pendiente de configurar por AgroValor]';
+
+function contactLine() {
+  return `Correo: ${env.legalContactEmail || PENDING}. Dirección postal: ${env.legalPostalAddress || PENDING}.`;
+}
 
 /**
  * Texto real de la política de privacidad, pensado para lo que AgroValor efectivamente
@@ -57,6 +65,30 @@ const PRIVACY_SECTIONS = [
       'estos pasos si lo prefieres.',
   },
   {
+    heading: 'Menores de edad',
+    body:
+      'AgroValor es solo para personas de 18 años o más. En el registro te pedimos la fecha de nacimiento ' +
+      'únicamente para comprobar que eres mayor de edad: no la guardamos, solo anotamos que la verificación se ' +
+      'hizo. No recogemos a sabiendas datos de menores de 13 años (COPPA) ni de menores de 18. Si crees que un ' +
+      'menor creó una cuenta, escríbenos y la eliminaremos.',
+  },
+  {
+    heading: 'Analítica, grabación de sesiones y fuentes',
+    body:
+      'No grabamos tu sesión, no usamos mapas de calor ni herramientas de analítica o publicidad. Las fuentes ' +
+      'tipográficas se sirven desde nuestro propio servidor, así que tu navegador no se conecta a Google para ' +
+      'mostrarlas.',
+  },
+  {
+    heading: 'Mensajes y cómo darte de baja',
+    body:
+      'Los resúmenes y alertas por WhatsApp o notificación solo se envían si tú los creas, y puedes apagarlos o ' +
+      'borrarlos cuando quieras desde "Alertas" y "Mi cuenta" (también puedes desactivar canales). No enviamos ' +
+      'correos de marketing; si algún día lo hacemos, cada correo incluirá un enlace de baja y esta dirección ' +
+      'postal. Contacto: ' +
+      contactLine(),
+  },
+  {
     heading: 'Cambios a esta política',
     body:
       'Si esta política cambia de forma importante, lo avisaremos dentro de la app. La fecha de la última ' +
@@ -74,8 +106,8 @@ const TERMS_SECTIONS = [
     heading: 'Qué es AgroValor y quién puede usarlo',
     body:
       'AgroValor es una herramienta para caficultores colombianos: precio de referencia, comparación entre ' +
-      'cooperativas, calculadora de precio neto, alertas y proyección del mercado. Al crear una cuenta ' +
-      'aceptas estos términos. Si no estás de acuerdo, no debes usar la app ni la web.',
+      'cooperativas, calculadora de precio neto, alertas y proyección del mercado. Solo pueden crear cuenta ' +
+      'personas de 18 años o más. Al crear una cuenta aceptas estos términos. Si no estás de acuerdo, no debes usar la app ni la web.',
   },
   {
     heading: 'Tu cuenta',
@@ -103,6 +135,15 @@ const TERMS_SECTIONS = [
       'automáticamente, y el plan queda activo durante un año desde el pago. Al vencerse, puedes volver a ' +
       'pagar cuando quieras para renovarlo. Si prefieres pagar por Nequi o Daviplata, puedes escribirnos por ' +
       'WhatsApp para que te activemos el plan a mano.',
+  },
+  {
+    heading: 'Renovación, cancelación y reembolsos',
+    body:
+      'Pro dura 1 año desde el pago ($150.000 COP, pago único) y NO se renueva automáticamente: no hay ' +
+      'suscripción que cancelar ni cobros futuros. Al vencer, vuelves al plan gratis. Si compraste por internet ' +
+      'tienes derecho de retracto durante 5 días hábiles desde el pago (Ley 1480 de 2011, art. 47), siempre que ' +
+      'no hayas usado el servicio de forma sustancial; escríbenos y te devolvemos el dinero. También puedes ' +
+      'eliminar tu cuenta cuando quieras desde "Mi cuenta". ' + contactLine(),
   },
   {
     heading: 'Disponibilidad del servicio',
@@ -170,6 +211,54 @@ const COOKIE_SECTIONS = [
   },
 ];
 
+/**
+ * Política DMCA. AgroValor casi no aloja contenido de terceros (solo cifras de precio que reportan
+ * los usuarios), pero se publica el procedimiento y los datos del agente designado para poder
+ * acogerse al "safe harbor" del 17 U.S.C. § 512 una vez se registre el agente en copyright.gov.
+ */
+function dmcaSections() {
+  return [
+    {
+      heading: 'Qué es esta página',
+      body:
+        'AgroValor respeta los derechos de autor. Si crees que algo publicado en AgroValor infringe tu derecho ' +
+        'de autor, puedes enviarnos una notificación según la Digital Millennium Copyright Act (17 U.S.C. § 512) ' +
+        'y la legislación colombiana (Ley 23 de 1982, Decisión Andina 351).',
+    },
+    {
+      heading: 'Cómo enviar una notificación',
+      body:
+        'Envíala por escrito al agente designado e incluye: (1) tu firma física o electrónica; (2) la obra ' +
+        'protegida que consideras infringida; (3) la dirección (URL) exacta del material que reclamas; (4) tus ' +
+        'datos de contacto (dirección, teléfono y correo); (5) una declaración de buena fe de que el uso no está ' +
+        'autorizado por el titular, su agente ni la ley; y (6) una declaración, bajo pena de perjurio, de que la ' +
+        'información es exacta y de que eres el titular o estás autorizado para actuar en su nombre.',
+    },
+    {
+      heading: 'Contra-notificación',
+      body:
+        'Si retiramos material y crees que fue un error, puedes enviar una contra-notificación con tu firma, la ' +
+        'identificación del material retirado y dónde estaba, una declaración bajo pena de perjurio de que lo ' +
+        'retiramos por error o identificación equivocada, y tu aceptación de la jurisdicción de los tribunales de ' +
+        'tu domicilio. Restableceremos el material en 10 a 14 días hábiles salvo que el reclamante inicie una acción judicial.',
+    },
+    {
+      heading: 'Infractores reincidentes',
+      body: 'Eliminaremos las cuentas de quienes infrinjan derechos de autor de forma repetida.',
+    },
+    {
+      heading: 'Agente designado',
+      body:
+        `Nombre: ${env.dmcaAgentName || PENDING}. Correo: ${env.dmcaAgentEmail || PENDING}. ` +
+        `Teléfono: ${env.dmcaAgentPhone || PENDING}. Dirección postal: ${env.legalPostalAddress || PENDING}.`,
+    },
+  ];
+}
+
+function getDmcaPolicy() {
+  return { updatedAt: LEGAL_UPDATED_AT, sections: dmcaSections() };
+}
+
 function getPrivacyPolicy() {
   return { updatedAt: LEGAL_UPDATED_AT, sections: PRIVACY_SECTIONS };
 }
@@ -182,4 +271,4 @@ function getCookiePolicy() {
   return { updatedAt: LEGAL_UPDATED_AT, sections: COOKIE_SECTIONS };
 }
 
-module.exports = { getPrivacyPolicy, getTermsOfService, getCookiePolicy };
+module.exports = { getPrivacyPolicy, getTermsOfService, getCookiePolicy, getDmcaPolicy };

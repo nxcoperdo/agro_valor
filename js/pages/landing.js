@@ -169,7 +169,8 @@ export async function renderLanding(root) {
           <a href="/precio-cafe-hoy">Precio del café hoy</a> ·
           <a href="#/privacidad">Política de privacidad</a> ·
           <a href="#/terminos">Términos de uso</a> ·
-          <a href="#/cookies">Política de cookies</a>
+          <a href="#/cookies">Política de cookies</a> ·
+          <a href="#/dmca">Derechos de autor (DMCA)</a>
         </p>
       </footer>
     </div>

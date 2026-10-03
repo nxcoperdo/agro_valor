@@ -54,3 +54,4 @@ function legalPage(title, fetchContent) {
 export const renderPrivacyPolicy = legalPage('Política de privacidad', api.privacyPolicy);
 export const renderTermsOfService = legalPage('Términos de uso', api.termsOfService);
 export const renderCookiePolicy = legalPage('Política de cookies', api.cookiePolicy);
+export const renderDmcaPolicy = legalPage('Política de derechos de autor (DMCA)', api.dmcaPolicy);

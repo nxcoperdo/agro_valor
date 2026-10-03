@@ -19,6 +19,7 @@ const ADDED_COLUMNS = [
   // Por qué canales quiere recibir las alertas cada usuario.
   ['users', 'notify_whatsapp', 'INTEGER NOT NULL DEFAULT 1'],
   ['users', 'notify_push', 'INTEGER NOT NULL DEFAULT 1'],
+  ['users', 'age_verified_at', 'TEXT'],
   // "whatsapp" o "push". En los envíos push, la columna phone guarda "app".
   ['alert_deliveries', 'channel', "TEXT NOT NULL DEFAULT 'whatsapp'"],
   // play_purchase_token/play_product_id: quedaron de un intento con Google Play Billing

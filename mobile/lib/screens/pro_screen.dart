@@ -305,6 +305,14 @@ class _PriceCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               const Center(child: Muted('No se renueva automáticamente', size: 11)),
+              const SizedBox(height: 10),
+              const Muted(
+                'Condiciones: \$150.000 COP, un solo pago por 1 año de Pro. No es una suscripción: no se renueva ni se '
+                'cobra de nuevo, y no hay nada que cancelar; al vencer vuelves al plan gratis. Puedes pagar de nuevo '
+                'cuando quieras. Para pedir reembolso (retracto de 5 días hábiles) o eliminar tu cuenta, escríbenos por '
+                'WhatsApp o usa Perfil → Mi cuenta. Más detalle en los Términos de uso.',
+                size: 11,
+              ),
             ],
           ),
         ),

@@ -62,6 +62,15 @@ function priceCard(pro, { badgeLabel, buttonLabel, fineNote }) {
       <button type="button" class="btn-primary btn-lg pro2-price-btn" data-pay-btn>${buttonLabel}</button>
       <p class="pro2-price-secure">${icon('shield', 'pro2-shield')}Pago seguro con Mercado Pago</p>
       <p class="pro2-price-fine">${fineNote}</p>
+      <div class="pro2-terms">
+        <strong>Condiciones del plan</strong>
+        <ul>
+          <li>$150.000 COP, un solo pago por 1 año de acceso a Pro.</li>
+          <li>No es una suscripción: no se renueva ni se cobra de nuevo automáticamente. No hay nada que cancelar; al vencer vuelves al plan gratis.</li>
+          <li>Para renovar, pagas de nuevo cuando quieras. Para pedir el reembolso (derecho de retracto de 5 días hábiles) o eliminar tu cuenta, escríbenos por WhatsApp o usa <a href="#/cuenta">Mi cuenta</a>.</li>
+          <li>Más detalle en los <a href="#/terminos">Términos de uso</a>.</li>
+        </ul>
+      </div>
       <p class="form-error" id="pro-error" role="alert" hidden></p>
     </aside>
   `;

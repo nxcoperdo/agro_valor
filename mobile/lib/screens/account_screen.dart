@@ -137,6 +137,12 @@ class AccountScreen extends StatelessWidget {
                       subtitle: 'Cuentas, reportes de precio y suscripción Pro',
                       open: () => LegalScreen(title: 'Términos de uso', load: session.api.termsOfService),
                     ),
+                    _MenuTile(
+                      icon: Icons.copyright_outlined,
+                      title: 'Derechos de autor (DMCA)',
+                      subtitle: 'Cómo reportar contenido que infringe derechos',
+                      open: () => LegalScreen(title: 'Derechos de autor (DMCA)', load: session.api.dmcaPolicy),
+                    ),
                   ],
                 ),
               ),

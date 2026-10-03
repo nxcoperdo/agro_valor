@@ -79,9 +79,7 @@ function layout({ title, description, path, body, structuredData }) {
   <meta name="theme-color" content="#0b3d2e">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="/icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="preload" href="/fonts/montserrat-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/style.css">
   ${structuredData.map(jsonLd).join('\n  ')}
 </head>
@@ -107,7 +105,8 @@ function layout({ title, description, path, body, structuredData }) {
         <a href="/precio-cafe-hoy">Precio del café hoy</a> ·
         <a href="/#/privacidad">Política de privacidad</a> ·
         <a href="/#/terminos">Términos de uso</a> ·
-        <a href="/#/cookies">Política de cookies</a>
+        <a href="/#/cookies">Política de cookies</a> ·
+        <a href="/#/dmca">Derechos de autor (DMCA)</a>
       </p>
     </footer>
   </div>
