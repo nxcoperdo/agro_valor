@@ -73,3 +73,13 @@ test('aislamiento entre negocios y fecha inválida', () => {
   assert.throws(() => workdays.daySummary(a, 'ayer'), { status: 400 });
   assert.equal(workdays.daySummary(b).compras, 0);
 });
+
+test('resumen del día en PDF; el operador no recibe costos internos en los datos', async () => {
+  const ctx = ctxFor('f@x.co');
+  buy(ctx, 1, 1000);
+  const buf = await workdays.daySummaryPdf(ctx);
+  assert.equal(buf.subarray(0, 5).toString(), '%PDF-');
+  const d = workdays.daySummary({ ...ctx, role: 'operador' });
+  assert.equal(d.costosInternos, undefined);
+  assert.equal(d.totalPagado, 6624000);
+});

@@ -11,6 +11,7 @@ import { renderSales } from './pages/sales.js';
 import { renderPurchases } from './pages/coffee/purchases.js';
 import { renderPurchaseDetail } from './pages/coffee/purchaseDetail.js';
 import { renderQuickCalc } from './pages/coffee/quickCalc.js';
+import { renderDaySummary } from './pages/coffee/daySummary.js';
 import { renderReceipt } from './pages/coffee/receipt.js';
 import { renderReport } from './pages/report.js';
 import { renderAccount } from './pages/account.js';
@@ -39,6 +40,7 @@ const ROUTES = {
   '#/compras': { render: renderPurchases, shell: true },
   '#/compra': { render: renderPurchaseDetail, shell: true },
   '#/calculadora-rapida': { render: renderQuickCalc, shell: true },
+  '#/resumen-dia': { render: renderDaySummary, shell: true },
   '#/comprobante': { render: renderReceipt, shell: true },
   '#/reportar': { render: renderReport, shell: true },
   '#/cuenta': { render: renderAccount, shell: true },

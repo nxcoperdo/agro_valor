@@ -232,6 +232,7 @@ export async function renderPurchases(container) {
         <span class="badge badge-real">${workday.status}</span></div>
         ${consolidatedCards(workday.summary)}
         <button type="button" class="btn-ghost" id="close-workday">Cerrar jornada</button>
+        <a class="btn-ghost" href="#/resumen-dia">Resumen del día</a>
         <p class="form-error" id="workday-error" role="alert" hidden></p></div>
       <div class="panel"><div class="panel-header"><h2>Nueva compra</h2></div><div id="stepper-root"></div></div>
       <details class="panel" id="business-panel"><summary>Datos del negocio (salen en el comprobante)</summary>

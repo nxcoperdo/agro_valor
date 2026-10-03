@@ -59,6 +59,14 @@ router.get('/workdays', wrap((req) => ({ workdays: workdayService.list(ctxOf(req
 router.get('/workdays/current', wrap((req) => workdayService.current(ctxOf(req))));
 router.get('/workdays/:id', wrap((req) => workdayService.get(ctxOf(req), req.params.id)));
 router.post('/workdays/:id/close', wrap((req) => workdayService.closeWorkday(ctxOf(req), req.params.id)));
+router.get('/day-summary.pdf', async (req, res, next) => {
+  try {
+    const date = req.query.date || undefined;
+    const buffer = await workdayService.daySummaryPdf(ctxOf(req), date);
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `${req.query.download ? 'attachment' : 'inline'}; filename="resumen-dia.pdf"` });
+    res.send(buffer);
+  } catch (err) { next(err); }
+});
 router.get('/day-summary', wrap((req) => workdayService.daySummary(ctxOf(req), req.query.date)));
 
 module.exports = router;

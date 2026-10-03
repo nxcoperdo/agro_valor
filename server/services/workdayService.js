@@ -90,4 +90,17 @@ function daySummary(ctx, date = sequenceService.today()) {
   return { date, ...serializeSummary(s, ctx.role) };
 }
 
-module.exports = { currentOrOpen, resolveForPurchase, current, list, get, closeWorkday, daySummary, serializeSummary };
+/** Datos y PDF del "Resumen del día". */
+async function daySummaryPdf(ctx, date) {
+  const receiptService = require('./receiptService');
+  const summaryPdf = require('./pdf/summaryPdf');
+  const s = daySummary(ctx, date);
+  return summaryPdf.render({
+    business: receiptService.businessInfo(ctx.businessId),
+    title: 'Resumen del día',
+    subtitle: s.date,
+    summary: s,
+  });
+}
+
+module.exports = { daySummaryPdf, currentOrOpen, resolveForPurchase, current, list, get, closeWorkday, daySummary, serializeSummary };
