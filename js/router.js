@@ -10,6 +10,7 @@ import { renderAlerts } from './pages/alerts.js';
 import { renderSales } from './pages/sales.js';
 import { renderPurchases } from './pages/coffee/purchases.js';
 import { renderPurchaseDetail } from './pages/coffee/purchaseDetail.js';
+import { renderQuickCalc } from './pages/coffee/quickCalc.js';
 import { renderReceipt } from './pages/coffee/receipt.js';
 import { renderReport } from './pages/report.js';
 import { renderAccount } from './pages/account.js';
@@ -37,6 +38,7 @@ const ROUTES = {
   '#/ventas': { render: renderSales, shell: true },
   '#/compras': { render: renderPurchases, shell: true },
   '#/compra': { render: renderPurchaseDetail, shell: true },
+  '#/calculadora-rapida': { render: renderQuickCalc, shell: true },
   '#/comprobante': { render: renderReceipt, shell: true },
   '#/reportar': { render: renderReport, shell: true },
   '#/cuenta': { render: renderAccount, shell: true },
