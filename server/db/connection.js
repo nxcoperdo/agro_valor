@@ -20,16 +20,18 @@ db.transaction = (fn) => (...args) => {
   const savepoint = `sp_${txDepth}`;
   db.exec(nested ? `SAVEPOINT ${savepoint}` : 'BEGIN IMMEDIATE');
   txDepth += 1;
+  let result;
   try {
-    const result = fn(...args);
-    txDepth -= 1;
-    db.exec(nested ? `RELEASE ${savepoint}` : 'COMMIT');
-    return result;
+    result = fn(...args);
   } catch (err) {
     txDepth -= 1;
     db.exec(nested ? `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}` : 'ROLLBACK');
     throw err;
   }
+  // Un fallo del COMMIT/RELEASE ya no vuelve a descontar la profundidad (antes quedaba negativa).
+  txDepth -= 1;
+  db.exec(nested ? `RELEASE ${savepoint}` : 'COMMIT');
+  return result;
 };
 
 module.exports = db;
