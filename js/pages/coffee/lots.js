@@ -1,6 +1,7 @@
 import { api } from '../../services/api.js';
 import { isPro } from '../../services/auth.js';
 import { paywall } from '../../ui/shell.js';
+import { renderProcessing } from './lotProcessing.js';
 import { escapeHtml, formatKg, formatCopValue, formatDateTime } from '../../utils/format.js';
 
 export const LOT_STATUS = {
@@ -87,7 +88,7 @@ export async function renderLotDetail(container) {
     const fail = (err) => { const el = container.querySelector('#lot-error'); el.textContent = err.message; el.hidden = false; };
     container.querySelector('#lot-next')?.addEventListener('click', async () => { try { await api.changeLotStatus(id, next[0]); await load(); } catch (err) { fail(err); } });
     container.querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', async () => { try { await api.removeLotPurchase(id, b.dataset.rm); await load(); } catch (err) { fail(err); } }));
-    if (renderLotDetail.extend) await renderLotDetail.extend(container.querySelector('#lot-extra'), l, load);
+    await renderProcessing(container.querySelector('#lot-extra'), l, load);
   }
   await load();
 }
