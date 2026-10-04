@@ -7,6 +7,7 @@ import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/forms.dart';
 import 'coffee_invoice_form_screen.dart';
+import 'coffee_line_projection.dart';
 
 /// Compra de producto: jornada actual, historial de facturas y nueva compra (factura con uno o varios productos).
 class CoffeePurchasesTab extends StatefulWidget {
@@ -259,6 +260,7 @@ class CoffeeInvoiceDetailScreen extends StatelessWidget {
                         const Expanded(child: Muted('SUBTOTAL')),
                         Text(formatCop(l['totalCompra'] as num?), style: mono(size: 16, weight: FontWeight.w700)),
                       ]),
+                      CoffeeLineProjection(api: session.api, purchaseId: l['id'] as int, editable: !voided),
                     ],
                   ),
                 ),
@@ -272,7 +274,7 @@ class CoffeeInvoiceDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Muted(
-                'Para clasificar estos productos en lotes, ve a la pestaña Lotes. La proyección de cada producto se ve en la versión web.',
+                'Para clasificar estos productos en lotes, ve a la pestaña Lotes.',
                 size: 12,
               ),
             ],

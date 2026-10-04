@@ -129,6 +129,10 @@ class ApiClient {
       await _request('POST', '/coffee/invoices/$id/void', {'reason': reason}) as Json;
   Future<Json> coffeeVoidPurchase(int id, String reason) async =>
       await _request('POST', '/coffee/purchases/$id/void', {'reason': reason}) as Json;
+  Future<Json> coffeeProjection(int purchaseId) async =>
+      await _request('GET', '/coffee/purchases/$purchaseId/projection') as Json;
+  Future<Json> coffeeSaveProjection(int purchaseId, Json payload) async =>
+      await _request('PUT', '/coffee/purchases/$purchaseId/projection', payload) as Json;
   Future<Json> coffeeProductTypes() async => await _request('GET', '/coffee/product-types') as Json;
   Future<Json> coffeeSearchSuppliers(String q) async =>
       await _request('GET', '/coffee/suppliers?q=${Uri.encodeQueryComponent(q)}') as Json;
