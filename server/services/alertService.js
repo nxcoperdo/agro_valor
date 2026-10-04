@@ -344,4 +344,4 @@ async function sendTestMessage(user) {
   return sendOnChannels({ userId: user.id, phone: user.phone, channels, built: buildWelcomeMessage(buildMarketSnapshot()) });
 }
 
-module.exports = { evaluateThresholdAlerts, sendDigests, sendTestMessage, channelsFor };
+module.exports = { evaluateThresholdAlerts, evaluateCocoaAlerts, sendDigests, sendTestMessage, channelsFor };
