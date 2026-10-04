@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const userRepository = require('../repositories/userRepository');
 const cooperativeRepository = require('../repositories/cooperativeRepository');
+const { isValidMarket } = require('../config/markets');
 const priceReportRepository = require('../repositories/priceReportRepository');
 const subscriptionService = require('../services/subscriptionService');
 const cooperativeService = require('../services/cooperativeService');
@@ -60,7 +61,10 @@ router.get('/cooperatives', (req, res) => {
 
 router.post('/cooperatives', (req, res, next) => {
   try {
-    const { name, region, municipality, differentialPct } = req.body || {};
+    const { name, region, municipality, differentialPct, market = 'coffee' } = req.body || {};
+    if (!isValidMarket(market)) {
+      return res.status(400).json({ error: 'Mercado no soportado' });
+    }
     if (!name || !String(name).trim()) {
       return res.status(400).json({ error: 'El nombre de la cooperativa es requerido' });
     }
@@ -69,6 +73,7 @@ router.post('/cooperatives', (req, res, next) => {
       region,
       municipality,
       differentialPct: differentialPct != null ? parseFloat(differentialPct) : 0,
+      market,
     });
     res.status(201).json({ cooperative: coop });
   } catch (err) {

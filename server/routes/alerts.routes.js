@@ -7,6 +7,7 @@ const pushService = require('../services/pushService');
 const pushDeviceRepository = require('../repositories/pushDeviceRepository');
 const { toIso } = require('../utils/datetime');
 const { testMessageRateLimit } = require('../middleware/rateLimit');
+const { isValidMarket, DEFAULT_MARKET } = require('../config/markets');
 
 const router = express.Router();
 
@@ -28,6 +29,8 @@ function serialize(alert) {
   return {
     id: alert.id,
     type: alert.type,
+    market: alert.market || DEFAULT_MARKET,
+    // Umbral en la unidad del mercado: COP/carga en café, COP/kg en cacao.
     thresholdCopCarga: alert.threshold_cop_carga,
     active: Boolean(alert.active),
     lastTriggeredAt: toIso(alert.last_triggered_at),
@@ -57,21 +60,37 @@ router.get('/', (req, res) => {
 
 router.post('/', (req, res, next) => {
   try {
-    const { type, thresholdCopCarga } = req.body || {};
+    const { type, thresholdCopCarga, market = DEFAULT_MARKET } = req.body || {};
+
+    if (!isValidMarket(market)) {
+      return res.status(400).json({ error: 'Mercado no soportado' });
+    }
 
     if (!VALID_TYPES.includes(type)) {
       return res.status(400).json({ error: 'Tipo de alerta inválido' });
     }
 
-    if (alertService.channelsFor(channelInput(req)).length === 0) {
+    const channels = alertService.channelsFor(channelInput(req));
+    if (channels.length === 0) {
       return res.status(400).json({ error: NO_CHANNEL_ERROR });
+    }
+
+    if (market === 'cocoa') {
+      if (type !== 'above' && type !== 'below') {
+        return res.status(400).json({ error: 'Para cacao solo hay alertas de precio (sube o baja de un valor)' });
+      }
+      if (!channels.includes('push')) {
+        return res.status(400).json({ error: 'Las alertas de cacao llegan por notificación en la app: actívalas primero' });
+      }
     }
 
     let threshold = null;
     if (type === 'above' || type === 'below') {
       threshold = parseFloat(thresholdCopCarga);
       if (!Number.isFinite(threshold) || threshold <= 0) {
-        return res.status(400).json({ error: 'Define un precio válido por carga para la alerta' });
+        return res
+          .status(400)
+          .json({ error: `Define un precio válido por ${market === 'cocoa' ? 'kilo' : 'carga'} para la alerta` });
       }
     }
 
@@ -86,6 +105,7 @@ router.post('/', (req, res, next) => {
       userId: req.user.id,
       type,
       thresholdCopCarga: threshold,
+      market,
     });
 
     res.status(201).json(serialize(alert));

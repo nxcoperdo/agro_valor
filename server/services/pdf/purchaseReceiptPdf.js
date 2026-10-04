@@ -1,6 +1,6 @@
 const { newDoc, header, keyValues, rule, signatures, cop, kg, pct, dateTime } = require('./pdfCommon');
 
-const COFFEE_TYPES = { cafe_verde: 'Café verde', cafe_merma_5: 'Café con merma 5%', cafe_sin_merma: 'Café sin merma', otro: 'Otro' };
+const productTypes = require('../../domain/productTypes');
 const PAYMENTS = { efectivo: 'Efectivo', transferencia: 'Transferencia', credito: 'Crédito', otro: 'Otro' };
 
 /** `receipt` viene de receiptService.build: nunca contiene costos internos, secado, utilidad ni márgenes. */
@@ -15,7 +15,7 @@ async function render(receipt) {
     ['Proveedor', receipt.supplier.name],
     ['Identificación', `${receipt.supplier.idType} ${receipt.supplier.idNumber}`],
     ['Fecha y hora', dateTime(receipt.purchasedAt)],
-    ['Tipo de café', COFFEE_TYPES[receipt.coffeeType] || receipt.coffeeType],
+    ['Tipo de producto', productTypes.label(receipt.coffeeType)],
   ]);
   rule(doc);
   doc.fontSize(11).font('Helvetica-Bold').text('Pesadas');

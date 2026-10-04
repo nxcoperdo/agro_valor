@@ -37,7 +37,7 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   static const _tabs = [
-    (title: 'Precio del café', label: 'Precio', icon: Icons.show_chart_rounded),
+    (title: 'Precio', label: 'Precio', icon: Icons.show_chart_rounded),
     (title: 'Cooperativas', label: 'Cooperativas', icon: Icons.storefront_rounded),
     (title: 'Calculadora', label: 'Calcular', icon: Icons.calculate_rounded),
     (title: 'Alertas', label: 'Alertas', icon: Icons.notifications_active_rounded),
@@ -47,32 +47,40 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      PriceScreen(session: widget.session),
-      CooperativesScreen(session: widget.session),
-      CalculatorScreen(session: widget.session),
-      AlertsScreen(session: widget.session),
-      ForecastScreen(session: widget.session),
-      AccountScreen(session: widget.session),
-    ];
+    // La sesión avisa cuando cambia el mercado; la llave por mercado hace que cada pantalla
+    // vuelva a pedir sus datos en vez de conservar los del mercado anterior.
+    return ListenableBuilder(
+      listenable: widget.session,
+      builder: (context, _) {
+        final m = widget.session.market;
+        final pages = [
+          PriceScreen(key: ValueKey('price-$m'), session: widget.session),
+          CooperativesScreen(key: ValueKey('coops-$m'), session: widget.session),
+          CalculatorScreen(session: widget.session),
+          AlertsScreen(session: widget.session),
+          ForecastScreen(key: ValueKey('forecast-$m'), session: widget.session),
+          AccountScreen(session: widget.session),
+        ];
 
-    return Scaffold(
-      extendBody: false,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _Header(title: _tabs[_index].title),
-            // IndexedStack conserva cada pestaña cargada al cambiar de una a otra.
-            Expanded(child: IndexedStack(index: _index, children: pages)),
-          ],
-        ),
-      ),
-      bottomNavigationBar: _BottomNav(
-        index: _index,
-        onTap: (i) => setState(() => _index = i),
-        items: [for (final t in _tabs) (label: t.label, icon: t.icon)],
-      ),
+        return Scaffold(
+          extendBody: false,
+          body: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _Header(title: _tabs[_index].title),
+                // IndexedStack conserva cada pestaña cargada al cambiar de una a otra.
+                Expanded(child: IndexedStack(index: _index, children: pages)),
+              ],
+            ),
+          ),
+          bottomNavigationBar: _BottomNav(
+            index: _index,
+            onTap: (i) => setState(() => _index = i),
+            items: [for (final t in _tabs) (label: t.label, icon: t.icon)],
+          ),
+        );
+      },
     );
   }
 }

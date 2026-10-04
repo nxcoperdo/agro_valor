@@ -8,7 +8,7 @@
  */
 
 // Subir esta versión invalida las cachés viejas en el próximo despliegue.
-const VERSION = 'v6';
+const VERSION = 'v9';
 const SHELL_CACHE = `agrovalor-shell-${VERSION}`;
 const DATA_CACHE = `agrovalor-data-${VERSION}`;
 

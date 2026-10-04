@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api/api_client.dart';
+import 'markets.dart';
 import 'push.dart';
 
 /// Guarda el token en el almacenamiento cifrado del teléfono para no pedir login cada vez.
@@ -14,12 +15,27 @@ class Session extends ChangeNotifier {
   }
 
   static const _tokenKey = 'av_token';
+  static const _marketKey = 'av_market';
   final _storage = const FlutterSecureStorage();
   final api = ApiClient();
   late final PushNotifications push;
 
   Json? user;
   bool restoring = true;
+
+  /// Mercado elegido (café por defecto). Se recuerda entre sesiones.
+  String market = kDefaultMarket;
+
+  Future<void> setMarket(String id) async {
+    if (id == market) return;
+    market = marketById(id).id;
+    notifyListeners();
+    try {
+      await _storage.write(key: _marketKey, value: market);
+    } catch (_) {
+      // Sin almacenamiento la elección dura solo mientras la app esté abierta.
+    }
+  }
 
   bool get isLoggedIn => user != null;
   bool get isPro => user?['isPro'] == true;
@@ -33,6 +49,7 @@ class Session extends ChangeNotifier {
 
   Future<void> restore() async {
     try {
+      market = marketById(await _storage.read(key: _marketKey)).id;
       api.token = await _storage.read(key: _tokenKey);
       if (api.token != null) {
         user = (await api.me())['user'] as Json;

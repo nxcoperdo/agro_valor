@@ -2,6 +2,8 @@ import { api } from '../services/api.js';
 import { isPro } from '../services/auth.js';
 import { paywall } from '../ui/shell.js';
 import { formatCop } from '../utils/currency.js';
+import { MARKETS, getMarketMeta } from '../config/markets.js';
+import { getSelectedMarket } from '../ui/marketSelector.js';
 
 const TYPE_LABELS = {
   above: 'Cuando suba de',
@@ -19,7 +21,9 @@ function alertRow(alert) {
   return `
     <li class="alert-row ${alert.active ? '' : 'is-inactive'}">
       <div>
-        <strong>${TYPE_LABELS[alert.type] || alert.type} ${alert.thresholdCopCarga ? detail : ''}</strong>
+        <strong>${getMarketMeta(alert.market).emoji} ${TYPE_LABELS[alert.type] || alert.type} ${
+          alert.thresholdCopCarga ? `${detail} por ${getMarketMeta(alert.market).thresholdUnit}` : ''
+        }</strong>
         <small>${alert.type === 'daily' || alert.type === 'weekly' ? detail : ''} ${last}</small>
       </div>
       <div class="alert-actions">
@@ -69,6 +73,14 @@ export async function renderAlerts(container) {
           <div class="panel-header"><h2>Crear una alerta</h2></div>
           <form class="calc-form" id="alert-form">
             <div class="field">
+              <label for="market">Mercado</label>
+              <select id="market" name="market">
+                ${MARKETS.map(
+                  (m) => `<option value="${m.id}" ${m.id === getSelectedMarket() ? 'selected' : ''}>${m.emoji} ${m.name}</option>`
+                ).join('')}
+              </select>
+            </div>
+            <div class="field">
               <label for="type">Tipo de aviso</label>
               <select id="type" name="type">
                 <option value="above">Cuando el precio suba de…</option>
@@ -78,8 +90,9 @@ export async function renderAlerts(container) {
               </select>
             </div>
             <div class="field" id="threshold-field">
-              <label for="thresholdCopCarga">Precio por carga (COP)</label>
+              <label for="thresholdCopCarga" id="threshold-label">Precio por carga (COP)</label>
               <input type="number" id="thresholdCopCarga" name="thresholdCopCarga" placeholder="2400000" min="10000" step="1" inputmode="numeric" />
+              <p class="form-hint" id="cocoa-hint" hidden>Las alertas de cacao llegan por notificación en la app.</p>
             </div>
             <button type="submit" class="btn-primary">Crear alerta</button>
           </form>
@@ -113,16 +126,36 @@ export async function renderAlerts(container) {
     const errorEl = container.querySelector('#alert-error');
     const thresholdField = container.querySelector('#threshold-field');
 
-    form.type.addEventListener('change', () => {
+    const thresholdLabel = container.querySelector('#threshold-label');
+    const cocoaHint = container.querySelector('#cocoa-hint');
+
+    /** Cacao: solo alertas de precio, y el umbral va en COP por kilo (no por carga). */
+    function syncMarketFields() {
+      const isCocoa = form.market.value === 'cocoa';
+      [...form.type.options].forEach((o) => {
+        o.disabled = isCocoa && (o.value === 'daily' || o.value === 'weekly');
+      });
+      if (form.type.selectedOptions[0]?.disabled) form.type.value = 'above';
+
+      thresholdLabel.textContent = isCocoa ? 'Precio por kilo (COP)' : 'Precio por carga (COP)';
+      form.thresholdCopCarga.placeholder = isCocoa ? '20000' : '2400000';
+      form.thresholdCopCarga.min = isCocoa ? '100' : '10000';
+      cocoaHint.hidden = !isCocoa;
+
       const needsThreshold = form.type.value === 'above' || form.type.value === 'below';
       thresholdField.hidden = !needsThreshold;
-    });
+    }
+
+    form.type.addEventListener('change', syncMarketFields);
+    form.market.addEventListener('change', syncMarketFields);
+    syncMarketFields();
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       errorEl.hidden = true;
       try {
         await api.createAlert({
+          market: form.market.value,
           type: form.type.value,
           thresholdCopCarga: form.thresholdCopCarga.value,
         });

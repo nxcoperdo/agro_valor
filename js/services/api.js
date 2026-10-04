@@ -54,12 +54,13 @@ export const api = {
   mpConfirm: () => request('/account/mercadopago/confirm', { method: 'POST' }),
 
   // Mercado (con cuenta)
-  currentPrice: () => request('/prices/current'),
-  priceHistory: (days = 30) => request(`/prices/history?days=${days}`),
-  cooperatives: () => request('/cooperatives'),
+  currentPrice: (market = 'coffee') => request(`/prices/current?market=${market}`),
+  priceHistory: (days = 30, market = 'coffee') => request(`/prices/history?days=${days}&market=${market}`),
+  cooperatives: (market = 'coffee') => request(`/cooperatives?market=${market}`),
 
   // Pro
-  forecast: () => request('/forecast'),
+  forecast: (market = 'coffee') => request(`/forecast?market=${market}`),
+  calculateCocoa: (payload) => request('/calculator/cocoa', { method: 'POST', ...body(payload) }),
   calculate: (payload) => request('/calculator', { method: 'POST', ...body(payload) }),
   alerts: () => request('/alerts'),
   createAlert: (payload) => request('/alerts', { method: 'POST', ...body(payload) }),
@@ -72,6 +73,7 @@ export const api = {
 
   // Compras de café
   coffeeMe: () => request('/coffee/me'),
+  productTypes: () => request('/coffee/product-types'),
   searchSuppliers: (q) => request(`/coffee/suppliers?q=${encodeURIComponent(q || '')}`),
   purchases: (params = {}) => request(`/coffee/purchases?${new URLSearchParams(params)}`),
   purchase: (id) => request(`/coffee/purchases/${id}`),

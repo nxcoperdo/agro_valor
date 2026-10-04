@@ -1,6 +1,9 @@
 const express = require('express');
 const netPriceService = require('../services/netPriceService');
 const cooperativeService = require('../services/cooperativeService');
+const cocoaNetPriceService = require('../services/cocoaNetPriceService');
+const marketSummaryService = require('../services/marketSummaryService');
+const cocoaReferenceService = require('../services/cocoaReferenceService');
 
 const router = express.Router();
 
@@ -49,6 +52,40 @@ router.post('/', (req, res, next) => {
         transport: body.transportCostCopCarga == null || body.transportCostCopCarga === '',
       },
       byCooperative,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Precio neto del cacao en COP por kilo. Referencia: precio semanal de Agronet (respaldo: ICE
+ * convertido con la TRM). También exclusivo de Pro (mismo middleware que la calculadora de café).
+ */
+router.post('/cocoa', (req, res, next) => {
+  try {
+    const body = req.body || {};
+    const summary = marketSummaryService.getMarketSummary('cocoa');
+    const iceCopPerKg = summary.international ? summary.international.copPerKg : null;
+    const reference = cocoaReferenceService.getLatest();
+    const referenceCopPerKg = reference && !reference.isStale ? reference.priceCopKg : null;
+
+    if (!referenceCopPerKg && !iceCopPerKg) {
+      return res.status(503).json({ error: 'Aún no hay un precio de referencia del cacao disponible para calcular' });
+    }
+
+    res.json({
+      ...cocoaNetPriceService.calculate({
+        referenceCopPerKg,
+        iceCopPerKg,
+        kg: body.kg,
+        humidity: body.humidity,
+        defectPct: body.defectPct,
+        fermented: body.fermented,
+        buyerDiscountPct: body.buyerDiscountPct,
+        transportCostCopKg: body.transportCostCopKg,
+      }),
+      referenceWeekLabel: referenceCopPerKg ? reference.weekLabel : null,
     });
   } catch (err) {
     next(err);

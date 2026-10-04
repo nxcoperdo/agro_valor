@@ -1,9 +1,11 @@
 const env = require('../config/env');
 const coffeePriceService = require('./coffeePriceService');
+const cocoaReferenceService = require('./cocoaReferenceService');
 const exchangeRateService = require('./exchangeRateService');
 const fncScraperService = require('./fncScraperService');
 const { centsToUsdPerLb, exportParityCopPerCarga, cargaToExcelsoLb, BASE_FACTOR, CARGA_KG } = require('../utils/currency');
 const { toIso } = require('../utils/datetime');
+const { getMarket, cocoaUsdPerTonneToCopKg } = require('../config/markets');
 
 /**
  * Arma la foto del mercado separando dos cosas que NO son lo mismo y que antes se
@@ -22,7 +24,61 @@ const { toIso } = require('../utils/datetime');
  * 94, así que convertir la cotización usando el peso del pergamino infla el valor
  * cerca de un 34%.
  */
-function getMarketSummary() {
+/**
+ * Cacao: el precio interno es la referencia semanal de Agronet (COP/kg); la cotización
+ * internacional (ICE, USD por tonelada métrica) se convierte a pesos por kilo con la TRM del día
+ * y queda como contexto de mercado.
+ */
+function getCocoaSummary(market) {
+  const price = coffeePriceService.getCurrentPrice(market.id);
+  const exchangeRate = exchangeRateService.getCurrentRate();
+  const reference = cocoaReferenceService.getLatest();
+  const meta = price && price.meta ? JSON.parse(price.meta) : null;
+  const changePct =
+    meta && meta.previousClose ? ((price.price - meta.previousClose) / meta.previousClose) * 100 : null;
+
+  return {
+    market: market.id,
+    // Referencia semanal de Agronet (lo que paga la industria): es la cifra principal en cacao,
+    // el equivalente al precio interno de la FNC en café.
+    internal: reference
+      ? {
+          copPerKg: reference.priceCopKg,
+          weekLabel: reference.weekLabel,
+          weekEnd: reference.weekEnd,
+          scrapedAt: reference.scrapedAt,
+          sourceUrl: reference.sourceUrl,
+          isStale: reference.isStale,
+          label: 'Precio de referencia semanal (Agronet)',
+        }
+      : null,
+    international: price
+      ? {
+          usdPerTonne: price.price,
+          copPerKg: exchangeRate ? cocoaUsdPerTonneToCopKg(price.price, exchangeRate.rate) : null,
+          source: price.source,
+          provider: price.provider,
+          granularity: coffeePriceService.granularityFor(price.provider),
+          quotedAt: toIso(price.quoted_at),
+          fetchedAt: toIso(price.fetched_at),
+          contract: meta ? meta.contract : null,
+          exchange: meta ? meta.exchange : null,
+          previousClose: meta ? meta.previousClose : null,
+          changePct,
+          unitLabel: 'USD por tonelada métrica de cacao',
+        }
+      : null,
+    exportParity: null,
+    exchangeRate: exchangeRate
+      ? { rate: exchangeRate.rate, source: exchangeRate.source, fetchedAt: toIso(exchangeRate.fetched_at) }
+      : null,
+  };
+}
+
+function getMarketSummary(marketId = 'coffee') {
+  const market = getMarket(marketId);
+  if (market.id === 'cocoa') return getCocoaSummary(market);
+
   const price = coffeePriceService.getCurrentPrice();
   const exchangeRate = exchangeRateService.getCurrentRate();
   const fnc = fncScraperService.getLatest();
@@ -69,6 +125,7 @@ function getMarketSummary() {
       : null;
 
   return {
+    market: 'coffee',
     internal: fnc
       ? {
           copPerCarga: fnc.price_cop_carga,

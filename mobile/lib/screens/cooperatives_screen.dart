@@ -5,6 +5,7 @@ import '../format.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/market_selector.dart';
 import 'report_screen.dart';
 
 class CooperativesScreen extends StatelessWidget {
@@ -14,40 +15,127 @@ class CooperativesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AsyncView<Json>(
-      load: session.api.cooperatives,
-      builder: (context, data) {
-        final coops = (data['cooperatives'] as List<dynamic>? ?? []).cast<Json>();
-        final fnc = data['fncReference'] as Json?;
+    final isCocoa = session.market == 'cocoa';
 
-        if (coops.isEmpty) {
-          return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(24),
-            children: [Muted(data['error'] as String? ?? 'Todavía no hay cooperativas para comparar.')],
-          );
-        }
+    return Column(
+      children: [
+        MarketSelector(session: session),
+        Expanded(
+          child: AsyncView<Json>(
+            load: () => session.api.cooperatives(session.market),
+            builder: (context, data) {
+              final coops = (data['cooperatives'] as List<dynamic>? ?? []).cast<Json>();
+              final fnc = data['fncReference'] as Json?;
+              final reference = data['reference'] as Json?;
 
-        return ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              if (coops.isEmpty) {
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    Muted(data['error'] as String? ?? 'Todavía no hay ${isCocoa ? 'compradores' : 'cooperativas'} para comparar.'),
+                  ],
+                );
+              }
+
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                children: [
+                  _ReportPrompt(session: session),
+                  const SizedBox(height: 12),
+                  if (fnc != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12, left: 4),
+                      child: Muted(
+                        'Base FNC: ${formatCop(fnc['priceCopCarga'] as num)} por carga'
+                        '${fnc['isStale'] == true ? ' · desactualizado' : ''}',
+                      ),
+                    ),
+                  if (reference != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12, left: 4),
+                      child: Muted(
+                        'Referencia de la industria (Agronet, semana del ${reference['weekLabel']}): '
+                        '${formatCop(reference['priceCopKg'] as num)} por kilo'
+                        '${reference['isStale'] == true ? ' · desactualizado' : ''}',
+                      ),
+                    ),
+                  for (final c in coops) ...[
+                    isCocoa ? _BuyerTile(buyer: c) : _CoopTile(coop: c),
+                    const SizedBox(height: 8),
+                  ],
+                  const SizedBox(height: 8),
+                  Muted(data['disclaimer'] as String? ?? '', size: 12),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Comprador de cacao: sin estimación. Muestra el precio solo si varios productores lo reportaron.
+class _BuyerTile extends StatelessWidget {
+  const _BuyerTile({required this.buyer});
+
+  final Json buyer;
+
+  @override
+  Widget build(BuildContext context) {
+    final price = buyer['priceCopKg'] as num?;
+    final best = buyer['isHighestBuyer'] == true;
+    final place = [buyer['municipality'], buyer['region']].where((e) => e != null && '$e'.isNotEmpty).join(', ');
+
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: best ? AvColors.accent : AvColors.border, width: best ? 1.5 : 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
           children: [
-            _ReportPrompt(session: session),
-            const SizedBox(height: 12),
-            if (fnc != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12, left: 4),
-                child: Muted(
-                  'Base FNC: ${formatCop(fnc['priceCopCarga'] as num)} por carga'
-                  '${fnc['isStale'] == true ? ' · desactualizado' : ''}',
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: best ? AvColors.accent : AvColors.surfaceAlt,
+              child: Text(
+                buyer['rank'] != null ? '${buyer['rank']}' : '—',
+                style: TextStyle(
+                  color: best ? AvColors.onAccent : AvColors.fg,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
                 ),
               ),
-            for (final c in coops) ...[_CoopTile(coop: c), const SizedBox(height: 8)],
-            const SizedBox(height: 8),
-            Muted(data['disclaimer'] as String? ?? '', size: 12),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(buyer['name'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  if (place.isNotEmpty) Muted(place, size: 12),
+                ],
+              ),
+            ),
+            if (price != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${formatCop(price)}/kg',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontFeatures: tabular),
+                  ),
+                  const Pill(label: 'Reportado', color: AvColors.positive),
+                ],
+              )
+            else
+              const Muted('Sin reportes aún', size: 12),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }

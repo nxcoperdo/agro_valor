@@ -5,12 +5,12 @@ function insert(p) {
     .prepare(
       `INSERT INTO purchases (business_id, code, receipt_code, supplier_id, workday_id, coffee_type, merma_inicial_pct,
          peso_total_kg, kg_descontados, peso_pagable_kg, precio_carga, precio_kg, total_compra,
-         payment_method, payment_reference, notes, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         payment_method, payment_reference, notes, created_by, requires_drying)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(p.businessId, p.code, p.code, p.supplierId, p.workdayId, p.coffeeType, p.mermaPct, p.pesoTotal,
       p.kgDescontados, p.pesoPagable, p.precioCarga, p.precioKg, p.totalCompra, p.paymentMethod,
-      p.paymentReference, p.notes, p.userId);
+      p.paymentReference, p.notes, p.userId, p.requiresDrying ? 1 : 0);
   return info.lastInsertRowid;
 }
 

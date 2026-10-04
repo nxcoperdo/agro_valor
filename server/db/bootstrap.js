@@ -5,12 +5,14 @@ const userRepository = require('../repositories/userRepository');
 const cooperativeRepository = require('../repositories/cooperativeRepository');
 const fncReferenceRepository = require('../repositories/fncReferenceRepository');
 const cooperativesConfig = require('../config/cooperatives.json');
+const cocoaBuyersConfig = require('../config/cocoaBuyers.json');
 const logger = require('../utils/logger');
 
 function bootstrap() {
   migrate();
 
   cooperativeRepository.seedFromConfig(cooperativesConfig);
+  cooperativeRepository.seedFromConfig(cocoaBuyersConfig, 'cocoa');
 
   if (userRepository.count() === 0) {
     const passwordHash = bcrypt.hashSync(env.adminPassword, 10);

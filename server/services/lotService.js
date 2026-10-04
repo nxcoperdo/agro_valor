@@ -27,7 +27,7 @@ function totals(lotId, role) {
               COALESCE(SUM(p.peso_total_kg), 0) AS kg_recibidos, COALESCE(SUM(p.peso_pagable_kg), 0) AS kg_pagables,
               COALESCE(SUM(p.total_compra), 0) AS total_compra,
               COALESCE(SUM((SELECT COALESCE(SUM(c.amount), 0) FROM purchase_costs c WHERE c.purchase_id = p.id)), 0) AS costos_compra,
-              COALESCE(SUM(COALESCE((SELECT pr.kilos_secos FROM purchase_projections pr WHERE pr.purchase_id = p.id), p.peso_pagable_kg * 0.55)), 0) AS kg_secos_proyectados,
+              COALESCE(SUM(COALESCE((SELECT pr.kilos_secos FROM purchase_projections pr WHERE pr.purchase_id = p.id), p.peso_pagable_kg * (CASE WHEN p.requires_drying = 1 THEN 0.55 ELSE 1 END))), 0) AS kg_secos_proyectados,
               COALESCE(SUM((SELECT pr.kilos_netos FROM purchase_projections pr WHERE pr.purchase_id = p.id)), 0) AS kg_netos_guardados,
               COALESCE(SUM((SELECT pr.costos_procesamiento FROM purchase_projections pr WHERE pr.purchase_id = p.id)), 0) AS costos_proc_proyectados
        FROM purchases p WHERE p.lot_id = ? AND p.status = 'ACTIVA'`

@@ -4,6 +4,7 @@ const twelveDataProvider = require('./providers/twelveDataProvider');
 const alphaVantageProvider = require('./providers/alphaVantageProvider');
 const simulatedProvider = require('./providers/simulatedProvider');
 const logger = require('../utils/logger');
+const { getMarket } = require('../config/markets');
 
 /**
  * Orden deliberado: primero la fuente con el dato más fresco.
@@ -37,39 +38,43 @@ function isSameQuote(previous, result) {
   return previous.price === result.price;
 }
 
-async function refreshPrice() {
+async function refreshPrice(marketId = 'coffee') {
+  const market = getMarket(marketId);
+
   for (const provider of REAL_PROVIDERS) {
+    // Solo los proveedores con datos reales de este producto (twelvedata/alphavantage son de café).
+    if (!market.providers.includes(provider.name)) continue;
     if (!provider.isConfigured()) continue;
 
     try {
-      const result = await provider.fetchLatestPrice();
-      const previous = coffeePriceRepository.latest();
+      const result = await provider.fetchLatestPrice(market);
+      const previous = coffeePriceRepository.latest(market.id);
 
       if (isSameQuote(previous, result)) {
         return coffeePriceRepository.touch(previous.id);
       }
 
-      const saved = coffeePriceRepository.insert({ ...result, source: 'real' });
-      logger.info(`Precio de café real obtenido vía ${provider.name}: ${result.price} centavos/lb`);
+      const saved = coffeePriceRepository.insert({ ...result, source: 'real', market: market.id });
+      logger.info(`Precio de ${market.name.toLowerCase()} real obtenido vía ${provider.name}: ${result.price} ${market.unit}`);
       return saved;
     } catch (err) {
-      logger.warn(`Proveedor ${provider.name} falló: ${err.message}`);
+      logger.warn(`Proveedor ${provider.name} (${market.id}) falló: ${err.message}`);
     }
   }
 
-  const last = coffeePriceRepository.latest();
-  const simulated = simulatedProvider.fetchLatestPrice(last ? last.price : undefined);
-  const saved = coffeePriceRepository.insert({ ...simulated, source: 'simulated' });
-  logger.info(`Precio de café simulado generado: ${simulated.price.toFixed(4)}`);
+  const last = coffeePriceRepository.latest(market.id);
+  const simulated = simulatedProvider.fetchLatestPrice(last ? last.price : undefined, market);
+  const saved = coffeePriceRepository.insert({ ...simulated, source: 'simulated', market: market.id });
+  logger.info(`Precio de ${market.name.toLowerCase()} simulado generado: ${simulated.price.toFixed(4)}`);
   return saved;
 }
 
-function getCurrentPrice() {
-  return coffeePriceRepository.latest();
+function getCurrentPrice(marketId = 'coffee') {
+  return coffeePriceRepository.latest(getMarket(marketId).id);
 }
 
-function getHistory(days = 30) {
-  return coffeePriceRepository.history(days);
+function getHistory(days = 30, marketId = 'coffee') {
+  return coffeePriceRepository.history(days, getMarket(marketId).id);
 }
 
 function granularityFor(provider) {

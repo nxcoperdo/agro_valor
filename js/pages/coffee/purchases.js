@@ -5,12 +5,15 @@ import { mountStepper } from '../../ui/stepper.js';
 import { askConfirm, askReason } from '../../ui/confirm.js';
 import { CARGA_KG, escapeHtml, formatKg, formatCopValue, formatPct, formatDateTime, parseNumber } from '../../utils/format.js';
 
-const COFFEE_TYPES = {
-  cafe_verde: { label: 'Café verde', merma: 8 },
-  cafe_merma_5: { label: 'Café con merma 5%', merma: 5 },
-  cafe_sin_merma: { label: 'Café sin merma', merma: 0 },
-  otro: { label: 'Otro', merma: 0 },
-};
+/** Respaldo si no se pueden pedir al servidor (GET /coffee/product-types es la fuente). */
+const FALLBACK_PRODUCT_TYPES = [
+  { key: 'cafe', label: 'Café', mermaDefault: 8, requiresDryingDefault: true },
+  { key: 'cacao', label: 'Cacao', mermaDefault: 0, requiresDryingDefault: false },
+  { key: 'pasilla_cafe', label: 'Pasilla de café', mermaDefault: 0, requiresDryingDefault: false },
+  { key: 'maiz', label: 'Maíz', mermaDefault: 0, requiresDryingDefault: false },
+  { key: 'frijol', label: 'Frijol', mermaDefault: 0, requiresDryingDefault: false },
+];
+const typeOf = (s) => s.productTypes.find((t) => t.key === s.productType) || s.productTypes[0];
 const PAYMENTS = { efectivo: 'Efectivo', transferencia: 'Transferencia', credito: 'Crédito', otro: 'Otro' };
 
 /** Vista previa en pantalla; el servidor recalcula y es quien guarda. */
@@ -19,8 +22,9 @@ function preview(state) {
   const merma = parseNumber(state.merma) || 0;
   const descontados = (total * merma) / 100;
   const pagable = total - descontados;
-  const precioCarga = parseNumber(state.precioCarga) || 0;
-  return { total, descontados, pagable, precioKg: precioCarga / CARGA_KG, totalPagar: Math.round(pagable * (precioCarga / CARGA_KG)) };
+  // El precio se escribe por carga o directamente por kilo; el servidor valida y es quien guarda.
+  const precioKg = state.priceMode === 'kg' ? parseNumber(state.precioKg) || 0 : (parseNumber(state.precioCarga) || 0) / CARGA_KG;
+  return { total, descontados, pagable, precioKg, totalPagar: Math.round(pagable * precioKg) };
 }
 
 function summaryCards(state) {
@@ -39,7 +43,7 @@ const stepSupplier = {
   render: (s) => `
     <div class="calc-form">
       <div class="field"><label for="sup-q">Buscar proveedor</label>
-        <input id="sup-q" type="search" placeholder="Nombre o identificación" autocomplete="off" />
+        <input id="sup-q" type="search" placeholder="Toca para ver la lista, o escribe nombre o identificación" autocomplete="off" />
         <ul class="pick-list" id="sup-results"></ul></div>
     </div>
     <p class="form-hint">${s.supplierId ? `Seleccionado: <strong>${escapeHtml(s.supplierName)}</strong>` : 'Si no existe, créalo aquí abajo sin salir de la compra.'}</p>
@@ -64,17 +68,25 @@ const stepSupplier = {
       s.newSupplier[key] = e.target.value;
       s.supplierId = null; // si escribe uno nuevo, deja de usar el seleccionado
     }));
+    // Al enfocar (o tocar) el buscador se despliegan todos los proveedores registrados en orden
+    // alfabético; al escribir se filtra la misma lista.
     let timer;
-    q.addEventListener('input', () => {
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
-        if (q.value.trim().length < 2) { results.innerHTML = ''; return; }
+    let seq = 0;
+    const showList = async () => {
+      const mine = ++seq;
+      try {
         const { suppliers } = await api.searchSuppliers(q.value.trim());
+        if (mine !== seq) return; // llegó una respuesta más vieja que la última búsqueda
         results.innerHTML = suppliers.length
           ? suppliers.map((x) => `<li><button type="button" class="pick" data-id="${x.id}" data-name="${escapeHtml(x.name)}">${escapeHtml(x.name)} <small>${escapeHtml(x.idType)} ${escapeHtml(x.idNumber)}</small></button></li>`).join('')
-          : '<li class="form-hint">Sin resultados</li>';
-      }, 250);
-    });
+          : `<li class="form-hint">${q.value.trim() ? 'Sin resultados' : 'Todavía no hay proveedores registrados'}</li>`;
+      } catch (err) {
+        if (mine === seq) results.innerHTML = `<li class="form-hint">${escapeHtml(err.message)}</li>`;
+      }
+    };
+    q.addEventListener('focus', showList);
+    q.addEventListener('click', showList);
+    q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(showList, 250); });
     results.addEventListener('click', (e) => {
       const b = e.target.closest('.pick');
       if (!b) return;
@@ -92,9 +104,11 @@ const stepWeighings = {
   title: 'Pesadas',
   render: (s) => `
     <div class="calc-form">
-      <div class="field"><label for="coffee-type">Tipo de café</label>
-        <select id="coffee-type">${Object.entries(COFFEE_TYPES).map(([k, v]) => `<option value="${k}" ${s.coffeeType === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></div>
+      <div class="field"><label for="coffee-type">Tipo de producto (café, cacao, pasilla de café, maíz, frijol)</label>
+        <select id="coffee-type">${s.productTypes.map((t) => `<option value="${t.key}" ${s.productType === t.key ? 'selected' : ''}>${escapeHtml(t.label)}</option>`).join('')}</select></div>
       <div class="field"><label for="merma">Merma inicial (%)</label><input id="merma" inputmode="decimal" value="${escapeHtml(s.merma)}" /></div>
+      <div class="field"><label class="check-row"><input type="checkbox" id="requires-drying" ${s.requiresDrying ? 'checked' : ''} /> ¿Requiere secado?</label>
+        <small>${s.requiresDrying ? 'Pasa por secado antes de entrar a inventario (la proyección usa el rendimiento de secado).' : 'No se seca: la proyección es directa al 100 % y puede enviarse a inventario.'}</small></div>
     </div>
     <div id="weighings-list">${s.weighings.map((w, i) => `
       <div class="weighing-row"><label for="w-${i}">Pesada ${i + 1} (kg)</label>
@@ -105,11 +119,12 @@ const stepWeighings = {
   afterRender(el, s, redraw) {
     const live = () => { el.querySelector('#live-summary').innerHTML = summaryCards(s); };
     el.querySelector('#coffee-type').addEventListener('change', (e) => {
-      s.coffeeType = e.target.value;
-      s.merma = String(COFFEE_TYPES[s.coffeeType].merma);
-      el.querySelector('#merma').value = s.merma;
-      live();
+      s.productType = e.target.value;
+      s.merma = String(typeOf(s).mermaDefault);
+      s.requiresDrying = typeOf(s).requiresDryingDefault;
+      s.rerender(); // actualiza la merma y el interruptor de secado según el producto
     });
+    el.querySelector('#requires-drying').addEventListener('change', (e) => { s.requiresDrying = e.target.checked; s.rerender(); });
     el.querySelector('#merma').addEventListener('input', (e) => { s.merma = e.target.value; live(); });
     el.querySelectorAll('[data-i]').forEach((i) => i.addEventListener('input', (e) => { s.weighings[Number(e.target.dataset.i)] = e.target.value; live(); }));
     el.querySelector('#add-weighing').addEventListener('click', () => {
@@ -131,7 +146,12 @@ const stepPrice = {
   title: 'Precio y pago',
   render: (s) => `
     <div class="calc-form">
-      <div class="field"><label for="precio-carga">Precio por carga (${CARGA_KG} kg)</label><input id="precio-carga" inputmode="numeric" value="${escapeHtml(s.precioCarga)}" /></div>
+      <div class="field"><label for="price-mode">Definir el precio</label>
+        <select id="price-mode"><option value="carga" ${s.priceMode === 'carga' ? 'selected' : ''}>Por carga (${CARGA_KG} kg)</option>
+          <option value="kg" ${s.priceMode === 'kg' ? 'selected' : ''}>Por kilogramo</option></select></div>
+      ${s.priceMode === 'kg'
+        ? `<div class="field"><label for="precio-kg-in">Precio por kilogramo</label><input id="precio-kg-in" inputmode="decimal" value="${escapeHtml(s.precioKg)}" /></div>`
+        : `<div class="field"><label for="precio-carga">Precio por carga (${CARGA_KG} kg)</label><input id="precio-carga" inputmode="numeric" value="${escapeHtml(s.precioCarga)}" /></div>`}
       <div class="field"><label for="payment">Forma de pago</label>
         <select id="payment">${Object.entries(PAYMENTS).map(([k, v]) => `<option value="${k}" ${s.paymentMethod === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
       <div class="field"><label for="reference">Referencia</label><input id="reference" value="${escapeHtml(s.paymentReference)}" /></div>
@@ -142,37 +162,46 @@ const stepPrice = {
   afterRender(el, s) {
     const live = () => {
       el.querySelector('#live-summary').innerHTML = summaryCards(s);
-      el.querySelector('#precio-kg').textContent = `Precio por kg: ${formatCopValue(preview(s).precioKg)}`;
+      const p = preview(s);
+      el.querySelector('#precio-kg').textContent = s.priceMode === 'kg'
+        ? `Equivale a ${formatCopValue(p.precioKg * CARGA_KG)} por carga de ${CARGA_KG} kg`
+        : `Precio por kg: ${formatCopValue(p.precioKg)}`;
     };
     live();
-    [['precio-carga', 'precioCarga'], ['payment', 'paymentMethod'], ['reference', 'paymentReference'], ['notes', 'notes']].forEach(([id, key]) =>
-      el.querySelector(`#${id}`).addEventListener('input', (e) => { s[key] = e.target.value; live(); }));
+    el.querySelector('#price-mode').addEventListener('change', (e) => { s.priceMode = e.target.value; s.rerender(); });
+    [['precio-carga', 'precioCarga'], ['precio-kg-in', 'precioKg'], ['payment', 'paymentMethod'], ['reference', 'paymentReference'], ['notes', 'notes']].forEach(([id, key]) =>
+      el.querySelector(`#${id}`)?.addEventListener('input', (e) => { s[key] = e.target.value; live(); }));
   },
-  validate: (s) => (parseNumber(s.precioCarga) > 0 ? null : 'El precio por carga debe ser mayor a cero'),
+  validate: (s) => (s.priceMode === 'kg'
+    ? (parseNumber(s.precioKg) > 0 ? null : 'El precio por kilogramo debe ser mayor a cero')
+    : (parseNumber(s.precioCarga) > 0 ? null : 'El precio por carga debe ser mayor a cero')),
 };
 
 const stepConfirm = {
   id: 'confirm',
   title: 'Confirmar',
   render: (s) => `<div class="panel-intro">Proveedor: <strong>${escapeHtml(s.supplierId ? s.supplierName : s.newSupplier.name)}</strong> ·
-    ${escapeHtml(COFFEE_TYPES[s.coffeeType].label)} · ${s.weighings.length} pesada(s) · ${PAYMENTS[s.paymentMethod]}</div>
+    ${escapeHtml(typeOf(s).label)}${s.requiresDrying ? ' (con secado)' : ' (sin secado)'} · ${s.weighings.length} pesada(s) · ${PAYMENTS[s.paymentMethod]}</div>
     ${summaryCards(s)}`,
 };
 
-function freshState() {
+function freshState(productTypes) {
+  const first = productTypes[0];
   return {
-    supplierId: null, supplierName: '', coffeeType: 'cafe_verde', merma: '8', weighings: [''],
-    precioCarga: '', paymentMethod: 'efectivo', paymentReference: '', notes: '',
+    productTypes, productType: first.key, requiresDrying: first.requiresDryingDefault,
+    supplierId: null, supplierName: '', merma: String(first.mermaDefault), weighings: [''],
+    priceMode: 'carga', precioKg: '', precioCarga: '', paymentMethod: 'efectivo', paymentReference: '', notes: '',
     newSupplier: { idType: 'CC', idNumber: '', name: '', legalName: '', phone: '', municipality: '', address: '', notes: '' },
   };
 }
 
 function toPayload(s) {
   const payload = {
-    coffeeType: s.coffeeType,
+    productType: s.productType,
+    requiresDrying: s.requiresDrying,
     porcentajeMermaInicial: parseNumber(s.merma),
     weighings: s.weighings.map((w) => ({ pesoKg: parseNumber(w) })),
-    precioCarga: parseNumber(s.precioCarga),
+    ...(s.priceMode === 'kg' ? { precioKg: parseNumber(s.precioKg) } : { precioCarga: parseNumber(s.precioCarga) }),
     paymentMethod: s.paymentMethod,
     paymentReference: s.paymentReference,
     notes: s.notes,
@@ -211,21 +240,24 @@ function historyRow(p) {
 
 export async function renderPurchases(container) {
   if (!isPro()) {
-    container.innerHTML = paywall('Compras de café', 'Registra compras con múltiples pesadas, merma y comprobante para cada proveedor.');
+    container.innerHTML = paywall('Compra de producto', 'Registra compras de café, cacao, pasilla, maíz o frijol con múltiples pesadas, merma y comprobante para cada proveedor.');
     return;
   }
 
   async function load() {
     container.innerHTML = '<div class="panel"><span class="skeleton" style="width:100%;height:120px;"></span></div>';
-    let purchases, workday, business;
+    let purchases, workday, business, productTypes;
     try {
-      [{ purchases }, workday, business] = await Promise.all([api.purchases(), api.currentWorkday(), api.business()]);
+      [{ purchases }, workday, business, productTypes] = await Promise.all([
+        api.purchases(), api.currentWorkday(), api.business(),
+        api.productTypes().then((r) => r.productTypes).catch(() => FALLBACK_PRODUCT_TYPES),
+      ]);
     } catch (err) {
       container.innerHTML = `<div class="panel"><p class="panel-error">${escapeHtml(err.message)}</p></div>`;
       return;
     }
     container.innerHTML = `
-      <div class="panel"><div class="panel-header"><h2>Nueva compra</h2></div><div id="stepper-root"></div></div>
+      <div class="panel"><div class="panel-header"><h2>Nueva compra de producto</h2></div><div id="stepper-root"></div></div>
       <div class="panel"><div class="panel-header"><h2>Jornada actual · ${escapeHtml(workday.code)}</h2>
         <span class="badge badge-real">${workday.status}</span></div>
         ${consolidatedCards(workday.summary)}
@@ -238,7 +270,7 @@ export async function renderPurchases(container) {
         ${purchases.length ? `<div class="table-scroll"><table class="coop-table"><thead><tr>
           <th>Compra</th><th>Proveedor</th><th>Kg pagables</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
           <tbody>${purchases.map(historyRow).join('')}</tbody></table></div>`
-          : `<div class="empty-cta"><p class="empty-state">Aún no hay compras. Registra la primera con el formulario de arriba: proveedor, pesadas, precio por carga y listo.</p>
+          : `<div class="empty-cta"><p class="empty-state">Aún no hay compras. Registra la primera con el formulario de arriba: proveedor, producto, pesadas, precio y listo.</p>
               <button type="button" class="btn-primary" id="go-new-purchase">Registrar primera compra</button></div>`}
         <p class="form-error" id="history-error" role="alert" hidden></p></div>
       <details class="panel" id="business-panel"><summary>Datos del negocio (salen en el comprobante)</summary>
@@ -250,7 +282,7 @@ export async function renderPurchases(container) {
           <button type="submit" class="btn-primary">Guardar</button>
         </form><p class="form-hint" id="business-msg" role="status"></p></details>`;
 
-    const state = freshState();
+    const state = freshState(productTypes);
     const root = container.querySelector('#stepper-root');
     const steps = [stepSupplier, stepWeighings, stepPrice, stepConfirm];
     const stepper = mountStepper(root, { steps, state, finishLabel: 'Registrar compra', onFinish: async (s) => { await api.createPurchase(toPayload(s)); await load(); } });

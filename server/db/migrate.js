@@ -41,6 +41,19 @@ const ADDED_COLUMNS = [
   ['forecast_cache', 'high_price', 'REAL'],
   // Prueba gratis de Pro por 7 días al registrarse (ver subscriptionService.startTrial/isTrialing).
   ['users', 'trial_granted_at', 'TEXT'],
+  // Mercado al que pertenece cada fila (café por defecto, cacao…). Las filas existentes son de café.
+  ['coffee_prices', 'market', "TEXT NOT NULL DEFAULT 'coffee'"],
+  ['forecast_cache', 'market', "TEXT NOT NULL DEFAULT 'coffee'"],
+  ['alerts', 'market', "TEXT NOT NULL DEFAULT 'coffee'"],
+  // Compradores/cooperativas de cada mercado (las existentes son de café).
+  ['cooperatives', 'market', "TEXT NOT NULL DEFAULT 'coffee'"],
+  // 1 = la compra pasa por secado (café, por defecto); 0 = va directo a inventario (maíz, frijol, café seco…).
+  ['purchases', 'requires_drying', 'INTEGER NOT NULL DEFAULT 1'],
+];
+
+/** Índices que dependen de columnas agregadas arriba, así que no pueden vivir en schema.sql. */
+const POST_COLUMN_INDEXES = [
+  'CREATE INDEX IF NOT EXISTS idx_coffee_prices_market_fetched ON coffee_prices(market, fetched_at)',
 ];
 
 function columnExists(table, column) {
@@ -70,6 +83,8 @@ function migrate() {
       db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
     }
   });
+
+  POST_COLUMN_INDEXES.forEach((sql) => db.exec(sql));
 }
 
 module.exports = migrate;

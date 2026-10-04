@@ -6,6 +6,7 @@ import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/forms.dart';
+import 'cocoa_calc_tab.dart';
 import 'coffee/coffee_dashboard_tab.dart';
 import 'coffee/coffee_inventory_tab.dart';
 import 'coffee/coffee_purchases_tab.dart';
@@ -33,7 +34,7 @@ class CalculatorScreen extends StatelessWidget {
     }
 
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Column(
         children: [
           const TabBar(
@@ -42,7 +43,8 @@ class CalculatorScreen extends StatelessWidget {
             tabs: [
               Tab(text: 'Precio neto'),
               Tab(text: 'Cuánto vale mi café'),
-              Tab(text: 'Comprar café'),
+              Tab(text: '🍫 Cacao'),
+              Tab(text: 'Compra de producto'),
               Tab(text: 'Inventario'),
               Tab(text: 'Resumen'),
             ],
@@ -55,6 +57,7 @@ class CalculatorScreen extends StatelessWidget {
                   builder: (context, profile) => _Calculator(session: session, profile: profile),
                 ),
                 CoffeeQuickCalcTab(session: session),
+                CocoaCalcTab(session: session),
                 CoffeePurchasesTab(session: session),
                 CoffeeInventoryTab(session: session),
                 CoffeeDashboardTab(session: session),

@@ -50,7 +50,7 @@ const mapPurchaseRow = (r) => ({
   mermaPromedio: r.kg_recibidos > 0 ? coffeeMath.roundKg((r.kg_descontados / r.kg_recibidos) * 100) : 0,
 });
 
-const COFFEE_LABEL = { cafe_verde: 'Café verde', cafe_merma_5: 'Café con merma 5%', cafe_sin_merma: 'Café sin merma', otro: 'Otro' };
+const productTypes = require('../domain/productTypes');
 
 function build(ctx, type, q = {}) {
   if (!TYPES.includes(type)) throw fail('Tipo de reporte inválido', 404);
@@ -79,8 +79,8 @@ function build(ctx, type, q = {}) {
     columns = ['Comprador', 'Compras', 'Kg recibidos', 'Kg pagables', 'Total pagado'];
     rows = purchasesBy(b, r, 'p.created_by', "COALESCE(u.full_name, u.username, 'Sin usuario')", 'LEFT JOIN users u ON u.id = p.created_by').map(mapPurchaseRow);
   } else if (type === 'tipo-cafe') {
-    columns = ['Tipo de café', 'Compras', 'Kg recibidos', 'Kg pagables', 'Merma promedio', 'Total pagado'];
-    rows = purchasesBy(b, r, 'p.coffee_type').map((x) => ({ ...mapPurchaseRow(x), label: COFFEE_LABEL[x.label] || x.label }));
+    columns = ['Tipo de producto', 'Compras', 'Kg recibidos', 'Kg pagables', 'Merma promedio', 'Total pagado'];
+    rows = purchasesBy(b, r, 'p.coffee_type').map((x) => ({ ...mapPurchaseRow(x), label: productTypes.label(x.label) }));
   } else if (type === 'jornada') {
     columns = ['Jornada', 'Compras', 'Kg recibidos', 'Kg pagables', 'Total pagado'];
     rows = purchasesBy(b, r, 'p.workday_id', "COALESCE(w.code, 'Sin jornada')", 'LEFT JOIN purchase_workdays w ON w.id = p.workday_id').map(mapPurchaseRow);
@@ -121,7 +121,7 @@ function build(ctx, type, q = {}) {
   return { type, from: r.from, to: r.to, columns, rows };
 }
 
-const TITLES = { diario: 'Reporte diario', semanal: 'Reporte semanal', mensual: 'Reporte mensual', proveedor: 'Reporte por proveedor', comprador: 'Reporte por comprador', lote: 'Reporte de lotes', factor: 'Reporte por factor', 'tipo-cafe': 'Reporte por tipo de café', jornada: 'Reporte por jornada', ventas: 'Reporte de ventas', rentabilidad: 'Reporte de rentabilidad' };
+const TITLES = { diario: 'Reporte diario', semanal: 'Reporte semanal', mensual: 'Reporte mensual', proveedor: 'Reporte por proveedor', comprador: 'Reporte por comprador', lote: 'Reporte de lotes', factor: 'Reporte por factor', 'tipo-cafe': 'Reporte por tipo de producto', jornada: 'Reporte por jornada', ventas: 'Reporte de ventas', rentabilidad: 'Reporte de rentabilidad' };
 
 async function pdf(ctx, type, q) {
   const rep = build(ctx, type, q);

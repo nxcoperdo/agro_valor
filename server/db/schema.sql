@@ -36,6 +36,16 @@ CREATE TABLE IF NOT EXISTS fnc_reference_prices (
 );
 CREATE INDEX IF NOT EXISTS idx_fnc_scraped_at ON fnc_reference_prices(scraped_at);
 
+/* Precio de referencia semanal del cacao (Agronet / Ministerio de Agricultura), en COP por kilo. */
+CREATE TABLE IF NOT EXISTS cocoa_reference_prices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  week_end TEXT NOT NULL UNIQUE,
+  week_label TEXT NOT NULL,
+  price_cop_kg REAL NOT NULL,
+  source_url TEXT NOT NULL,
+  scraped_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS cooperatives (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,

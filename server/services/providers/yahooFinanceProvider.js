@@ -1,16 +1,21 @@
 const fetchWithTimeout = require('../../utils/fetchWithTimeout');
+const { getMarket } = require('../../config/markets');
 
 const PROVIDER_NAME = 'yahoo';
-/** Contrato continuo de café "C" en ICE Futures. Cotiza en USX = centavos de dólar por libra. */
-const SYMBOL = 'KC=F';
+/**
+ * Contrato continuo en ICE Futures de cada mercado. Café ("KC=F") cotiza en USX = centavos de
+ * dólar por libra; cacao ("CC=F") en USD por tonelada métrica.
+ */
+const coffeeMarket = getMarket('coffee');
 
 /** No necesita API key, así que siempre está disponible. */
 function isConfigured() {
   return true;
 }
 
-async function fetchLatestPrice() {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(SYMBOL)}?interval=1d&range=5d`;
+/** `market` es la config de server/config/markets.js; sin ella se asume café. */
+async function fetchLatestPrice(market = coffeeMarket) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(market.yahooSymbol)}?interval=1d&range=5d`;
 
   const res = await fetchWithTimeout(
     url,
@@ -41,14 +46,16 @@ async function fetchLatestPrice() {
     throw new Error('yahooFinanceProvider: no se pudo leer el precio');
   }
 
-  if (meta.currency !== 'USX') {
-    throw new Error(`yahooFinanceProvider: moneda inesperada (${meta.currency}), se esperaban centavos`);
+  if (meta.currency !== market.yahooCurrency) {
+    throw new Error(
+      `yahooFinanceProvider: moneda inesperada (${meta.currency}), se esperaba ${market.yahooCurrency}`
+    );
   }
 
   return {
     price,
     currency: 'USD',
-    unit: 'cents_per_lb',
+    unit: market.unit,
     provider: PROVIDER_NAME,
     quotedAt: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : null,
     meta: {

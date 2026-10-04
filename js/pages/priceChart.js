@@ -74,6 +74,80 @@ function renderInternal(el, internal) {
   `;
 }
 
+/**
+ * Cacao: la cifra principal es el precio de referencia semanal de Agronet (lo que paga la
+ * industria), equivalente al precio interno de la FNC en café. Si aún no hay dato, se muestra la
+ * cotización ICE convertida a pesos por kilo.
+ */
+function renderCocoaHero(el, internal, international) {
+  if (internal) {
+    el.hidden = false;
+    el.innerHTML = `
+      <p class="pv-label">Lo que paga la industria por el cacao</p>
+      <div class="pv-hero">
+        <span class="pv-mono pv-hero-value">${fmtInt(internal.copPerKg)}</span>
+        <span class="pv-hero-unit">$</span>
+      </div>
+      <p class="pv-sub">por kilo · semana del ${internal.weekLabel}</p>
+      <div class="pv-foot">
+        <span class="pv-pill pv-pill-gold">Agronet</span>
+        <span class="pv-sub">${internal.isStale ? 'Dato desactualizado · ' : ''}Promedio de la industria nacional y exportadores. No es el precio de tu comprador.</span>
+      </div>
+    `;
+    return;
+  }
+  if (!international || international.copPerKg == null) {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.innerHTML = `
+    <p class="pv-label">Referencia internacional del cacao</p>
+    <div class="pv-hero">
+      <span class="pv-mono pv-hero-value">${fmtInt(international.copPerKg)}</span>
+      <span class="pv-hero-unit">$</span>
+    </div>
+    <p class="pv-sub">por kilo, cotización de la bolsa de Nueva York convertida con la TRM del día</p>
+    <div class="pv-foot">
+      <span class="pv-pill pv-pill-gold">ICE</span>
+      <span class="pv-sub">Todavía no hay referencia semanal de Agronet.</span>
+    </div>
+  `;
+}
+
+function renderCocoaMarket(el, international, exchangeRate) {
+  if (!international) {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  const rate = exchangeRate ? exchangeRate.rate : null;
+  const badge = liveBadge(international);
+  const change = international.changePct;
+  const meta = [
+    international.exchange || 'Bolsa',
+    international.quotedAt ? `cotización ${timeAgo(international.quotedAt)}` : null,
+    rate ? `1 USD ≈ ${fmtInt(rate)} $` : null,
+  ].filter(Boolean);
+
+  el.innerHTML = `
+    <div class="pv-row">
+      <span class="pv-label">Mercado internacional${international.contract ? ` · ${international.contract}` : ''}</span>
+      <span class="pv-pill ${badge.cls} pv-pill-caps">${badge.text}</span>
+    </div>
+    <div class="pv-market">
+      <span class="pv-mono pv-market-value">US$ ${fmtInt(international.usdPerTonne)}</span>
+      ${
+        change != null
+          ? `<span class="pv-change ${change >= 0 ? 'is-up' : 'is-down'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>`
+          : ''
+      }
+    </div>
+    <p class="pv-sub">por tonelada métrica</p>
+    <p class="pv-meta">${meta.join(' · ')}</p>
+  `;
+}
+
 function renderMarket(el, international, exchangeRate) {
   if (!international) {
     el.hidden = true;
@@ -147,12 +221,12 @@ function renderParity(el, market) {
 // --- Velas -------------------------------------------------------------------------
 
 /** Agrupa el histórico por día (hora Colombia) en velas de apertura/máximo/mínimo/cierre. */
-function buildCandles(history, days) {
+function buildCandles(history, days, market = 'coffee') {
   const byDay = new Map();
   for (const row of history) {
     const at = new Date(row.fetchedAt || row.quotedAt);
     const key = at.toLocaleDateString('en-CA', { timeZone: TZ });
-    const value = usdPerLbToCarga(row.usdPerLb);
+    const value = market === 'cocoa' ? row.usdPerTonne : usdPerLbToCarga(row.usdPerLb);
     const day = byDay.get(key);
     if (!day) {
       byDay.set(key, { at, open: value, high: value, low: value, close: value });
@@ -272,7 +346,7 @@ function tooltipHtml(d) {
   `;
 }
 
-function renderChartPanel(el) {
+function renderChartPanel(el, market = 'coffee') {
   const state = { period: '30D', showMA: true, hover: null, data: [], loading: false };
   const cache = new Map();
 
@@ -280,7 +354,7 @@ function renderChartPanel(el) {
     <div class="pv-chart-head">
       <div class="pv-row pv-row-top">
         <div>
-          <p class="pv-eyebrow">Histórico · US$ por carga</p>
+          <p class="pv-eyebrow">Histórico · ${market === 'cocoa' ? 'US$ por tonelada' : 'US$ por carga'}</p>
           <div class="pv-chart-last"></div>
         </div>
         <div class="pv-updown"></div>
@@ -381,7 +455,7 @@ function renderChartPanel(el) {
     const p = period();
     drawChrome();
     try {
-      if (!cache.has(p.id)) cache.set(p.id, buildCandles(await api.priceHistory(p.days), p.days));
+      if (!cache.has(p.id)) cache.set(p.id, buildCandles(await api.priceHistory(p.days, market), p.days, market));
       if (p.id !== state.period) return;
       state.data = cache.get(p.id);
       state.hover = null;
@@ -431,7 +505,7 @@ function renderChartPanel(el) {
 
 // --- Sección completa ------------------------------------------------------------
 
-export async function renderPriceChart(container) {
+export async function renderPriceChart(container, market = 'coffee') {
   container.innerHTML = `
     <div class="pv">
       <article class="pv-card pv-internal"><span class="skeleton" style="width: 220px; height: 2.6rem;"></span></article>
@@ -446,16 +520,21 @@ export async function renderPriceChart(container) {
   const chartEl = container.querySelector('.pv-chart');
   const parityEl = container.querySelector('.pv-parity');
 
-  function renderPrices(market) {
-    renderInternal(internalEl, market.internal);
-    renderMarket(marketEl, market.international, market.exchangeRate);
-    renderParity(parityEl, market);
+  function renderPrices(summary) {
+    if (market === 'cocoa') {
+      renderCocoaHero(internalEl, summary.internal, summary.international);
+      renderCocoaMarket(marketEl, summary.international, summary.exchangeRate);
+      parityEl.hidden = true;
+      return;
+    }
+    renderInternal(internalEl, summary.internal);
+    renderMarket(marketEl, summary.international, summary.exchangeRate);
+    renderParity(parityEl, summary);
   }
 
   try {
-    const market = await api.currentPrice();
-    renderPrices(market);
-    renderChartPanel(chartEl);
+    renderPrices(await api.currentPrice(market));
+    renderChartPanel(chartEl, market);
     startAutoRefresh();
   } catch (err) {
     internalEl.innerHTML = `<p class="panel-error">No se pudo cargar el precio: ${err.message}</p>`;
@@ -467,7 +546,7 @@ export async function renderPriceChart(container) {
 
     async function refresh() {
       try {
-        renderPrices(await api.currentPrice());
+        renderPrices(await api.currentPrice(market));
       } catch (err) {
         // Un fallo puntual de red no debe romper la pantalla: se reintenta al siguiente ciclo.
       }

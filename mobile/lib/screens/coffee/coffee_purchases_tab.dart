@@ -8,7 +8,7 @@ import '../../widgets/common.dart';
 import '../../widgets/forms.dart';
 import 'coffee_math.dart';
 
-/// Compras de café: jornada actual, historial y nueva compra con varias pesadas.
+/// Compra de producto (café, cacao, pasilla, maíz, frijol): jornada actual, historial y nueva compra con varias pesadas.
 class CoffeePurchasesTab extends StatefulWidget {
   const CoffeePurchasesTab({super.key, required this.session});
 
@@ -31,7 +31,7 @@ class _CoffeePurchasesTabState extends State<CoffeePurchasesTab> {
   }
 
   Future<void> _newPurchase() async {
-    final created = await showFormSheet<bool>(context, title: 'Nueva compra', child: _NewPurchaseForm(api: _api));
+    final created = await showFormSheet<bool>(context, title: 'Nueva compra de producto', child: _NewPurchaseForm(api: _api));
     if (created == true) {
       if (mounted) showMessage(context, 'Compra registrada');
       _reload();
@@ -167,9 +167,18 @@ class _NewPurchaseFormState extends State<_NewPurchaseForm> {
   final _merma = TextEditingController(text: '8');
   final _price = TextEditingController();
   final List<TextEditingController> _weighings = [TextEditingController()];
-  String _type = 'cafe_verde';
+  List<ProductType> _types = kProductTypes;
+  String _type = 'cafe';
+  bool _requiresDrying = true;
+  bool _priceByKg = false;
   String _payment = 'efectivo';
   bool _busy = false;
+
+  /// Proveedor ya registrado (se manda por id) o, si es null y [_creatingSupplier], uno nuevo.
+  Json? _supplier;
+  bool _creatingSupplier = false;
+
+  ProductType get _typeInfo => _types.firstWhere((t) => t.key == _type, orElse: () => _types.first);
 
   @override
   void initState() {
@@ -178,6 +187,32 @@ class _NewPurchaseFormState extends State<_NewPurchaseForm> {
       c.addListener(_refresh);
     }
     _weighings.first.addListener(_refresh);
+    // Los tipos de producto los define el servidor; si falla la carga queda el respaldo local.
+    widget.api.coffeeProductTypes().then((r) {
+      final list = (r['productTypes'] as List<dynamic>? ?? const [])
+          .map((e) => ProductType.fromJson(e as Map<String, dynamic>))
+          .toList();
+      if (mounted && list.isNotEmpty) setState(() => _types = list);
+    }).catchError((_) {});
+  }
+
+  Future<void> _pickSupplier() async {
+    final picked = await showModalBottomSheet<Json?>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _SupplierSheet(api: widget.api),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      if (picked['new'] == true) {
+        _supplier = null;
+        _creatingSupplier = true;
+      } else {
+        _supplier = picked;
+        _creatingSupplier = false;
+      }
+    });
   }
 
   @override
@@ -204,19 +239,28 @@ class _NewPurchaseFormState extends State<_NewPurchaseForm> {
   PurchasePreview get _preview => previewPurchase(
         pesadasKg: [for (final c in _weighings) parseDecimal(c.text) ?? 0],
         mermaPct: parseDecimal(_merma.text) ?? 0,
-        precioCarga: parseCop(_price.text) ?? 0,
+        precioCarga: _priceByKg ? 0 : parseCop(_price.text) ?? 0,
+        precioKg: _priceByKg ? parseDecimal(_price.text) ?? 0 : null,
       );
 
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
+    if (_supplier == null && !_creatingSupplier) {
+      showMessage(context, 'Selecciona un proveedor o crea uno nuevo', error: true);
+      return;
+    }
     setState(() => _busy = true);
     try {
       await widget.api.coffeeCreatePurchase({
-        'supplier': {'idNumber': _idNumber.text.trim(), 'name': _name.text.trim()},
-        'coffeeType': _type,
+        if (_supplier != null)
+          'supplierId': _supplier!['id']
+        else
+          'supplier': {'idNumber': _idNumber.text.trim(), 'name': _name.text.trim()},
+        'productType': _type,
+        'requiresDrying': _requiresDrying,
         'porcentajeMermaInicial': parseDecimal(_merma.text),
         'weighings': [for (final c in _weighings) {'pesoKg': parseDecimal(c.text)}],
-        'precioCarga': parseCop(_price.text),
+        if (_priceByKg) 'precioKg': parseDecimal(_price.text) else 'precioCarga': parseCop(_price.text),
         'paymentMethod': _payment,
       });
       if (mounted) Navigator.of(context).pop(true);
@@ -235,35 +279,69 @@ class _NewPurchaseFormState extends State<_NewPurchaseForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextFormField(
-            controller: _idNumber,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Identificación del proveedor'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Obligatorio' : null,
+          // Al tocar se despliega la lista de proveedores registrados, en orden alfabético.
+          InkWell(
+            onTap: _pickSupplier,
+            borderRadius: BorderRadius.circular(12),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'Proveedor',
+                suffixIcon: Icon(Icons.arrow_drop_down_rounded),
+              ),
+              child: Text(
+                _supplier != null
+                    ? '${_supplier!['name']}'
+                    : _creatingSupplier
+                        ? 'Proveedor nuevo'
+                        : 'Toca para elegir de la lista',
+                style: TextStyle(color: _supplier == null && !_creatingSupplier ? AvColors.fgMuted : AvColors.fg),
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _name,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(labelText: 'Nombre del proveedor'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Obligatorio' : null,
-          ),
+          if (_creatingSupplier) ...[
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _idNumber,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Identificación del proveedor'),
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Obligatorio' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _name,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(labelText: 'Nombre del proveedor'),
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Obligatorio' : null,
+            ),
+          ],
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _type,
-            decoration: const InputDecoration(labelText: 'Tipo de café'),
-            items: [
-              for (final e in nombreTipoCafe.entries) DropdownMenuItem(value: e.key, child: Text(e.value)),
-            ],
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Tipo de producto (café, cacao, pasilla de café, maíz, frijol)'),
+            items: [for (final t in _types) DropdownMenuItem(value: t.key, child: Text(t.label))],
             onChanged: (v) {
               if (v == null) return;
               setState(() {
                 _type = v;
-                _merma.text = decimalInputText(mermaPorTipo[v]);
+                _merma.text = decimalInputText(_typeInfo.merma);
+                _requiresDrying = _typeInfo.requiresDrying;
               });
             },
           ),
-          const SizedBox(height: 12),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('¿Requiere secado?'),
+            subtitle: Text(
+              _requiresDrying
+                  ? 'Pasa por secado antes de entrar a inventario.'
+                  : 'No se seca: la proyección es directa al 100 % y va a inventario.',
+              style: const TextStyle(fontSize: 12),
+            ),
+            value: _requiresDrying,
+            onChanged: (v) => setState(() => _requiresDrying = v),
+          ),
+          const SizedBox(height: 4),
           NumberField(controller: _merma, label: 'Merma inicial (%)', suffix: '%', required: true, min: 0, max: 100),
           const SectionLabel('Pesadas'),
           for (var i = 0; i < _weighings.length; i++) ...[
@@ -280,7 +358,31 @@ class _NewPurchaseFormState extends State<_NewPurchaseForm> {
           ],
           TextButton.icon(onPressed: _addWeighing, icon: const Icon(Icons.add_rounded), label: const Text('Agregar pesada')),
           const SizedBox(height: 8),
-          NumberField(controller: _price, label: 'Precio por carga (125 kg)', kind: NumberKind.cop, required: true, min: 1),
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: false, label: Text('Por carga (125 kg)')),
+              ButtonSegment(value: true, label: Text('Por kilogramo')),
+            ],
+            selected: {_priceByKg},
+            showSelectedIcon: false,
+            onSelectionChanged: (s) => setState(() {
+              _priceByKg = s.first;
+              _price.clear();
+            }),
+          ),
+          const SizedBox(height: 12),
+          NumberField(
+            controller: _price,
+            label: _priceByKg ? 'Precio por kilogramo' : 'Precio por carga (125 kg)',
+            kind: _priceByKg ? NumberKind.decimal : NumberKind.cop,
+            required: true,
+            min: _priceByKg ? 0.01 : 1,
+          ),
+          if (_priceByKg)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Muted('Equivale a ${formatCop(p.precioKg * cargaKgBase)} por carga de $cargaKgBase kg', size: 12),
+            ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _payment,
@@ -311,6 +413,89 @@ class _NewPurchaseFormState extends State<_NewPurchaseForm> {
           const SizedBox(height: 16),
           BusyButton(label: 'Registrar compra', busy: _busy, onPressed: _save),
         ],
+      ),
+    );
+  }
+}
+
+/// Lista de proveedores registrados en orden alfabético (el servidor ya la entrega ordenada).
+/// Al escribir se filtra; "Proveedor nuevo" devuelve {'new': true}.
+class _SupplierSheet extends StatefulWidget {
+  const _SupplierSheet({required this.api});
+
+  final ApiClient api;
+
+  @override
+  State<_SupplierSheet> createState() => _SupplierSheetState();
+}
+
+class _SupplierSheetState extends State<_SupplierSheet> {
+  final _query = TextEditingController();
+  late Future<Json> _future = widget.api.coffeeSearchSuppliers('');
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  void _search(String q) => setState(() => _future = widget.api.coffeeSearchSuppliers(q.trim()));
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottom),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.7,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _query,
+              autofocus: false,
+              onChanged: _search,
+              decoration: const InputDecoration(labelText: 'Buscar proveedor', prefixIcon: Icon(Icons.search_rounded)),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.person_add_alt_1_rounded, color: AvColors.accent),
+              title: const Text('Proveedor nuevo'),
+              onTap: () => Navigator.pop(context, <String, dynamic>{'new': true}),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: FutureBuilder<Json>(
+                future: _future,
+                builder: (context, snap) {
+                  if (snap.connectionState != ConnectionState.done) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snap.hasError) return Center(child: Muted('${snap.error}'));
+                  final list = (snap.data?['suppliers'] as List<dynamic>? ?? const []).cast<Json>();
+                  if (list.isEmpty) {
+                    return Center(
+                      child: Muted(_query.text.trim().isEmpty ? 'Todavía no hay proveedores registrados.' : 'Sin resultados.'),
+                    );
+                  }
+                  return ListView.builder(
+                    itemCount: list.length,
+                    itemBuilder: (context, i) {
+                      final s = list[i];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text('${s['name']}'),
+                        subtitle: Text('${s['idType'] ?? ''} ${s['idNumber'] ?? ''}'.trim()),
+                        onTap: () => Navigator.pop(context, s),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

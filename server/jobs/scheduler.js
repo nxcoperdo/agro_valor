@@ -3,10 +3,12 @@ const env = require('../config/env');
 const coffeePriceService = require('../services/coffeePriceService');
 const exchangeRateService = require('../services/exchangeRateService');
 const fncScraperService = require('../services/fncScraperService');
+const cocoaReferenceService = require('../services/cocoaReferenceService');
 const forecastService = require('../services/forecastService');
 const alertService = require('../services/alertService');
 const mercadoPagoBillingService = require('../services/mercadoPagoBillingService');
 const logger = require('../utils/logger');
+const { listMarkets } = require('../config/markets');
 
 /**
  * Todos los horarios se interpretan en la zona horaria de la aplicación
@@ -18,7 +20,13 @@ const CRON_OPTIONS = { timezone: env.timezone };
 
 async function refreshMarketData() {
   try {
-    await Promise.all([coffeePriceService.refreshPrice(), exchangeRateService.refreshRate()]);
+    // Cada mercado se refresca por separado: que falle el cacao no debe frenar el café.
+    await Promise.all([
+      ...listMarkets().map((m) =>
+        coffeePriceService.refreshPrice(m.id).catch((err) => logger.error(`Error refrescando precio de ${m.id}:`, err))
+      ),
+      exchangeRateService.refreshRate(),
+    ]);
   } catch (err) {
     logger.error('Error refrescando precio de café / tasa de cambio:', err);
   }
@@ -33,8 +41,10 @@ async function runOnStartup() {
     logger.error('Error refrescando precio FNC al arrancar:', err);
   }
 
+  await cocoaReferenceService.refresh();
+
   try {
-    await forecastService.recomputeAndCache();
+    await forecastService.recomputeAllMarkets();
   } catch (err) {
     logger.error('Error recalculando proyección al arrancar:', err);
   }
@@ -63,9 +73,20 @@ function start() {
   );
 
   cron.schedule(
+    env.cocoaReferenceCron,
+    () => {
+      cocoaReferenceService
+        .refresh()
+        .then(() => alertService.evaluateThresholdAlerts())
+        .catch((err) => logger.error('Cron referencia de cacao:', err));
+    },
+    CRON_OPTIONS
+  );
+
+  cron.schedule(
     env.forecastRefreshCron,
     () => {
-      forecastService.recomputeAndCache().catch((err) => logger.error('Cron proyección:', err));
+      forecastService.recomputeAllMarkets().catch((err) => logger.error('Cron proyección:', err));
     },
     CRON_OPTIONS
   );

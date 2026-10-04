@@ -72,10 +72,12 @@ class ApiClient {
       }) as Json;
 
   // Mercado
-  Future<Json> currentPrice() async => await _request('GET', '/prices/current') as Json;
-  Future<List<dynamic>> priceHistory([int days = 30]) async =>
-      await _request('GET', '/prices/history?days=$days') as List<dynamic>;
-  Future<Json> cooperatives() async => await _request('GET', '/cooperatives') as Json;
+  Future<Json> currentPrice([String market = 'coffee']) async =>
+      await _request('GET', '/prices/current?market=$market') as Json;
+  Future<List<dynamic>> priceHistory([int days = 30, String market = 'coffee']) async =>
+      await _request('GET', '/prices/history?days=$days&market=$market') as List<dynamic>;
+  Future<Json> cooperatives([String market = 'coffee']) async =>
+      await _request('GET', '/cooperatives?market=$market') as Json;
   Future<Json> plans() async => await _request('GET', '/public/plans') as Json;
   Future<Json> plan() async => await _request('GET', '/account/plan') as Json;
   Future<Json> privacyPolicy() async => await _request('GET', '/public/legal/privacy') as Json;
@@ -99,7 +101,9 @@ class ApiClient {
   Future<Json> myReports() async => await _request('GET', '/reports/mine') as Json;
 
   // Pro
-  Future<Json> forecast() async => await _request('GET', '/forecast') as Json;
+  Future<Json> forecast([String market = 'coffee']) async =>
+      await _request('GET', '/forecast?market=$market') as Json;
+  Future<Json> calculateCocoa(Json payload) async => await _request('POST', '/calculator/cocoa', payload) as Json;
   Future<Json> calculate(Json payload) async => await _request('POST', '/calculator', payload) as Json;
 
   Future<Json> alerts() async => await _request('GET', '/alerts') as Json;
@@ -119,6 +123,7 @@ class ApiClient {
   Future<Json> coffeeCreatePurchase(Json payload) async => await _request('POST', '/coffee/purchases', payload) as Json;
   Future<Json> coffeeVoidPurchase(int id, String reason) async =>
       await _request('POST', '/coffee/purchases/$id/void', {'reason': reason}) as Json;
+  Future<Json> coffeeProductTypes() async => await _request('GET', '/coffee/product-types') as Json;
   Future<Json> coffeeSearchSuppliers(String q) async =>
       await _request('GET', '/coffee/suppliers?q=${Uri.encodeQueryComponent(q)}') as Json;
   Future<Json> coffeeCurrentWorkday() async => await _request('GET', '/coffee/workdays/current') as Json;
