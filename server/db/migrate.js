@@ -49,12 +49,31 @@ const ADDED_COLUMNS = [
   ['cooperatives', 'market', "TEXT NOT NULL DEFAULT 'coffee'"],
   // 1 = la compra pasa por secado (café, por defecto); 0 = va directo a inventario (maíz, frijol, café seco…).
   ['purchases', 'requires_drying', 'INTEGER NOT NULL DEFAULT 1'],
+  // Factura a la que pertenece la compra (un producto = una línea).
+  ['purchases', 'invoice_id', 'INTEGER REFERENCES purchase_invoices(id)'],
 ];
 
 /** Índices que dependen de columnas agregadas arriba, así que no pueden vivir en schema.sql. */
 const POST_COLUMN_INDEXES = [
   'CREATE INDEX IF NOT EXISTS idx_coffee_prices_market_fetched ON coffee_prices(market, fetched_at)',
+  'CREATE INDEX IF NOT EXISTS idx_purchases_invoice ON purchases(invoice_id)',
 ];
+
+/**
+ * Las compras anteriores a las facturas pasan a ser facturas de una línea (mismo código), para que
+ * todo el sistema pueda asumir que cada compra pertenece a una factura. Es idempotente.
+ */
+function backfillInvoices() {
+  if (!db.prepare('SELECT 1 FROM purchases WHERE invoice_id IS NULL LIMIT 1').get()) return;
+  db.exec(`
+    INSERT OR IGNORE INTO purchase_invoices (business_id, code, supplier_id, workday_id, payment_method, payment_reference,
+      notes, status, void_reason, voided_by, voided_at, created_by, purchased_at)
+    SELECT business_id, code, supplier_id, workday_id, payment_method, payment_reference, notes, status, void_reason,
+      voided_by, voided_at, created_by, purchased_at FROM purchases WHERE invoice_id IS NULL;
+    UPDATE purchases SET invoice_id = (SELECT i.id FROM purchase_invoices i
+      WHERE i.business_id = purchases.business_id AND i.code = purchases.code) WHERE invoice_id IS NULL;
+  `);
+}
 
 function columnExists(table, column) {
   return db
@@ -85,6 +104,7 @@ function migrate() {
   });
 
   POST_COLUMN_INDEXES.forEach((sql) => db.exec(sql));
+  backfillInvoices();
 }
 
 module.exports = migrate;

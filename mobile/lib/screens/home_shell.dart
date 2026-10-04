@@ -38,10 +38,10 @@ class _HomeShellState extends State<HomeShell> {
 
   static const _tabs = [
     (title: 'Precio', label: 'Precio', icon: Icons.show_chart_rounded),
+    (title: 'Proyección', label: 'Proyección', icon: Icons.calendar_month_rounded),
     (title: 'Cooperativas', label: 'Cooperativas', icon: Icons.storefront_rounded),
     (title: 'Calculadora', label: 'Calcular', icon: Icons.calculate_rounded),
     (title: 'Alertas', label: 'Alertas', icon: Icons.notifications_active_rounded),
-    (title: 'Proyección', label: 'Proyección', icon: Icons.calendar_month_rounded),
     (title: 'Mi cuenta', label: 'Cuenta', icon: Icons.person_rounded),
   ];
 
@@ -55,10 +55,10 @@ class _HomeShellState extends State<HomeShell> {
         final m = widget.session.market;
         final pages = [
           PriceScreen(key: ValueKey('price-$m'), session: widget.session),
+          ForecastScreen(key: ValueKey('forecast-$m'), session: widget.session),
           CooperativesScreen(key: ValueKey('coops-$m'), session: widget.session),
           CalculatorScreen(session: widget.session),
           AlertsScreen(session: widget.session),
-          ForecastScreen(key: ValueKey('forecast-$m'), session: widget.session),
           AccountScreen(session: widget.session),
         ];
 

@@ -33,7 +33,9 @@ function close(businessId, id, userId) {
 function summarize(businessId, where = '1=1', params = []) {
   return db
     .prepare(
-      `SELECT COUNT(*) AS compras,
+      // "compras" son FACTURAS (una factura con 3 productos es 1 compra); "productos" cuenta las líneas.
+      `SELECT COUNT(DISTINCT COALESCE(p.invoice_id, -p.id)) AS compras,
+              COUNT(*) AS productos,
               COUNT(DISTINCT p.supplier_id) AS proveedores,
               COALESCE(SUM((SELECT COUNT(*) FROM purchase_weighings w WHERE w.purchase_id = p.id)), 0) AS pesadas,
               COALESCE(SUM(p.peso_total_kg), 0) AS kg_recibidos,

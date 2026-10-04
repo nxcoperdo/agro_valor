@@ -5,12 +5,12 @@ function insert(p) {
     .prepare(
       `INSERT INTO purchases (business_id, code, receipt_code, supplier_id, workday_id, coffee_type, merma_inicial_pct,
          peso_total_kg, kg_descontados, peso_pagable_kg, precio_carga, precio_kg, total_compra,
-         payment_method, payment_reference, notes, created_by, requires_drying)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         payment_method, payment_reference, notes, created_by, requires_drying, invoice_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(p.businessId, p.code, p.code, p.supplierId, p.workdayId, p.coffeeType, p.mermaPct, p.pesoTotal,
       p.kgDescontados, p.pesoPagable, p.precioCarga, p.precioKg, p.totalCompra, p.paymentMethod,
-      p.paymentReference, p.notes, p.userId, p.requiresDrying ? 1 : 0);
+      p.paymentReference, p.notes, p.userId, p.requiresDrying ? 1 : 0, p.invoiceId ?? null);
   return info.lastInsertRowid;
 }
 
@@ -21,7 +21,8 @@ function insertWeighing(purchaseId, w) {
 }
 
 const SELECT = `SELECT p.*, s.name AS supplier_name, s.id_type AS supplier_id_type, s.id_number AS supplier_id_number,
-    s.phone AS supplier_phone, l.code AS lot_code,
+    s.phone AS supplier_phone, s.legal_name AS supplier_legal_name, s.address AS supplier_address,
+    s.municipality AS supplier_municipality, s.notes AS supplier_notes, l.code AS lot_code,
     (SELECT COUNT(*) FROM purchase_weighings w WHERE w.purchase_id = p.id) AS weighings_count
   FROM purchases p JOIN suppliers s ON s.id = p.supplier_id LEFT JOIN lots l ON l.id = p.lot_id`;
 

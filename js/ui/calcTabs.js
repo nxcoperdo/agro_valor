@@ -18,6 +18,7 @@ export const CALC_TABS = [
 /** Ruta de detalle → pestaña a la que pertenece. */
 const PARENT_TAB = {
   '#/compra': '#/compras',
+  '#/factura': '#/compras',
   '#/comprobante': '#/compras',
   '#/resumen-dia': '#/compras',
   '#/lote': '#/lotes',

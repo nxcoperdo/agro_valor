@@ -252,6 +252,29 @@ CREATE TABLE IF NOT EXISTS lots (
   UNIQUE(business_id, code)
 );
 
+/*
+ * Factura de compra: encabezado de uno o varios productos del mismo proveedor. Cada producto es una
+ * fila de purchases (invoice_id). El total NO se guarda: se calcula sumando las líneas ACTIVAS.
+ */
+CREATE TABLE IF NOT EXISTS purchase_invoices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  code TEXT NOT NULL,
+  supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
+  workday_id INTEGER REFERENCES purchase_workdays(id) ON DELETE SET NULL,
+  payment_method TEXT NOT NULL DEFAULT 'efectivo' CHECK(payment_method IN ('efectivo','transferencia','credito','otro')),
+  payment_reference TEXT,
+  notes TEXT,
+  status TEXT NOT NULL DEFAULT 'ACTIVA' CHECK(status IN ('ACTIVA','ANULADA')),
+  void_reason TEXT,
+  voided_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  voided_at TEXT,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  purchased_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(business_id, code)
+);
+CREATE INDEX IF NOT EXISTS idx_invoices_business_date ON purchase_invoices(business_id, purchased_at);
+
 CREATE TABLE IF NOT EXISTS purchases (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,

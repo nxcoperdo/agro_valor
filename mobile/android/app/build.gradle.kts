@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -7,6 +10,18 @@ plugins {
 // Sin google-services.json la app compila igual; solo quedan desactivadas las notificaciones push.
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
+}
+
+// Firma de release: sale de android/key.properties (no se sube al repo, ver .gitignore).
+// Sin ese archivo el build de release se firma con la llave de debug, que sirve para probar
+// en el teléfono pero Google Play la rechaza.
+val keyProperties = Properties()
+val keyPropertiesFile = rootProject.file("key.properties")
+val hasReleaseKey = keyPropertiesFile.exists()
+if (hasReleaseKey) {
+    FileInputStream(keyPropertiesFile).use { keyProperties.load(it) }
+} else {
+    logger.warn("AVISO: no existe android/key.properties; el release se firmará con la llave de debug y NO sirve para Google Play.")
 }
 
 android {
@@ -20,7 +35,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Definitivo para Google Play: no se puede cambiar después de publicar.
         applicationId = "co.agrovalor.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -34,11 +49,20 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+                storeFile = rootProject.file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (hasReleaseKey) "release" else "debug")
         }
     }
 }

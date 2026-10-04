@@ -53,7 +53,71 @@ function projectionPanel(pr) {
     <p class="form-error" id="proj-error" role="alert" hidden></p>${results}</div>`;
 }
 
-/** Detalle de una compra: resumen, costos internos y proyección. Costos/proyección solo si el rol los puede ver. */
+/**
+ * Costos internos y proyección de UNA compra (un producto). Se usa en el detalle de la compra y,
+ * una vez por producto, en el detalle de la factura: cada producto distinto tiene su proyección propia.
+ * Solo se muestra lo que el rol puede ver (sin permiso de costos el servidor responde 403).
+ */
+export async function mountLinePanels(el, id, reload) {
+  const [costs, proj] = await Promise.all([api.purchaseCosts(id).catch(() => null), api.projection(id).catch(() => null)]);
+  el.innerHTML = `${costs ? costsPanel(costs) : ''}${proj ? projectionPanel(proj) : ''}`;
+
+  // Los elementos de error se toman antes de volver únicos los ids (abajo).
+  const errors = { cost: el.querySelector('#cost-error'), proj: el.querySelector('#proj-error') };
+  const showErr = (key, err) => { if (errors[key]) { errors[key].textContent = err.message; errors[key].hidden = false; } };
+
+  el.querySelector('#cost-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target));
+    try { await api.addPurchaseCost(id, { ...d, valor: parseNumber(d.valor) }); await reload(); } catch (err) { showErr('cost', err); }
+  });
+  el.querySelectorAll('[data-rm-cost]').forEach((b) => b.addEventListener('click', async () => {
+    try { await api.removePurchaseCost(id, b.dataset.rmCost); await reload(); } catch (err) { showErr('cost', err); }
+  }));
+  // Al apagar el secado el rendimiento queda en 100 % (bloqueado); al encenderlo vuelve a ser editable.
+  const dryHint = el.querySelector('#p-dry-hint');
+  el.querySelector('#p-dry')?.addEventListener('change', (e) => {
+    const rend = el.querySelector('[name=rendimientoSecadoPct]');
+    rend.disabled = !e.target.checked;
+    if (!e.target.checked) rend.value = '100';
+    else if (parseNumber(rend.value) === 100) rend.value = '55';
+    dryHint.textContent = e.target.checked
+      ? 'Se proyecta con el rendimiento de secado de abajo.'
+      : 'No se seca: la proyección es directa al 100 % y los precios de venta se calculan igual.';
+  });
+  el.querySelector('#add-proj-cost')?.addEventListener('click', () => {
+    const host = el.querySelector('#proj-costs');
+    const tpl = host.querySelector('.proj-cost').cloneNode(true);
+    tpl.querySelectorAll('input').forEach((i) => { i.value = ''; });
+    host.insertBefore(tpl, host.querySelector('datalist'));
+  });
+  el.querySelector('#proj-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const costos = [...f.querySelectorAll('.proj-cost')].map((r) => ({
+      concepto: r.querySelector('[data-f=concepto]').value.trim(),
+      valor: parseNumber(r.querySelector('[data-f=valor]').value),
+      modo: r.querySelector('[data-f=modo]').value,
+    })).filter((c) => c.concepto || Number.isFinite(c.valor));
+    try {
+      await api.saveProjection(id, {
+        requiereSecado: f.requiereSecado.checked,
+        rendimientoSecadoPct: parseNumber(f.rendimientoSecadoPct.value),
+        destareKg: parseNumber(f.destareKg.value) || 0,
+        precioVentaCarga: f.precioVentaCarga.value.trim() ? parseNumber(f.precioVentaCarga.value) : null,
+        costos,
+      });
+      await reload();
+    } catch (err) { showErr('proj', err); }
+  });
+
+  // Con varios productos en la misma pantalla los ids se repetirían: se hacen únicos por compra.
+  el.querySelectorAll('[id]').forEach((n) => { n.id = `${n.id}-c${id}`; });
+  el.querySelectorAll('label[for]').forEach((n) => n.setAttribute('for', `${n.getAttribute('for')}-c${id}`));
+  el.querySelectorAll('[list]').forEach((n) => n.setAttribute('list', `${n.getAttribute('list')}-c${id}`));
+}
+
+/** Detalle de una compra (un producto): resumen, costos internos y proyección. */
 export async function renderPurchaseDetail(container) {
   const id = new URLSearchParams(window.location.hash.split('?')[1] || '').get('id');
   async function load() {
@@ -63,61 +127,56 @@ export async function renderPurchaseDetail(container) {
       container.innerHTML = `<div class="panel"><p class="panel-error">${escapeHtml(err.message)}</p><a class="btn-ghost" href="#/compras">Volver</a></div>`;
       return;
     }
-    const [costs, proj] = await Promise.all([api.purchaseCosts(id).catch(() => null), api.projection(id).catch(() => null)]);
     container.innerHTML = `
       <div class="rc-actions"><a class="btn-ghost" href="#/compras">← Compras</a>
-        <a class="btn-ghost" href="#/comprobante?id=${p.id}">Comprobante</a></div>
+        ${p.invoiceId ? `<a class="btn-ghost" href="#/factura?id=${p.invoiceId}">Ver factura</a>
+        <a class="btn-ghost" href="#/comprobante?factura=${p.invoiceId}">Comprobante</a>` : ''}</div>
       <div class="panel"><div class="panel-header"><h2>${escapeHtml(p.code)} · ${escapeHtml(p.supplier.name)}</h2>
         <span class="badge ${p.status === 'ANULADA' ? 'badge-stale' : 'badge-real'}">${p.status}</span></div>
-        <p class="panel-intro">${formatDateTime(p.purchasedAt)}${p.lot ? ` · Lote ${escapeHtml(p.lot.code)}` : ''}</p>
+        <p class="panel-intro">${escapeHtml(p.productLabel || '')} · ${formatDateTime(p.purchasedAt)}${p.lot ? ` · Lote ${escapeHtml(p.lot.code)}` : ''}</p>
         <div class="summary-cards">${card('Kg recibidos', formatKg(p.pesoTotalCompra))}${card(`Merma ${formatPct(p.porcentajeMermaInicial)}`, formatKg(p.kgDescontados))}
         ${card('Peso pagable', formatKg(p.pesoPagable), true)}${card('Total pagado', formatCopValue(p.totalCompra), true)}</div></div>
-      ${costs ? costsPanel(costs) : ''}${proj ? projectionPanel(proj) : ''}`;
+      <div id="line-panels"></div>`;
+    await mountLinePanels(container.querySelector('#line-panels'), id, load);
+  }
+  await load();
+}
 
-    const showErr = (sel, err) => { const el = container.querySelector(sel); el.textContent = err.message; el.hidden = false; };
-    container.querySelector('#cost-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const d = Object.fromEntries(new FormData(e.target));
-      try { await api.addPurchaseCost(id, { ...d, valor: parseNumber(d.valor) }); await load(); } catch (err) { showErr('#cost-error', err); }
-    });
-    container.querySelectorAll('[data-rm-cost]').forEach((b) => b.addEventListener('click', async () => {
-      try { await api.removePurchaseCost(id, b.dataset.rmCost); await load(); } catch (err) { showErr('#cost-error', err); }
-    }));
-    // Al apagar el secado el rendimiento queda en 100 % (bloqueado); al encenderlo vuelve a ser editable.
-    container.querySelector('#p-dry')?.addEventListener('change', (e) => {
-      const rend = container.querySelector('#p-rend');
-      rend.disabled = !e.target.checked;
-      if (!e.target.checked) rend.value = '100';
-      else if (parseNumber(rend.value) === 100) rend.value = '55';
-      container.querySelector('#p-dry-hint').textContent = e.target.checked
-        ? 'Se proyecta con el rendimiento de secado de abajo.'
-        : 'No se seca: la proyección es directa al 100 % y los precios de venta se calculan igual.';
-    });
-    container.querySelector('#add-proj-cost')?.addEventListener('click', () => {
-      const host = container.querySelector('#proj-costs');
-      const tpl = host.querySelector('.proj-cost').cloneNode(true);
-      tpl.querySelectorAll('input').forEach((i) => { i.value = ''; });
-      host.insertBefore(tpl, host.querySelector('datalist'));
-    });
-    container.querySelector('#proj-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const f = e.target;
-      const costos = [...f.querySelectorAll('.proj-cost')].map((r) => ({
-        concepto: r.querySelector('[data-f=concepto]').value.trim(),
-        valor: parseNumber(r.querySelector('[data-f=valor]').value),
-        modo: r.querySelector('[data-f=modo]').value,
-      })).filter((c) => c.concepto || Number.isFinite(c.valor));
-      try {
-        await api.saveProjection(id, {
-          requiereSecado: f.requiereSecado.checked,
-          rendimientoSecadoPct: parseNumber(f.rendimientoSecadoPct.value),
-          destareKg: parseNumber(f.destareKg.value) || 0,
-          precioVentaCarga: f.precioVentaCarga.value.trim() ? parseNumber(f.precioVentaCarga.value) : null,
-          costos,
-        });
-        await load();
-      } catch (err) { showErr('#proj-error', err); }
-    });
+/**
+ * Detalle de una factura: encabezado y totales, y por cada producto sus costos y SU PROPIA proyección
+ * (productos distintos se proyectan por separado).
+ */
+export async function renderInvoiceDetail(container) {
+  const id = new URLSearchParams(window.location.hash.split('?')[1] || '').get('id');
+  async function load() {
+    container.innerHTML = '<div class="panel"><span class="skeleton" style="width:100%;height:160px;"></span></div>';
+    let inv;
+    try { inv = await api.invoice(id); } catch (err) {
+      container.innerHTML = `<div class="panel"><p class="panel-error">${escapeHtml(err.message)}</p><a class="btn-ghost" href="#/compras">Volver</a></div>`;
+      return;
+    }
+    const voided = inv.status === 'ANULADA';
+    const sum = (key) => inv.lines.reduce((a, l) => a + l[key], 0);
+    container.innerHTML = `
+      <div class="rc-actions"><a class="btn-ghost" href="#/compras">← Compras</a>
+        <a class="btn-ghost" href="#/comprobante?factura=${inv.id}">Comprobante</a></div>
+      <div class="panel"><div class="panel-header"><h2>${escapeHtml(inv.code)} · ${escapeHtml(inv.supplier.name)}</h2>
+        <span class="badge ${voided ? 'badge-stale' : 'badge-real'}">${inv.status}</span></div>
+        <p class="panel-intro">${formatDateTime(inv.purchasedAt)}${inv.workdayCode ? ` · Jornada ${escapeHtml(inv.workdayCode)}` : ''} · ${escapeHtml(inv.supplier.idType)} ${escapeHtml(inv.supplier.idNumber)}</p>
+        ${voided ? `<p class="form-error">Anulada: ${escapeHtml(inv.voidReason || '')}</p>` : ''}
+        <div class="summary-cards">${card('Productos', inv.lines.length)}${card('Peso pagable', formatKg(voided ? sum('pesoPagable') : inv.totals.pesoPagable), true)}
+        ${card('Total de la factura', formatCopValue(voided ? sum('totalCompra') : inv.totals.totalCompra), true)}</div></div>
+      ${inv.lines.map((l) => `<section class="invoice-block" data-line="${l.id}">
+        <div class="panel"><div class="panel-header"><h2>${escapeHtml(l.productLabel)} · ${escapeHtml(l.code)}</h2>
+          <span class="badge ${l.status === 'ANULADA' ? 'badge-stale' : 'badge-real'}">${l.status}</span></div>
+          <p class="panel-intro">${l.lot ? `Lote ${escapeHtml(l.lot.code)} · ` : ''}${l.requiresDrying ? 'Con secado' : 'Sin secado'} · <a href="#/compra?id=${l.id}">Ver compra</a></p>
+          <div class="summary-cards">${card('Kg recibidos', formatKg(l.pesoTotalCompra))}${card(`Merma ${formatPct(l.porcentajeMermaInicial)}`, formatKg(l.kgDescontados))}
+          ${card('Peso pagable', formatKg(l.pesoPagable), true)}${card('Precio por kg', formatCopValue(l.precioKg))}${card('Subtotal', formatCopValue(l.totalCompra), true)}</div></div>
+        <div class="line-panels"></div></section>`).join('')}`;
+    await Promise.all(
+      inv.lines.filter((l) => l.status === 'ACTIVA').map((l) =>
+        mountLinePanels(container.querySelector(`[data-line="${l.id}"] .line-panels`), l.id, load))
+    );
   }
   await load();
 }

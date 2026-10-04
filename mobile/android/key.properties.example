@@ -1,0 +1,6 @@
+# Copia este archivo como android/key.properties y completa los valores.
+# key.properties y el .jks NO se suben al repo (están en .gitignore).
+storePassword=CAMBIAME
+keyPassword=CAMBIAME
+keyAlias=agrovalor
+storeFile=agrovalor-upload.jks

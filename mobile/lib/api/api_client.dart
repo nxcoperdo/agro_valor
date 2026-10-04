@@ -119,10 +119,20 @@ class ApiClient {
 
   // Módulo de café (compras, lotes, inventario, ventas). Mismo API que la web: /api/coffee.
   Future<Json> coffeeDashboard() async => await _request('GET', '/coffee/dashboard') as Json;
-  Future<Json> coffeePurchases() async => await _request('GET', '/coffee/purchases') as Json;
+  Future<Json> coffeePurchases({bool onlyWithoutLot = false}) async =>
+      await _request('GET', '/coffee/purchases${onlyWithoutLot ? '?noLot=1&status=ACTIVA' : ''}') as Json;
   Future<Json> coffeeCreatePurchase(Json payload) async => await _request('POST', '/coffee/purchases', payload) as Json;
+  Future<Json> coffeeInvoices() async => await _request('GET', '/coffee/invoices') as Json;
+  Future<Json> coffeeInvoice(int id) async => await _request('GET', '/coffee/invoices/$id') as Json;
+  Future<Json> coffeeCreateInvoice(Json payload) async => await _request('POST', '/coffee/invoices', payload) as Json;
+  Future<Json> coffeeVoidInvoice(int id, String reason) async =>
+      await _request('POST', '/coffee/invoices/$id/void', {'reason': reason}) as Json;
   Future<Json> coffeeVoidPurchase(int id, String reason) async =>
       await _request('POST', '/coffee/purchases/$id/void', {'reason': reason}) as Json;
+  Future<Json> coffeeProjection(int purchaseId) async =>
+      await _request('GET', '/coffee/purchases/$purchaseId/projection') as Json;
+  Future<Json> coffeeSaveProjection(int purchaseId, Json payload) async =>
+      await _request('PUT', '/coffee/purchases/$purchaseId/projection', payload) as Json;
   Future<Json> coffeeProductTypes() async => await _request('GET', '/coffee/product-types') as Json;
   Future<Json> coffeeSearchSuppliers(String q) async =>
       await _request('GET', '/coffee/suppliers?q=${Uri.encodeQueryComponent(q)}') as Json;
@@ -132,4 +142,22 @@ class ApiClient {
       await _request('POST', '/coffee/calculator/compare', payload) as Json;
   Future<Json> coffeeInventory() async => await _request('GET', '/coffee/inventory') as Json;
   Future<Json> coffeeLots() async => await _request('GET', '/coffee/lots') as Json;
+  Future<Json> coffeeLot(int id) async => await _request('GET', '/coffee/lots/$id') as Json;
+  Future<Json> coffeeCreateLot(List<int> purchaseIds, String notes) async =>
+      await _request('POST', '/coffee/lots', {'purchaseIds': purchaseIds, 'notes': notes}) as Json;
+  Future<Json> coffeeChangeLotStatus(int id, String status) async =>
+      await _request('POST', '/coffee/lots/$id/status', {'status': status}) as Json;
+  Future<Json> coffeeRemoveLotPurchase(int id, int purchaseId) async =>
+      await _request('DELETE', '/coffee/lots/$id/purchases/$purchaseId') as Json;
+  Future<Json> coffeeLotProcessing(int id) async => await _request('GET', '/coffee/lots/$id/processing') as Json;
+  Future<Json> coffeeSaveLotShipment(int id, Json payload) async =>
+      await _request('PUT', '/coffee/lots/$id/processing', payload) as Json;
+  Future<Json> coffeeAddLotCost(int id, Json payload) async =>
+      await _request('POST', '/coffee/lots/$id/processing/costs', payload) as Json;
+  Future<Json> coffeeRemoveLotCost(int id, int costId) async =>
+      await _request('DELETE', '/coffee/lots/$id/processing/costs/$costId') as Json;
+  Future<Json> coffeeFinishLot(int id, Json payload) async =>
+      await _request('POST', '/coffee/lots/$id/processing/finish', payload) as Json;
+  Future<Json> coffeeEnterInventory(int lotId, Json payload) async =>
+      await _request('POST', '/coffee/lots/$lotId/inventory', payload) as Json;
 }

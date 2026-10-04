@@ -7,6 +7,7 @@ const projectionService = require('../services/projectionService');
 const quickCalcService = require('../services/quickCalcService');
 const lotService = require('../services/lotService');
 const processingService = require('../services/processingService');
+const invoiceService = require('../services/invoiceService');
 const productTypes = require('../domain/productTypes');
 const inventoryService = require('../services/inventoryService');
 const customerService = require('../services/customerService');
@@ -38,6 +39,10 @@ router.get('/product-types', wrap(() => ({ productTypes: productTypes.selectable
 router.get('/suppliers', wrap((req) => ({ suppliers: supplierService.search(ctxOf(req), req.query.q) })));
 router.post('/suppliers', requirePermission('registrar'), wrap(created((req) => supplierService.create(ctxOf(req), req.body || {}))));
 
+router.get('/invoices', wrap((req) => ({ invoices: invoiceService.list(ctxOf(req), req.query) })));
+router.post('/invoices', requirePermission('registrar'), wrap(created((req) => invoiceService.create(ctxOf(req), req.body || {}))));
+router.get('/invoices/:id', wrap((req) => invoiceService.get(ctxOf(req), req.params.id)));
+router.post('/invoices/:id/void', requirePermission('anular'), wrap((req) => invoiceService.voidInvoice(ctxOf(req), req.params.id, (req.body || {}).reason)));
 router.get('/purchases', wrap((req) => ({ purchases: purchaseService.list(ctxOf(req), req.query) })));
 router.post('/purchases', requirePermission('registrar'), wrap(created((req) => purchaseService.create(ctxOf(req), req.body || {}))));
 router.get('/purchases/:id', wrap((req) => purchaseService.get(ctxOf(req), req.params.id)));
@@ -92,6 +97,18 @@ router.get('/reports/:type/pdf', async (req, res, next) => {
 router.get('/business', wrap((req) => receiptService.businessInfo(req.business.businessId)));
 router.put('/business', requirePermission('gestionar_equipo'), wrap((req) => receiptService.updateBusiness(ctxOf(req), req.body || {})));
 router.get('/purchases/:id/receipt', wrap((req) => receiptService.build(ctxOf(req), req.params.id)));
+router.get('/invoices/:id/receipt', wrap((req) => receiptService.buildInvoice(ctxOf(req), req.params.id)));
+router.get('/invoices/:id/receipt.pdf', async (req, res, next) => {
+  try {
+    const buffer = await receiptService.invoicePdf(ctxOf(req), req.params.id);
+    const code = receiptService.buildInvoice(ctxOf(req), req.params.id).code;
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `${req.query.download ? 'attachment' : 'inline'}; filename="${code}.pdf"`,
+    });
+    res.send(buffer);
+  } catch (err) { next(err); }
+});
 router.get('/purchases/:id/receipt.pdf', async (req, res, next) => {
   try {
     const buffer = await receiptService.pdf(ctxOf(req), req.params.id);

@@ -13,27 +13,53 @@ const FALLBACK_PRODUCT_TYPES = [
   { key: 'maiz', label: 'Maíz', mermaDefault: 0, requiresDryingDefault: false },
   { key: 'frijol', label: 'Frijol', mermaDefault: 0, requiresDryingDefault: false },
 ];
-const typeOf = (s) => s.productTypes.find((t) => t.key === s.productType) || s.productTypes[0];
 const PAYMENTS = { efectivo: 'Efectivo', transferencia: 'Transferencia', credito: 'Crédito', otro: 'Otro' };
 
-/** Vista previa en pantalla; el servidor recalcula y es quien guarda. */
-function preview(state) {
-  const total = state.weighings.reduce((a, w) => a + (parseNumber(w) || 0), 0);
-  const merma = parseNumber(state.merma) || 0;
+/** Un producto de la factura, vacío y con los valores por defecto de su tipo. */
+const newLine = (types, key) => {
+  const t = types.find((x) => x.key === key) || types[0];
+  return { productType: t.key, merma: String(t.mermaDefault), requiresDrying: t.requiresDryingDefault, weighings: [''], priceMode: 'carga', precioCarga: '', precioKg: '' };
+};
+const typeOfLine = (s, line) => s.productTypes.find((t) => t.key === line.productType) || s.productTypes[0];
+
+/** Vista previa de un producto en pantalla; el servidor recalcula y es quien guarda. */
+function previewLine(line) {
+  const total = line.weighings.reduce((a, w) => a + (parseNumber(w) || 0), 0);
+  const merma = parseNumber(line.merma) || 0;
   const descontados = (total * merma) / 100;
   const pagable = total - descontados;
-  // El precio se escribe por carga o directamente por kilo; el servidor valida y es quien guarda.
-  const precioKg = state.priceMode === 'kg' ? parseNumber(state.precioKg) || 0 : (parseNumber(state.precioCarga) || 0) / CARGA_KG;
+  // El precio se escribe por carga o directamente por kilo.
+  const precioKg = line.priceMode === 'kg' ? parseNumber(line.precioKg) || 0 : (parseNumber(line.precioCarga) || 0) / CARGA_KG;
   return { total, descontados, pagable, precioKg, totalPagar: Math.round(pagable * precioKg) };
 }
 
-function summaryCards(state) {
-  const p = preview(state);
+function invoiceTotals(s) {
+  return s.lines.reduce(
+    (acc, line) => {
+      const p = previewLine(line);
+      return { pagable: acc.pagable + p.pagable, total: acc.total + p.totalPagar };
+    },
+    { pagable: 0, total: 0 }
+  );
+}
+
+function lineCards(line) {
+  const p = previewLine(line);
   return `<div class="summary-cards">
     <div class="summary-card"><h3>Kg recibidos</h3><strong class="tabular-nums">${formatKg(p.total)}</strong></div>
-    <div class="summary-card"><h3>Descuento (${formatPct(parseNumber(state.merma) || 0)})</h3><strong class="tabular-nums">${formatKg(p.descontados)}</strong></div>
-    <div class="summary-card highlight"><h3>PESO PAGABLE</h3><strong class="tabular-nums">${formatKg(p.pagable)}</strong></div>
-    <div class="summary-card highlight"><h3>TOTAL A PAGAR</h3><strong class="tabular-nums">${formatCopValue(p.totalPagar)}</strong></div>
+    <div class="summary-card"><h3>Descuento (${formatPct(parseNumber(line.merma) || 0)})</h3><strong class="tabular-nums">${formatKg(p.descontados)}</strong></div>
+    <div class="summary-card"><h3>Peso pagable</h3><strong class="tabular-nums">${formatKg(p.pagable)}</strong></div>
+    <div class="summary-card"><h3>Precio por kg</h3><strong class="tabular-nums">${formatCopValue(p.precioKg)}</strong></div>
+    <div class="summary-card highlight"><h3>Subtotal</h3><strong class="tabular-nums">${formatCopValue(p.totalPagar)}</strong></div>
+  </div>`;
+}
+
+function totalCards(s) {
+  const t = invoiceTotals(s);
+  return `<div class="summary-cards">
+    <div class="summary-card"><h3>Productos</h3><strong class="tabular-nums">${s.lines.length}</strong></div>
+    <div class="summary-card highlight"><h3>PESO PAGABLE</h3><strong class="tabular-nums">${formatKg(t.pagable)}</strong></div>
+    <div class="summary-card highlight"><h3>TOTAL A PAGAR</h3><strong class="tabular-nums">${formatCopValue(t.total)}</strong></div>
   </div>`;
 }
 
@@ -99,112 +125,170 @@ const stepSupplier = {
   validate: (s) => (s.supplierId || (s.newSupplier.idNumber.trim() && s.newSupplier.name.trim()) ? null : 'Selecciona un proveedor o completa identificación y nombre'),
 };
 
-const stepWeighings = {
-  id: 'weighings',
-  title: 'Pesadas',
-  render: (s) => `
+/** Un producto de la factura: tipo, merma, secado, pesadas y precio. Cada producto tiene su propio precio. */
+function lineHtml(s, line, i) {
+  const t = typeOfLine(s, line);
+  const n = s.lines.length;
+  return `<fieldset class="invoice-line" data-line="${i}">
+    <legend>Producto ${i + 1}${n > 1 ? ` · ${escapeHtml(t.label)}` : ''}</legend>
     <div class="calc-form">
-      <div class="field"><label for="coffee-type">Tipo de producto (café, cacao, pasilla de café, maíz, frijol)</label>
-        <select id="coffee-type">${s.productTypes.map((t) => `<option value="${t.key}" ${s.productType === t.key ? 'selected' : ''}>${escapeHtml(t.label)}</option>`).join('')}</select></div>
-      <div class="field"><label for="merma">Merma inicial (%)</label><input id="merma" inputmode="decimal" value="${escapeHtml(s.merma)}" /></div>
-      <div class="field"><label class="check-row"><input type="checkbox" id="requires-drying" ${s.requiresDrying ? 'checked' : ''} /> ¿Requiere secado?</label>
-        <small>${s.requiresDrying ? 'Pasa por secado antes de entrar a inventario (la proyección usa el rendimiento de secado).' : 'No se seca: la proyección es directa al 100 % y puede enviarse a inventario.'}</small></div>
+      <div class="field"><label for="ln${i}-type">Tipo de producto (café, cacao, pasilla de café, maíz, frijol)</label>
+        <select id="ln${i}-type" class="ln-type">${s.productTypes.map((x) => `<option value="${x.key}" ${line.productType === x.key ? 'selected' : ''}>${escapeHtml(x.label)}</option>`).join('')}</select></div>
+      <div class="field"><label for="ln${i}-merma">Merma inicial (%)</label><input id="ln${i}-merma" class="ln-merma" inputmode="decimal" value="${escapeHtml(line.merma)}" /></div>
+      <div class="field"><label class="check-row"><input type="checkbox" class="ln-dry" ${line.requiresDrying ? 'checked' : ''} /> ¿Requiere secado?</label>
+        <small>${line.requiresDrying ? 'Pasa por secado antes de entrar a inventario.' : 'No se seca: la proyección es directa al 100 % y puede enviarse a inventario.'}</small></div>
     </div>
-    <div id="weighings-list">${s.weighings.map((w, i) => `
-      <div class="weighing-row"><label for="w-${i}">Pesada ${i + 1} (kg)</label>
-        <input id="w-${i}" data-i="${i}" inputmode="decimal" value="${escapeHtml(w)}" />
-        ${s.weighings.length > 1 ? `<button type="button" class="btn-ghost" data-remove="${i}" aria-label="Quitar pesada ${i + 1}">Quitar</button>` : ''}</div>`).join('')}</div>
-    <button type="button" class="btn-ghost" id="add-weighing">+ Agregar pesada</button>
-    <div id="live-summary">${summaryCards(s)}</div>`,
-  afterRender(el, s, redraw) {
-    const live = () => { el.querySelector('#live-summary').innerHTML = summaryCards(s); };
-    el.querySelector('#coffee-type').addEventListener('change', (e) => {
-      s.productType = e.target.value;
-      s.merma = String(typeOf(s).mermaDefault);
-      s.requiresDrying = typeOf(s).requiresDryingDefault;
-      s.rerender(); // actualiza la merma y el interruptor de secado según el producto
+    <div>${line.weighings.map((w, j) => `
+      <div class="weighing-row"><label for="ln${i}-w${j}">Pesada ${j + 1} (kg)</label>
+        <input id="ln${i}-w${j}" class="ln-w" data-w="${j}" inputmode="decimal" value="${escapeHtml(w)}" />
+        ${line.weighings.length > 1 ? `<button type="button" class="btn-ghost ln-wrm" data-w="${j}" aria-label="Quitar pesada ${j + 1}">Quitar</button>` : ''}</div>`).join('')}</div>
+    <button type="button" class="btn-ghost ln-wadd">+ Agregar pesada</button>
+    <div class="calc-form">
+      <div class="field"><label for="ln${i}-mode">Definir el precio</label>
+        <select id="ln${i}-mode" class="ln-mode"><option value="carga" ${line.priceMode === 'carga' ? 'selected' : ''}>Por carga (${CARGA_KG} kg)</option>
+          <option value="kg" ${line.priceMode === 'kg' ? 'selected' : ''}>Por kilogramo</option></select></div>
+      <div class="field"><label for="ln${i}-price">${line.priceMode === 'kg' ? 'Precio por kilogramo' : `Precio por carga (${CARGA_KG} kg)`}</label>
+        <input id="ln${i}-price" class="ln-price" inputmode="decimal" value="${escapeHtml(line.priceMode === 'kg' ? line.precioKg : line.precioCarga)}" /></div>
+    </div>
+    <div class="ln-sum">${lineCards(line)}</div>
+    ${n > 1 ? '<button type="button" class="btn-danger ln-rm">Quitar este producto</button>' : ''}
+  </fieldset>`;
+}
+
+const stepProducts = {
+  id: 'products',
+  title: 'Productos',
+  render: (s) => `
+    <p class="form-hint">Si el cliente trae varios productos, agrégalos aquí: cada uno lleva su pesada, su precio y su subtotal, como una factura.</p>
+    ${s.lines.map((line, i) => lineHtml(s, line, i)).join('')}
+    <button type="button" class="btn-ghost" id="add-line">+ Agregar otro producto</button>
+    <div id="invoice-total">${totalCards(s)}</div>`,
+  afterRender(el, s) {
+    const lineOf = (target) => {
+      const box = target.closest('[data-line]');
+      return box ? { i: Number(box.dataset.line), box } : null;
+    };
+    /** Refresca solo los resúmenes (no redibuja, para no perder el cursor al escribir). */
+    const live = (i, box) => {
+      box.querySelector('.ln-sum').innerHTML = lineCards(s.lines[i]);
+      el.querySelector('#invoice-total').innerHTML = totalCards(s);
+    };
+
+    el.addEventListener('input', (e) => {
+      const ctx = lineOf(e.target);
+      if (!ctx) return;
+      const line = s.lines[ctx.i];
+      if (e.target.classList.contains('ln-merma')) line.merma = e.target.value;
+      else if (e.target.classList.contains('ln-w')) line.weighings[Number(e.target.dataset.w)] = e.target.value;
+      else if (e.target.classList.contains('ln-price')) line[line.priceMode === 'kg' ? 'precioKg' : 'precioCarga'] = e.target.value;
+      else return;
+      live(ctx.i, ctx.box);
     });
-    el.querySelector('#requires-drying').addEventListener('change', (e) => { s.requiresDrying = e.target.checked; s.rerender(); });
-    el.querySelector('#merma').addEventListener('input', (e) => { s.merma = e.target.value; live(); });
-    el.querySelectorAll('[data-i]').forEach((i) => i.addEventListener('input', (e) => { s.weighings[Number(e.target.dataset.i)] = e.target.value; live(); }));
-    el.querySelector('#add-weighing').addEventListener('click', () => {
-      s.weighings.push('');
+
+    el.addEventListener('change', (e) => {
+      const ctx = lineOf(e.target);
+      if (!ctx) return;
+      const line = s.lines[ctx.i];
+      if (e.target.classList.contains('ln-type')) {
+        // Al cambiar de producto, la merma y el secado vuelven a los valores de ese producto.
+        const fresh = newLine(s.productTypes, e.target.value);
+        Object.assign(line, { productType: fresh.productType, merma: fresh.merma, requiresDrying: fresh.requiresDrying });
+      } else if (e.target.classList.contains('ln-dry')) line.requiresDrying = e.target.checked;
+      else if (e.target.classList.contains('ln-mode')) line.priceMode = e.target.value;
+      else return;
       s.rerender();
-      document.getElementById(`w-${s.weighings.length - 1}`)?.focus(); // la nueva pesada lista para escribir
     });
-    el.querySelectorAll('[data-remove]').forEach((b) => b.addEventListener('click', () => { s.weighings.splice(Number(b.dataset.remove), 1); s.rerender(); }));
+
+    el.addEventListener('click', (e) => {
+      const ctx = lineOf(e.target);
+      if (e.target.closest('#add-line')) {
+        s.lines.push(newLine(s.productTypes));
+        s.rerender();
+        document.getElementById(`ln${s.lines.length - 1}-type`)?.focus();
+        return;
+      }
+      if (!ctx) return;
+      const line = s.lines[ctx.i];
+      if (e.target.closest('.ln-wadd')) {
+        line.weighings.push('');
+        s.rerender();
+        document.getElementById(`ln${ctx.i}-w${line.weighings.length - 1}`)?.focus(); // la nueva pesada lista para escribir
+      } else if (e.target.closest('.ln-wrm')) {
+        line.weighings.splice(Number(e.target.closest('.ln-wrm').dataset.w), 1);
+        s.rerender();
+      } else if (e.target.closest('.ln-rm')) {
+        s.lines.splice(ctx.i, 1);
+        s.rerender();
+      }
+    });
   },
   validate: (s) => {
-    if (s.weighings.some((w) => !(parseNumber(w) > 0))) return 'Cada pesada debe ser mayor a cero';
-    const m = parseNumber(s.merma);
-    return Number.isFinite(m) && m >= 0 && m <= 100 ? null : 'La merma debe estar entre 0 y 100';
+    for (let i = 0; i < s.lines.length; i += 1) {
+      const line = s.lines[i];
+      const who = s.lines.length > 1 ? `Producto ${i + 1}: ` : '';
+      if (line.weighings.some((w) => !(parseNumber(w) > 0))) return `${who}cada pesada debe ser mayor a cero`;
+      const m = parseNumber(line.merma);
+      if (!(Number.isFinite(m) && m >= 0 && m <= 100)) return `${who}la merma debe estar entre 0 y 100`;
+      const price = parseNumber(line.priceMode === 'kg' ? line.precioKg : line.precioCarga);
+      if (!(price > 0)) return `${who}el precio ${line.priceMode === 'kg' ? 'por kilogramo' : 'por carga'} debe ser mayor a cero`;
+    }
+    return null;
   },
 };
 
-const stepPrice = {
-  id: 'price',
-  title: 'Precio y pago',
+const stepPayment = {
+  id: 'payment',
+  title: 'Pago',
   render: (s) => `
     <div class="calc-form">
-      <div class="field"><label for="price-mode">Definir el precio</label>
-        <select id="price-mode"><option value="carga" ${s.priceMode === 'carga' ? 'selected' : ''}>Por carga (${CARGA_KG} kg)</option>
-          <option value="kg" ${s.priceMode === 'kg' ? 'selected' : ''}>Por kilogramo</option></select></div>
-      ${s.priceMode === 'kg'
-        ? `<div class="field"><label for="precio-kg-in">Precio por kilogramo</label><input id="precio-kg-in" inputmode="decimal" value="${escapeHtml(s.precioKg)}" /></div>`
-        : `<div class="field"><label for="precio-carga">Precio por carga (${CARGA_KG} kg)</label><input id="precio-carga" inputmode="numeric" value="${escapeHtml(s.precioCarga)}" /></div>`}
       <div class="field"><label for="payment">Forma de pago</label>
         <select id="payment">${Object.entries(PAYMENTS).map(([k, v]) => `<option value="${k}" ${s.paymentMethod === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
       <div class="field"><label for="reference">Referencia</label><input id="reference" value="${escapeHtml(s.paymentReference)}" /></div>
       <div class="field"><label for="notes">Observaciones</label><input id="notes" value="${escapeHtml(s.notes)}" /></div>
     </div>
-    <div id="live-summary">${summaryCards(s)}</div>
-    <p class="form-hint tabular-nums" id="precio-kg"></p>`,
+    <div id="invoice-total">${totalCards(s)}</div>`,
   afterRender(el, s) {
-    const live = () => {
-      el.querySelector('#live-summary').innerHTML = summaryCards(s);
-      const p = preview(s);
-      el.querySelector('#precio-kg').textContent = s.priceMode === 'kg'
-        ? `Equivale a ${formatCopValue(p.precioKg * CARGA_KG)} por carga de ${CARGA_KG} kg`
-        : `Precio por kg: ${formatCopValue(p.precioKg)}`;
-    };
-    live();
-    el.querySelector('#price-mode').addEventListener('change', (e) => { s.priceMode = e.target.value; s.rerender(); });
-    [['precio-carga', 'precioCarga'], ['precio-kg-in', 'precioKg'], ['payment', 'paymentMethod'], ['reference', 'paymentReference'], ['notes', 'notes']].forEach(([id, key]) =>
-      el.querySelector(`#${id}`)?.addEventListener('input', (e) => { s[key] = e.target.value; live(); }));
+    [['payment', 'paymentMethod'], ['reference', 'paymentReference'], ['notes', 'notes']].forEach(([id, key]) =>
+      el.querySelector(`#${id}`).addEventListener('input', (e) => { s[key] = e.target.value; }));
   },
-  validate: (s) => (s.priceMode === 'kg'
-    ? (parseNumber(s.precioKg) > 0 ? null : 'El precio por kilogramo debe ser mayor a cero')
-    : (parseNumber(s.precioCarga) > 0 ? null : 'El precio por carga debe ser mayor a cero')),
 };
 
 const stepConfirm = {
   id: 'confirm',
   title: 'Confirmar',
-  render: (s) => `<div class="panel-intro">Proveedor: <strong>${escapeHtml(s.supplierId ? s.supplierName : s.newSupplier.name)}</strong> ·
-    ${escapeHtml(typeOf(s).label)}${s.requiresDrying ? ' (con secado)' : ' (sin secado)'} · ${s.weighings.length} pesada(s) · ${PAYMENTS[s.paymentMethod]}</div>
-    ${summaryCards(s)}`,
+  render: (s) => `<div class="panel-intro">Proveedor: <strong>${escapeHtml(s.supplierId ? s.supplierName : s.newSupplier.name)}</strong> · ${PAYMENTS[s.paymentMethod]}</div>
+    <div class="table-scroll"><table class="coop-table"><thead><tr><th>Producto</th><th>Kg pagables</th><th>Precio por kg</th><th>Subtotal</th></tr></thead><tbody>
+      ${s.lines.map((line) => {
+        const p = previewLine(line);
+        return `<tr><td data-label="Producto">${escapeHtml(typeOfLine(s, line).label)}${line.requiresDrying ? '' : ' <small>(sin secado)</small>'}</td>
+          <td data-label="Kg pagables" class="tabular-nums">${formatKg(p.pagable)}</td>
+          <td data-label="Precio por kg" class="tabular-nums">${formatCopValue(p.precioKg)}</td>
+          <td data-label="Subtotal" class="tabular-nums">${formatCopValue(p.totalPagar)}</td></tr>`;
+      }).join('')}</tbody></table></div>
+    ${totalCards(s)}`,
 };
 
 function freshState(productTypes) {
-  const first = productTypes[0];
   return {
-    productTypes, productType: first.key, requiresDrying: first.requiresDryingDefault,
-    supplierId: null, supplierName: '', merma: String(first.mermaDefault), weighings: [''],
-    priceMode: 'carga', precioKg: '', precioCarga: '', paymentMethod: 'efectivo', paymentReference: '', notes: '',
+    productTypes, lines: [newLine(productTypes)],
+    supplierId: null, supplierName: '',
+    paymentMethod: 'efectivo', paymentReference: '', notes: '',
     newSupplier: { idType: 'CC', idNumber: '', name: '', legalName: '', phone: '', municipality: '', address: '', notes: '' },
   };
 }
 
 function toPayload(s) {
   const payload = {
-    productType: s.productType,
-    requiresDrying: s.requiresDrying,
-    porcentajeMermaInicial: parseNumber(s.merma),
-    weighings: s.weighings.map((w) => ({ pesoKg: parseNumber(w) })),
-    ...(s.priceMode === 'kg' ? { precioKg: parseNumber(s.precioKg) } : { precioCarga: parseNumber(s.precioCarga) }),
     paymentMethod: s.paymentMethod,
     paymentReference: s.paymentReference,
     notes: s.notes,
+    items: s.lines.map((line) => ({
+      productType: line.productType,
+      requiresDrying: line.requiresDrying,
+      porcentajeMermaInicial: parseNumber(line.merma),
+      weighings: line.weighings.map((w) => ({ pesoKg: parseNumber(w) })),
+      ...(line.priceMode === 'kg' ? { precioKg: parseNumber(line.precioKg) } : { precioCarga: parseNumber(line.precioCarga) }),
+    })),
   };
   if (s.supplierId) payload.supplierId = s.supplierId; else payload.supplier = s.newSupplier;
   return payload;
@@ -214,7 +298,7 @@ function toPayload(s) {
 export function consolidatedCards(s) {
   const card = (t, v) => `<div class="summary-card"><h3>${t}</h3><strong class="tabular-nums">${v}</strong></div>`;
   return `<div class="summary-cards">
-    ${card('Compras', s.compras)}${card('Proveedores', s.proveedores)}${card('Pesadas', s.pesadas)}
+    ${card('Compras', s.compras)}${s.productos != null && s.productos !== s.compras ? card('Productos', s.productos) : ''}${card('Proveedores', s.proveedores)}${card('Pesadas', s.pesadas)}
     ${card('Kg recibidos', formatKg(s.kgRecibidos))}${card('Kg pagables', formatKg(s.kgPagables))}${card('Kg descontados', formatKg(s.kgDescontados))}
     ${card('Total pagado', formatCopValue(s.totalPagado))}
     ${s.costosInternos != null ? card('Costos internos', formatCopValue(s.costosInternos)) : ''}
@@ -223,18 +307,20 @@ export function consolidatedCards(s) {
   </div>`;
 }
 
-function historyRow(p) {
-  const voided = p.status === 'ANULADA';
+function historyRow(inv) {
+  const voided = inv.status === 'ANULADA';
+  const products = inv.lines.map((l) => escapeHtml(l.productLabel)).join(', ');
   return `<tr class="${voided ? 'row-voided' : ''}">
-    <td data-label="Compra">${escapeHtml(p.code)}<br /><small>${formatDateTime(p.purchasedAt)}</small></td>
-    <td data-label="Proveedor">${escapeHtml(p.supplier.name)}</td>
-    <td data-label="Kg pagables" class="tabular-nums">${formatKg(p.pesoPagable)}</td>
-    <td data-label="Total" class="tabular-nums">${formatCopValue(p.totalCompra)}</td>
-    <td data-label="Estado"><span class="badge ${voided ? 'badge-stale' : 'badge-real'}">${p.status}</span></td>
+    <td data-label="Factura">${escapeHtml(inv.code)}<br /><small>${formatDateTime(inv.purchasedAt)}</small></td>
+    <td data-label="Proveedor">${escapeHtml(inv.supplier.name)}</td>
+    <td data-label="Productos">${products}</td>
+    <td data-label="Kg pagables" class="tabular-nums">${formatKg(voided ? inv.lines.reduce((a, l) => a + l.pesoPagable, 0) : inv.totals.pesoPagable)}</td>
+    <td data-label="Total" class="tabular-nums">${formatCopValue(voided ? inv.lines.reduce((a, l) => a + l.totalCompra, 0) : inv.totals.totalCompra)}</td>
+    <td data-label="Estado"><span class="badge ${voided ? 'badge-stale' : 'badge-real'}">${inv.status}</span></td>
     <td data-label="Acciones" class="row-actions">
-      <a class="btn-ghost" href="#/compra?id=${p.id}">Ver detalle</a>
-      <a class="btn-ghost" href="#/comprobante?id=${p.id}">Comprobante</a>
-      ${voided ? '' : `<button type="button" class="btn-danger" data-void="${p.id}">Anular</button>`}</td>
+      <a class="btn-ghost" href="#/factura?id=${inv.id}">Ver detalle</a>
+      <a class="btn-ghost" href="#/comprobante?factura=${inv.id}">Comprobante</a>
+      ${voided ? '' : `<button type="button" class="btn-danger" data-void="${inv.id}">Anular</button>`}</td>
   </tr>`;
 }
 
@@ -246,10 +332,10 @@ export async function renderPurchases(container) {
 
   async function load() {
     container.innerHTML = '<div class="panel"><span class="skeleton" style="width:100%;height:120px;"></span></div>';
-    let purchases, workday, business, productTypes;
+    let invoices, workday, business, productTypes;
     try {
-      [{ purchases }, workday, business, productTypes] = await Promise.all([
-        api.purchases(), api.currentWorkday(), api.business(),
+      [{ invoices }, workday, business, productTypes] = await Promise.all([
+        api.invoices(), api.currentWorkday(), api.business(),
         api.productTypes().then((r) => r.productTypes).catch(() => FALLBACK_PRODUCT_TYPES),
       ]);
     } catch (err) {
@@ -257,7 +343,7 @@ export async function renderPurchases(container) {
       return;
     }
     container.innerHTML = `
-      <div class="panel"><div class="panel-header"><h2>Nueva compra de producto</h2></div><div id="stepper-root"></div></div>
+      <div class="panel"><div class="panel-header"><h2>Nueva compra (factura)</h2></div><div id="stepper-root"></div></div>
       <div class="panel"><div class="panel-header"><h2>Jornada actual · ${escapeHtml(workday.code)}</h2>
         <span class="badge badge-real">${workday.status}</span></div>
         ${consolidatedCards(workday.summary)}
@@ -266,11 +352,11 @@ export async function renderPurchases(container) {
           <button type="button" class="btn-ghost" id="close-workday">Cerrar jornada</button>
         </div>
         <p class="form-error" id="workday-error" role="alert" hidden></p></div>
-      <div class="panel"><div class="panel-header"><h2>Historial de compras</h2></div>
-        ${purchases.length ? `<div class="table-scroll"><table class="coop-table"><thead><tr>
-          <th>Compra</th><th>Proveedor</th><th>Kg pagables</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
-          <tbody>${purchases.map(historyRow).join('')}</tbody></table></div>`
-          : `<div class="empty-cta"><p class="empty-state">Aún no hay compras. Registra la primera con el formulario de arriba: proveedor, producto, pesadas, precio y listo.</p>
+      <div class="panel"><div class="panel-header"><h2>Historial de facturas</h2></div>
+        ${invoices.length ? `<div class="table-scroll"><table class="coop-table"><thead><tr>
+          <th>Factura</th><th>Proveedor</th><th>Productos</th><th>Kg pagables</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>${invoices.map(historyRow).join('')}</tbody></table></div>`
+          : `<div class="empty-cta"><p class="empty-state">Aún no hay facturas. Registra la primera con el formulario de arriba: proveedor, productos, pesadas, precio y listo.</p>
               <button type="button" class="btn-primary" id="go-new-purchase">Registrar primera compra</button></div>`}
         <p class="form-error" id="history-error" role="alert" hidden></p></div>
       <details class="panel" id="business-panel"><summary>Datos del negocio (salen en el comprobante)</summary>
@@ -284,8 +370,8 @@ export async function renderPurchases(container) {
 
     const state = freshState(productTypes);
     const root = container.querySelector('#stepper-root');
-    const steps = [stepSupplier, stepWeighings, stepPrice, stepConfirm];
-    const stepper = mountStepper(root, { steps, state, finishLabel: 'Registrar compra', onFinish: async (s) => { await api.createPurchase(toPayload(s)); await load(); } });
+    const steps = [stepSupplier, stepProducts, stepPayment, stepConfirm];
+    const stepper = mountStepper(root, { steps, state, finishLabel: 'Registrar compra', onFinish: async (s) => { await api.createInvoice(toPayload(s)); await load(); } });
     state.rerender = () => stepper.redraw();
 
     container.querySelector('#business-form').addEventListener('submit', async (e) => {
@@ -305,9 +391,9 @@ export async function renderPurchases(container) {
     if (goNew) goNew.addEventListener('click', () => { const i = root.querySelector('input'); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); if (i) i.focus({ preventScroll: true }); });
 
     container.querySelectorAll('[data-void]').forEach((btn) => btn.addEventListener('click', async () => {
-      const reason = await askReason({ title: 'Anular compra', message: 'La compra no se borra: queda anulada y registrada en la auditoría.', label: 'Motivo de la anulación', confirmLabel: 'Anular compra', danger: true });
+      const reason = await askReason({ title: 'Anular factura', message: 'La factura completa (todos sus productos) queda anulada y registrada en la auditoría; no se borra.', label: 'Motivo de la anulación', confirmLabel: 'Anular factura', danger: true });
       if (!reason) return;
-      try { await api.voidPurchase(btn.dataset.void, reason); await load(); }
+      try { await api.voidInvoice(btn.dataset.void, reason); await load(); }
       catch (err) { const e = container.querySelector('#history-error'); e.textContent = err.message; e.hidden = false; }
     }));
   }
