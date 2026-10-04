@@ -34,7 +34,7 @@ class CoffeeInventoryTab extends StatelessWidget {
             if (items.isEmpty)
               const Padding(
                 padding: EdgeInsets.only(top: 24),
-                child: Muted('Aún no hay lotes en inventario. Termina el secado de un lote y envíalo a inventario desde la web.'),
+                child: Muted('Aún no hay lotes en inventario. En la pestaña Lotes, termina el secado de un lote (o envíalo directo si no se seca) y pásalo a inventario.'),
               ),
             for (final i in items) ...[
               const SizedBox(height: 8),
