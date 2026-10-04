@@ -2,6 +2,8 @@ const express = require('express');
 const env = require('../config/env');
 const marketSummaryService = require('../services/marketSummaryService');
 const cooperativeService = require('../services/cooperativeService');
+const fncScraperService = require('../services/fncScraperService');
+const { toIso } = require('../utils/datetime');
 
 /**
  * Páginas públicas renderizadas en el servidor, pensadas para Google.
@@ -32,6 +34,12 @@ function slugify(text) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+/** Una carga son 125 kg de pergamino seco; la arroba, 12,5 kg; el saco de exportación, 70 kg. */
+function unitPrices(priceCopCarga) {
+  const kilo = priceCopCarga / 125;
+  return { carga: priceCopCarga, arroba: priceCopCarga / 10, kilo, saco: kilo * 70 };
 }
 
 function longDate(iso) {
@@ -133,6 +141,22 @@ function cooperativeRows(cooperatives) {
     .join('');
 }
 
+function faqFor(units) {
+  const priced = units
+    ? [
+        {
+          q: '¿Cuánto está la arroba de café hoy?',
+          a: `Con el precio de referencia de hoy, la arroba de café pergamino seco (12,5 kg) está en ${cop.format(units.arroba)}. Es la décima parte del precio de la carga de 125 kg.`,
+        },
+        {
+          q: '¿Cuánto vale el kilo de café hoy?',
+          a: `El kilo de café pergamino seco está hoy en ${cop.format(units.kilo)}, que resulta de dividir el precio de la carga (${cop.format(units.carga)}) entre 125.`,
+        },
+      ]
+    : [];
+  return [...priced, ...FAQ];
+}
+
 const FAQ = [
   {
     q: '¿Qué es el precio de referencia del café de la FNC?',
@@ -174,11 +198,62 @@ function marketBlock(summary, fnc) {
     </div>`;
 }
 
+function unitsTable(units) {
+  const row = (label, value) => `<tr><td>${label}</td><td class="tabular-nums"><strong>${cop.format(value)}</strong></td></tr>`;
+  return `
+    <section class="panel landing-panel">
+      <div class="panel-header"><h2>Precio del café hoy por carga, arroba y kilo</h2></div>
+      <div class="table-scroll">
+        <table class="coop-table">
+          <thead><tr><th>Unidad (café pergamino seco)</th><th>Precio hoy</th></tr></thead>
+          <tbody>
+            ${row('Carga (125 kg)', units.carga)}
+            ${row('Arroba (12,5 kg)', units.arroba)}
+            ${row('Kilo', units.kilo)}
+            ${row('Saco (70 kg)', units.saco)}
+          </tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
+/** Variación del precio FNC frente al último día con dato. Null si no hay día anterior. */
+function dailyChange(fnc) {
+  const previous = fncScraperService.getPreviousDay();
+  if (!fnc || !previous || !previous.price_cop_carga) return null;
+  const diff = fnc.priceCopCarga - previous.price_cop_carga;
+  return {
+    diff,
+    pct: (diff / previous.price_cop_carga) * 100,
+    previousPrice: previous.price_cop_carga,
+    previousDate: longDate(toIso(previous.scraped_at)),
+  };
+}
+
+function changeBlock(change) {
+  const verb = change.diff > 0 ? 'subió' : change.diff < 0 ? 'bajó' : 'se mantuvo igual';
+  const amount =
+    change.diff === 0
+      ? ''
+      : ` ${cop.format(Math.abs(change.diff))} (${change.pct >= 0 ? '+' : ''}${change.pct.toFixed(2)}%)`;
+  return `
+    <section class="panel landing-panel">
+      <div class="panel-header"><h2>¿Subió o bajó el precio del café hoy?</h2></div>
+      <p class="panel-intro">
+        El precio de la carga <strong>${verb}${amount}</strong> frente al ${escapeHtml(change.previousDate)},
+        cuando estaba en ${cop.format(change.previousPrice)}.
+      </p>
+    </section>`;
+}
+
 function renderPricePage({ region } = {}) {
   const summary = marketSummaryService.getMarketSummary();
   const comparison = cooperativeService.getComparison();
   const fnc = comparison.fncReference;
   const regions = regionsOf(comparison.cooperatives);
+  const units = fnc ? unitPrices(fnc.priceCopCarga) : null;
+  const change = dailyChange(fnc);
+  const faq = faqFor(units);
 
   const cooperatives = region
     ? comparison.cooperatives.filter((c) => c.region && slugify(c.region) === region.slug)
@@ -191,13 +266,15 @@ function renderPricePage({ region } = {}) {
   const best = cooperatives[0];
 
   const title = priceText
-    ? `Precio del café hoy en ${place}: ${priceText} la carga | AgroValor`
+    ? `Precio del café hoy en ${place}: ${priceText} la carga, ${cop.format(units.arroba)} la arroba | AgroValor`
     : `Precio del café hoy en ${place} | AgroValor`;
 
   const description = priceText
-    ? `Precio del café hoy en ${place}, ${dateText}: ${priceText} por carga de 125 kg según la FNC.${
+    ? `Precio del café hoy en ${place}, ${dateText}: ${priceText} la carga, ${cop.format(units.arroba)} la arroba y ${cop.format(
+        units.kilo
+      )} el kilo según la FNC.${
         best ? ` Mejor pago: ${best.name} con ${cop.format(best.estimatedPriceCopCarga)}.` : ''
-      } Bolsa de Nueva York y dólar, actualizado a diario.`
+      } Bolsa de Nueva York y dólar.`
     : `Precio del café hoy en ${place} por carga de 125 kg, cotización de Nueva York y qué cooperativa paga mejor.`;
 
   const regionLinks = regions.length
@@ -218,7 +295,8 @@ function renderPricePage({ region } = {}) {
         <h1>Precio del café hoy en ${escapeHtml(place)}</h1>
         <p class="hero-sub">
           Precio de referencia de la Federación Nacional de Cafeteros, cotización de la Bolsa de Nueva York,
-          dólar y ranking de cooperativas${region ? ` en ${escapeHtml(place)}` : ''}. Actualizado ${escapeHtml(dateText)}.
+          dólar y ranking de cooperativas${region ? ` en ${escapeHtml(place)}` : ''}. Actualizado el
+          <time datetime="${escapeHtml(fnc ? fnc.scrapedAt : new Date().toISOString())}">${escapeHtml(dateText)}</time>.
         </p>
         <div class="hero-price">
           ${
@@ -232,7 +310,14 @@ function renderPricePage({ region } = {}) {
         </div>
       </section>
 
-      ${marketBlock(summary, fnc)}
+      ${units ? unitsTable(units) : ''}
+
+      ${change ? changeBlock(change) : ''}
+
+      <section class="panel landing-panel">
+        <div class="panel-header"><h2>Bolsa de Nueva York y dólar hoy</h2></div>
+        ${marketBlock(summary, fnc)}
+      </section>
 
       <section class="panel landing-panel">
         <div class="panel-header"><h2>Qué cooperativa paga mejor el café hoy${region ? ` en ${escapeHtml(place)}` : ''}</h2></div>
@@ -249,11 +334,21 @@ function renderPricePage({ region } = {}) {
         <p class="disclaimer">${escapeHtml(comparison.disclaimer)}</p>
       </section>
 
+      <section class="panel landing-panel">
+        <div class="panel-header"><h2>Cómo se calcula el precio interno del café</h2></div>
+        <p class="panel-intro">
+          La Federación Nacional de Cafeteros toma el cierre del contrato de café en la Bolsa de Nueva York
+          (centavos de dólar por libra), lo convierte a pesos con la tasa de cambio del día y le suma la prima o
+          diferencial del café colombiano. El resultado es el precio base de compra por carga de 125 kg de
+          pergamino seco, que cada comprador ajusta según el factor de rendimiento y la humedad.
+        </p>
+      </section>
+
       ${regionLinks}
 
       <section class="panel landing-panel">
-        <div class="panel-header"><h2>Preguntas frecuentes</h2></div>
-        ${FAQ.map((f) => `<h3>${escapeHtml(f.q)}</h3><p class="panel-intro">${escapeHtml(f.a)}</p>`).join('')}
+        <div class="panel-header"><h2>Preguntas frecuentes sobre el precio del café</h2></div>
+        ${faq.map((f) => `<h3>${escapeHtml(f.q)}</h3><p class="panel-intro">${escapeHtml(f.a)}</p>`).join('')}
       </section>
     </main>`;
 
@@ -282,7 +377,7 @@ function renderPricePage({ region } = {}) {
     {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
-      mainEntity: FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+      mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
     },
   ];
 

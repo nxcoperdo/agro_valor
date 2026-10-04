@@ -15,4 +15,15 @@ function latest() {
     .get();
 }
 
-module.exports = { insert, latest };
+/** Último precio de un día anterior al del registro más reciente (para la variación diaria). */
+function previousDay() {
+  return db
+    .prepare(
+      `SELECT * FROM fnc_reference_prices
+        WHERE date(scraped_at) < (SELECT date(MAX(scraped_at)) FROM fnc_reference_prices)
+        ORDER BY scraped_at DESC, id DESC LIMIT 1`
+    )
+    .get();
+}
+
+module.exports = { insert, latest, previousDay };
