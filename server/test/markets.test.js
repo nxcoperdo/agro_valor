@@ -109,3 +109,12 @@ test('calculadora de cacao: ajustes por humedad, defecto, fermentación, descuen
 
   assert.throws(() => cocoaCalc.calculate({ iceCopPerKg: 0 }), (e) => e.status === 400);
 });
+
+test('histórico: cada vela diaria de Yahoo se guarda en 4 filas que el gráfico reconstruye (OHLC)', () => {
+  const { candlesToRows } = require('../services/priceHistoryBackfillService');
+  const rows = candlesToRows([1759723200], { open: [10], high: [14], low: [9], close: [12] });
+  assert.deepEqual(rows.map((r) => r.price), [10, 9, 14, 12]); // apertura, mínimo, máximo, cierre
+  assert.equal(new Set(rows.map((r) => r.at.slice(0, 10))).size, 1); // todas el mismo día
+  assert.deepEqual(rows, [...rows].sort((a, b) => a.at.localeCompare(b.at)));
+  assert.equal(candlesToRows([1], { open: [null], high: [1], low: [1], close: [1] }).length, 0);
+});

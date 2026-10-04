@@ -4,6 +4,7 @@ const coffeePriceService = require('../services/coffeePriceService');
 const exchangeRateService = require('../services/exchangeRateService');
 const fncScraperService = require('../services/fncScraperService');
 const cocoaReferenceService = require('../services/cocoaReferenceService');
+const priceHistoryBackfillService = require('../services/priceHistoryBackfillService');
 const forecastService = require('../services/forecastService');
 const alertService = require('../services/alertService');
 const mercadoPagoBillingService = require('../services/mercadoPagoBillingService');
@@ -42,6 +43,8 @@ async function runOnStartup() {
   }
 
   await cocoaReferenceService.refresh();
+  // Un mercado nuevo arranca sin histórico: se completa una vez para que la gráfica no salga vacía.
+  await priceHistoryBackfillService.backfill('cocoa');
 
   try {
     await forecastService.recomputeAllMarkets();
