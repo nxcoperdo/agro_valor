@@ -46,4 +46,8 @@ function getLatest() {
   return fncReferenceRepository.latest();
 }
 
-module.exports = { refresh, getLatest, extractPriceFromHtml };
+function getPreviousDay() {
+  return fncReferenceRepository.previousDay();
+}
+
+module.exports = { refresh, getLatest, getPreviousDay, extractPriceFromHtml };

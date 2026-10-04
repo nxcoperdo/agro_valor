@@ -92,10 +92,10 @@ export async function renderLanding(root) {
       </header>
 
       <section class="hero">
-        <h1>¿Cuánto puede valer tu café mañana?</h1>
+        <h1>Precio del café hoy y qué cooperativa paga mejor</h1>
         <p class="hero-sub">
-          Consulta el mercado, compara cuánto paga cada cooperativa y calcula
-          cuánta plata te queda realmente a ti. Mercados que mueven el campo.
+          ¿Cuánto puede valer tu café mañana? Consulta el mercado, compara cuánto paga cada cooperativa y calcula
+          cuánta plata te queda realmente a ti. <a href="/precio-cafe-hoy">Ver el precio del café hoy por carga, arroba y kilo</a>.
         </p>
         <div class="hero-price" id="hero-price">
           <span class="skeleton" style="width: 260px; height: 3rem;"></span>
@@ -128,7 +128,7 @@ export async function renderLanding(root) {
       </section>
 
       <section class="panel landing-panel">
-        <div class="panel-header"><h2>Quién está pagando mejor hoy</h2></div>
+        <div class="panel-header"><h2>Qué cooperativa paga mejor el café hoy</h2></div>
         <div class="table-scroll">
           <table class="coop-table">
             <thead>
