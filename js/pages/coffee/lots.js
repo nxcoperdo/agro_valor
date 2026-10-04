@@ -31,7 +31,7 @@ export async function renderLots(container) {
       <div class="panel"><div class="panel-header"><h2>Crear lote</h2></div>
         ${free.length ? `<form id="lot-form"><div class="pick-grid">${free.map((p) => `
           <label class="pick-check"><input type="checkbox" name="purchase" value="${p.id}" />
-            <span><strong>${escapeHtml(p.code)}</strong> · ${escapeHtml(p.supplier.name)}<br /><small>${formatKg(p.pesoPagable)} pagables · ${formatCopValue(p.totalCompra)}</small></span></label>`).join('')}</div>
+            <span><strong>${escapeHtml(p.code)}</strong> · ${escapeHtml(p.supplier.name)}<br /><small>${escapeHtml(p.productLabel || '')} · ${formatKg(p.pesoPagable)} pagables · ${formatCopValue(p.totalCompra)}${p.requiresDrying === false ? ' · sin secado' : ''}</small></span></label>`).join('')}</div>
           <div class="field"><label for="lot-notes">Observaciones</label><input id="lot-notes" name="notes" /></div>
           <button type="submit" class="btn-primary">Crear lote</button></form>`
           : '<p class="empty-state">No hay compras activas sin lote.</p>'}

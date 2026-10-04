@@ -8,20 +8,26 @@ const row = (k, v, strong) => `<div class="rc-row ${strong ? 'is-strong' : ''}">
 /** Comprobante imprimible del proveedor. Solo muestra lo que devuelve /receipt (sin datos internos). */
 export async function renderReceipt(container) {
   const params = new URLSearchParams((window.location.hash.split('?')[1]) || '');
+  const invoiceId = params.get('factura');
   const id = params.get('id');
   container.innerHTML = '<div class="panel"><span class="skeleton" style="width:100%;height:160px;"></span></div>';
   let r;
   try {
-    r = await api.receipt(id);
+    r = invoiceId ? await api.invoiceReceipt(invoiceId) : await api.receipt(id);
   } catch (err) {
     container.innerHTML = `<div class="panel"><p class="panel-error">${escapeHtml(err.message)}</p><a class="btn-ghost" href="#/compras">Volver</a></div>`;
     return;
   }
+  // Una compra individual se ve como una factura de un solo producto.
+  const lines = invoiceId ? r.lines : [r];
+  const totals = invoiceId ? r.totals : { productos: 1, pesoPagable: r.pesoPagable, totalCompra: r.totalCompra };
+  const pdfUrl = invoiceId ? `/api/coffee/invoices/${Number(invoiceId)}/receipt.pdf` : `/api/coffee/purchases/${Number(id)}/receipt.pdf`;
+
   container.innerHTML = `
     <div class="rc-actions">
       <a class="btn-ghost" href="#/compras">← Compras</a>
       <button type="button" class="btn-ghost" id="rc-print">Imprimir</button>
-      <a class="btn-primary" href="/api/coffee/purchases/${Number(id)}/receipt.pdf?download=1">Descargar PDF</a>
+      <a class="btn-primary" href="${pdfUrl}?download=1">Descargar PDF</a>
     </div>
     <article class="panel receipt" aria-label="Comprobante ${escapeHtml(r.code)}">
       <header class="rc-head"><div><h2>${escapeHtml(r.business.name)}</h2>
@@ -30,16 +36,18 @@ export async function renderReceipt(container) {
       ${row('Proveedor', escapeHtml(r.supplier.name))}
       ${row('Identificación', `${escapeHtml(r.supplier.idType)} ${escapeHtml(r.supplier.idNumber)}`)}
       ${row('Fecha y hora', formatDateTime(r.purchasedAt))}
-      ${row('Tipo de producto', escapeHtml(r.productLabel || r.coffeeType))}
-      <h3>Pesadas</h3>
-      ${r.weighings.map((w, i) => row(`Pesada ${i + 1} · ${formatDateTime(w.at)}`, formatKg(w.pesoKg))).join('')}
+      ${lines.map((l, i) => `
+        <h3>${lines.length > 1 ? `${i + 1}. ` : ''}${escapeHtml(l.productLabel || l.coffeeType)}</h3>
+        ${l.weighings.map((w, j) => row(`Pesada ${j + 1} · ${formatDateTime(w.at)}`, formatKg(w.pesoKg))).join('')}
+        ${row('Kg recibidos', formatKg(l.pesoTotalCompra))}
+        ${row(`Merma (${formatPct(l.porcentajeMermaInicial)})`, formatKg(l.kgDescontados))}
+        ${row('Kg pagables', formatKg(l.pesoPagable), true)}
+        ${row('Precio por carga (125 kg)', formatCopValue(l.precioCarga))}
+        ${row('Precio por kg', formatCopValue(l.precioKg))}
+        ${lines.length > 1 ? row('Subtotal', formatCopValue(l.totalCompra), true) : ''}`).join('<hr />')}
       <hr />
-      ${row('Kg recibidos', formatKg(r.pesoTotalCompra))}
-      ${row(`Merma (${formatPct(r.porcentajeMermaInicial)})`, formatKg(r.kgDescontados))}
-      ${row('Kg pagables', formatKg(r.pesoPagable), true)}
-      ${row('Precio por carga (125 kg)', formatCopValue(r.precioCarga))}
-      ${row('Precio por kg', formatCopValue(r.precioKg))}
-      ${row('TOTAL PAGADO', formatCopValue(r.totalCompra), true)}
+      ${lines.length > 1 ? row('Kg pagables (total)', formatKg(totals.pesoPagable), true) : ''}
+      ${row('TOTAL PAGADO', formatCopValue(totals.totalCompra), true)}
       ${row('Forma de pago', escapeHtml(PAYMENTS[r.paymentMethod] || r.paymentMethod))}
       ${r.paymentReference ? row('Referencia', escapeHtml(r.paymentReference)) : ''}
       ${r.notes ? row('Observaciones', escapeHtml(r.notes)) : ''}
