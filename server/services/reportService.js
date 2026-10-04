@@ -34,7 +34,7 @@ const LOCAL_DATE = "date(datetime(p.purchased_at, '-5 hours'))";
 /** Agrupa las compras ACTIVAS del periodo por una expresión SQL. */
 function purchasesBy(businessId, { from, to }, groupExpr, labelExpr = groupExpr, extraJoin = '') {
   return db.prepare(
-    `SELECT ${labelExpr} AS label, COUNT(*) AS compras, COALESCE(SUM(p.peso_total_kg), 0) AS kg_recibidos,
+    `SELECT ${labelExpr} AS label, COUNT(DISTINCT COALESCE(p.invoice_id, -p.id)) AS compras, COALESCE(SUM(p.peso_total_kg), 0) AS kg_recibidos,
             COALESCE(SUM(p.peso_pagable_kg), 0) AS kg_pagables, COALESCE(SUM(p.total_compra), 0) AS total_pagado,
             COALESCE(AVG(p.precio_carga), 0) AS precio_carga_promedio,
             COALESCE(SUM(p.kg_descontados), 0) AS kg_descontados

@@ -2,6 +2,7 @@ const db = require('../db/connection');
 const coffeeMath = require('../domain/coffeeMath');
 const productTypes = require('../domain/productTypes');
 const purchaseRepository = require('../repositories/purchaseRepository');
+const invoiceRepository = require('../repositories/invoiceRepository');
 const supplierService = require('./supplierService');
 const workdayService = require('./workdayService');
 const sequenceService = require('./sequenceService');
@@ -19,6 +20,7 @@ function serialize(row, weighings) {
     code: row.code,
     receiptCode: row.receipt_code,
     status: row.status,
+    invoiceId: row.invoice_id,
     purchasedAt: toIso(row.purchased_at),
     supplier: {
       id: row.supplier_id,
@@ -26,6 +28,10 @@ function serialize(row, weighings) {
       idType: row.supplier_id_type,
       idNumber: row.supplier_id_number,
       phone: row.supplier_phone,
+      legalName: row.supplier_legal_name,
+      address: row.supplier_address,
+      municipality: row.supplier_municipality,
+      notes: row.supplier_notes,
     },
     workdayId: row.workday_id,
     lot: row.lot_id ? { id: row.lot_id, code: row.lot_code } : null,
@@ -61,30 +67,31 @@ function parseWeighings(input) {
   });
 }
 
-function create(ctx, body) {
+/**
+ * Valida y calcula UNA línea (un producto) de una factura. No escribe nada: así una factura con una
+ * línea inválida falla entera antes de tocar la base.
+ */
+function buildLine(item) {
   // La app móvil instalada sigue mandando coffeeType; la web nueva manda productType (mismo valor).
-  const coffeeType = body.productType || body.coffeeType || 'cafe_verde';
+  const coffeeType = item.productType || item.coffeeType || 'cafe_verde';
   if (!productTypes.isValid(coffeeType)) throw fail('Tipo de producto inválido');
-  const paymentMethod = body.paymentMethod || 'efectivo';
-  if (!PAYMENT_METHODS.includes(paymentMethod)) throw fail('Forma de pago inválida');
 
-  const pesadas = parseWeighings(body.weighings);
+  const pesadas = parseWeighings(item.weighings);
   const mermaPct =
-    body.porcentajeMermaInicial != null && body.porcentajeMermaInicial !== ''
-      ? parseFloat(body.porcentajeMermaInicial)
+    item.porcentajeMermaInicial != null && item.porcentajeMermaInicial !== ''
+      ? parseFloat(item.porcentajeMermaInicial)
       : coffeeMath.mermaPorDefecto(coffeeType);
   // El precio se define por carga (125 kg) o directamente por kilo; si llegan los dos manda el de kilo.
-  const hasKg = body.precioKg != null && body.precioKg !== '';
-  const precioKgIn = hasKg ? parseFloat(body.precioKg) : null;
+  const hasKg = item.precioKg != null && item.precioKg !== '';
+  const precioKgIn = hasKg ? parseFloat(item.precioKg) : null;
   if (hasKg && (!Number.isFinite(precioKgIn) || precioKgIn <= 0)) throw fail('El precio por kilo debe ser mayor a cero');
-  const precioCargaIn = hasKg ? precioKgIn * coffeeMath.CARGA_KG : parseFloat(body.precioCarga);
-  if (!hasKg && (!Number.isFinite(precioCargaIn) || precioCargaIn <= 0)) throw fail('El precio por carga debe ser mayor a cero');
-  const precioCarga = precioCargaIn;
+  const precioCarga = hasKg ? precioKgIn * coffeeMath.CARGA_KG : parseFloat(item.precioCarga);
+  if (!hasKg && (!Number.isFinite(precioCarga) || precioCarga <= 0)) throw fail('El precio por carga debe ser mayor a cero');
 
   const requiresDrying =
-    body.requiresDrying == null || body.requiresDrying === ''
+    item.requiresDrying == null || item.requiresDrying === ''
       ? productTypes.get(coffeeType).requiresDryingDefault
-      : body.requiresDrying === true || body.requiresDrying === 1 || body.requiresDrying === 'true' || body.requiresDrying === '1';
+      : item.requiresDrying === true || item.requiresDrying === 1 || item.requiresDrying === 'true' || item.requiresDrying === '1';
 
   const calc = coffeeMath.calcularCompra({
     pesadasKg: pesadas.map((p) => p.pesoKg),
@@ -92,37 +99,46 @@ function create(ctx, body) {
     precioCarga,
     precioKg: hasKg ? precioKgIn : null,
   });
+  return { coffeeType, pesadas, mermaPct, precioCarga, requiresDrying, calc };
+}
 
-  const id = db.transaction(() => {
-    const supplier = supplierService.resolveForPurchase(ctx, body);
-    const code = sequenceService.nextYearlyCode(ctx.businessId, 'compra');
-    const purchaseId = purchaseRepository.insert({
-      businessId: ctx.businessId,
-      code,
-      supplierId: supplier.id,
-      workdayId: workdayService.resolveForPurchase(ctx, body.workdayId),
-      coffeeType,
-      mermaPct,
-      pesoTotal: calc.pesoTotalCompra,
-      kgDescontados: calc.kgDescontados,
-      pesoPagable: calc.pesoPagable,
-      precioCarga: coffeeMath.roundCop(precioCarga),
-      precioKg: calc.precioKg,
-      totalCompra: calc.totalCompra,
-      paymentMethod,
-      paymentReference: clean(body.paymentReference),
-      notes: clean(body.notes),
-      userId: ctx.userId,
-      requiresDrying,
-    });
-    pesadas.forEach((p) => purchaseRepository.insertWeighing(purchaseId, { ...p, userId: ctx.userId }));
-    auditService.log({
-      businessId: ctx.businessId, userId: ctx.userId, action: 'CREAR', entity: 'purchase', entityId: purchaseId,
-      changes: { code, totalCompra: calc.totalCompra, pesoPagable: calc.pesoPagable },
-    });
-    return purchaseId;
-  })();
-  return get(ctx, id);
+/** Escribe una línea ya validada. `shared` trae lo común de la factura (proveedor, jornada, pago, factura). */
+function insertLine(ctx, shared, line, code) {
+  const purchaseId = purchaseRepository.insert({
+    businessId: ctx.businessId,
+    code,
+    supplierId: shared.supplierId,
+    workdayId: shared.workdayId,
+    coffeeType: line.coffeeType,
+    mermaPct: line.mermaPct,
+    pesoTotal: line.calc.pesoTotalCompra,
+    kgDescontados: line.calc.kgDescontados,
+    pesoPagable: line.calc.pesoPagable,
+    precioCarga: coffeeMath.roundCop(line.precioCarga),
+    precioKg: line.calc.precioKg,
+    totalCompra: line.calc.totalCompra,
+    paymentMethod: shared.paymentMethod,
+    paymentReference: shared.paymentReference,
+    notes: shared.notes,
+    userId: ctx.userId,
+    requiresDrying: line.requiresDrying,
+    invoiceId: shared.invoiceId,
+  });
+  line.pesadas.forEach((p) => purchaseRepository.insertWeighing(purchaseId, { ...p, userId: ctx.userId }));
+  auditService.log({
+    businessId: ctx.businessId, userId: ctx.userId, action: 'CREAR', entity: 'purchase', entityId: purchaseId,
+    changes: { code, totalCompra: line.calc.totalCompra, pesoPagable: line.calc.pesoPagable },
+  });
+  return purchaseId;
+}
+
+/**
+ * Compra de un solo producto (contrato de siempre: lo usa la app instalada). Internamente es una
+ * factura de una línea; devuelve la compra, no la factura.
+ */
+function create(ctx, body) {
+  const invoice = require('./invoiceService').create(ctx, { ...body, items: [body] });
+  return get(ctx, invoice.lines[0].id);
 }
 
 /** Cambia si la compra pasa por secado. No se puede una vez su lote ya terminó el secado o entró a inventario. */
@@ -168,7 +184,14 @@ function voidPurchase(ctx, id, reason) {
   if (!row) throw fail('Compra no encontrada', 404);
   if (row.status === 'ANULADA') throw fail('La compra ya está anulada', 409);
   if (row.lot_id) throw fail(`La compra pertenece al lote ${row.lot_code}; sácala del lote antes de anularla`, 409);
-  purchaseRepository.markVoid(ctx.businessId, row.id, { reason: motivo, userId: ctx.userId });
+  // Una factura de varios productos se anula completa (POST /invoices/:id/void).
+  if (row.invoice_id && invoiceRepository.lineCount(row.invoice_id) > 1) {
+    throw fail('Esta compra es parte de una factura con varios productos: anula la factura completa', 409);
+  }
+  db.transaction(() => {
+    purchaseRepository.markVoid(ctx.businessId, row.id, { reason: motivo, userId: ctx.userId });
+    if (row.invoice_id) invoiceRepository.markVoid(ctx.businessId, row.invoice_id, { reason: motivo, userId: ctx.userId });
+  })();
   auditService.log({
     businessId: ctx.businessId, userId: ctx.userId, action: 'ANULAR', entity: 'purchase', entityId: row.id,
     changes: { motivo, code: row.code },
@@ -176,4 +199,4 @@ function voidPurchase(ctx, id, reason) {
   return get(ctx, row.id);
 }
 
-module.exports = { create, get, list, voidPurchase, setRequiresDrying, PAYMENT_METHODS };
+module.exports = { create, buildLine, insertLine, get, list, voidPurchase, setRequiresDrying, PAYMENT_METHODS, clean, fail };

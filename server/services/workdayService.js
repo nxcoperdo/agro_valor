@@ -11,6 +11,7 @@ const fail = (msg, status = 400) => Object.assign(new Error(msg), { status });
 function serializeSummary(s, role) {
   const out = {
     compras: s.compras,
+    productos: s.productos,
     proveedores: s.proveedores,
     pesadas: s.pesadas,
     kgRecibidos: coffeeMath.roundKg(s.kg_recibidos),
