@@ -122,6 +122,11 @@ class ApiClient {
   Future<Json> coffeePurchases({bool onlyWithoutLot = false}) async =>
       await _request('GET', '/coffee/purchases${onlyWithoutLot ? '?noLot=1&status=ACTIVA' : ''}') as Json;
   Future<Json> coffeeCreatePurchase(Json payload) async => await _request('POST', '/coffee/purchases', payload) as Json;
+  Future<Json> coffeeInvoices() async => await _request('GET', '/coffee/invoices') as Json;
+  Future<Json> coffeeInvoice(int id) async => await _request('GET', '/coffee/invoices/$id') as Json;
+  Future<Json> coffeeCreateInvoice(Json payload) async => await _request('POST', '/coffee/invoices', payload) as Json;
+  Future<Json> coffeeVoidInvoice(int id, String reason) async =>
+      await _request('POST', '/coffee/invoices/$id/void', {'reason': reason}) as Json;
   Future<Json> coffeeVoidPurchase(int id, String reason) async =>
       await _request('POST', '/coffee/purchases/$id/void', {'reason': reason}) as Json;
   Future<Json> coffeeProductTypes() async => await _request('GET', '/coffee/product-types') as Json;
