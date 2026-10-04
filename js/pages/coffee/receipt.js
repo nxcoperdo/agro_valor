@@ -1,7 +1,6 @@
 import { api } from '../../services/api.js';
 import { escapeHtml, formatKg, formatCopValue, formatPct, formatDateTime } from '../../utils/format.js';
 
-const COFFEE_TYPES = { cafe_verde: 'Café verde', cafe_merma_5: 'Café con merma 5%', cafe_sin_merma: 'Café sin merma', otro: 'Otro' };
 const PAYMENTS = { efectivo: 'Efectivo', transferencia: 'Transferencia', credito: 'Crédito', otro: 'Otro' };
 
 const row = (k, v, strong) => `<div class="rc-row ${strong ? 'is-strong' : ''}"><span>${k}</span><span class="tabular-nums">${v ?? '—'}</span></div>`;
@@ -31,7 +30,7 @@ export async function renderReceipt(container) {
       ${row('Proveedor', escapeHtml(r.supplier.name))}
       ${row('Identificación', `${escapeHtml(r.supplier.idType)} ${escapeHtml(r.supplier.idNumber)}`)}
       ${row('Fecha y hora', formatDateTime(r.purchasedAt))}
-      ${row('Tipo de café', escapeHtml(COFFEE_TYPES[r.coffeeType] || r.coffeeType))}
+      ${row('Tipo de producto', escapeHtml(r.productLabel || r.coffeeType))}
       <h3>Pesadas</h3>
       ${r.weighings.map((w, i) => row(`Pesada ${i + 1} · ${formatDateTime(w.at)}`, formatKg(w.pesoKg))).join('')}
       <hr />

@@ -32,6 +32,12 @@ const env = {
   forecastRefreshCron: process.env.FORECAST_REFRESH_CRON || '0 15 * * *',
 
   fncSourceUrl: process.env.FNC_SOURCE_URL || 'https://federaciondecafeteros.org/estadisticas-cafeteras/',
+  // Precio de referencia semanal del cacao (Agronet, Ministerio de Agricultura). La fuente cambia
+  // una vez por semana; se consulta a diario para recogerla apenas la publican.
+  cocoaReferenceUrl:
+    process.env.COCOA_REFERENCE_URL ||
+    'https://agronet.gov.co/noticias/precio-de-referencia-semanal-de-compra-de-cacao-fuente-industria-nacional-exportadores-0',
+  cocoaReferenceCron: process.env.COCOA_REFERENCE_CRON || '0 9 * * *',
   fncFallbackCopCarga: process.env.FNC_FALLBACK_COP_CARGA ? parseFloat(process.env.FNC_FALLBACK_COP_CARGA) : null,
   // Token compartido con el workflow de GitHub Actions que scrapea la FNC desde afuera
   // del VPS y empuja el precio al endpoint POST /api/internal/fnc-price.

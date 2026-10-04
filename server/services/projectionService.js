@@ -61,14 +61,24 @@ function get(ctx, purchaseId) {
   permissionService.assert(ctx.role, 'ver_costos');
   const p = purchaseService.get(ctx, purchaseId);
   const saved =
-    load(p.id) || { rendimientoSecadoPct: coffeeMath.RENDIMIENTO_SECADO_DEFECTO, destareKg: 0, costos: [], precioVentaCarga: null };
-  return { guardada: Boolean(load(p.id)), ...stripMargins(ctx.role, compute(p, saved)) };
+    load(p.id) || { rendimientoSecadoPct: coffeeMath.rendimientoPorDefecto(p.requiresDrying), destareKg: 0, costos: [], precioVentaCarga: null };
+  return { requiresDrying: p.requiresDrying, guardada: Boolean(load(p.id)), ...stripMargins(ctx.role, compute(p, saved)) };
 }
 
 function save(ctx, purchaseId, input) {
   permissionService.assert(ctx.role, 'gestionar_costos');
   const p = purchaseService.get(ctx, purchaseId);
-  const rendimiento = input.rendimientoSecadoPct == null || input.rendimientoSecadoPct === '' ? coffeeMath.RENDIMIENTO_SECADO_DEFECTO : parseFloat(input.rendimientoSecadoPct);
+  // El interruptor '¿Requiere secado?' vive en la compra: si se apaga, el rendimiento es 100 % fijo.
+  let requiresDrying = p.requiresDrying;
+  if (input.requiereSecado != null && input.requiereSecado !== '') {
+    requiresDrying = input.requiereSecado === true || input.requiereSecado === 'true' || input.requiereSecado === 1;
+    if (requiresDrying !== p.requiresDrying) purchaseService.setRequiresDrying(ctx, p.id, requiresDrying);
+  }
+  const rendimiento = !requiresDrying
+    ? coffeeMath.RENDIMIENTO_SIN_SECADO
+    : input.rendimientoSecadoPct == null || input.rendimientoSecadoPct === ''
+      ? coffeeMath.rendimientoPorDefecto(true)
+      : parseFloat(input.rendimientoSecadoPct);
   const destare = input.destareKg == null || input.destareKg === '' ? 0 : parseFloat(input.destareKg);
   const precioVentaCarga = input.precioVentaCarga == null || input.precioVentaCarga === '' ? null : parseFloat(input.precioVentaCarga);
   if (!Number.isFinite(rendimiento) || rendimiento <= 0 || rendimiento > 100) throw fail('El rendimiento de secado debe estar entre 0 y 100');

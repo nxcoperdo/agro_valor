@@ -1,9 +1,13 @@
 const db = require('../db/connection');
 
-function create({ userId, type, thresholdCopCarga = null }) {
+/**
+ * threshold_cop_carga guarda el umbral en la unidad del mercado: COP por carga en café y
+ * COP por kilo en cacao (el nombre de la columna es histórico).
+ */
+function create({ userId, type, thresholdCopCarga = null, market = 'coffee' }) {
   const info = db
-    .prepare('INSERT INTO alerts (user_id, type, threshold_cop_carga) VALUES (?, ?, ?)')
-    .run(userId, type, thresholdCopCarga);
+    .prepare('INSERT INTO alerts (user_id, type, threshold_cop_carga, market) VALUES (?, ?, ?, ?)')
+    .run(userId, type, thresholdCopCarga, market);
   return findById(info.lastInsertRowid);
 }
 
@@ -30,7 +34,7 @@ function setActive(id, userId, active) {
  * Solo trae las que tienen al menos un canal por donde llegar: WhatsApp con número
  * guardado o la app con un teléfono registrado.
  */
-function findActiveByTypes(types) {
+function findActiveByTypes(types, market = 'coffee') {
   const placeholders = types.map(() => '?').join(',');
   return db
     .prepare(
@@ -39,13 +43,14 @@ function findActiveByTypes(types) {
        FROM alerts a
        JOIN users u ON u.id = a.user_id
        WHERE a.active = 1
+         AND a.market = ?
          AND a.type IN (${placeholders})
          AND (
            (u.notify_whatsapp = 1 AND u.phone IS NOT NULL AND u.phone <> '')
            OR (u.notify_push = 1 AND EXISTS (SELECT 1 FROM push_devices d WHERE d.user_id = u.id))
          )`
     )
-    .all(...types);
+    .all(market, ...types);
 }
 
 function markTriggered(id) {

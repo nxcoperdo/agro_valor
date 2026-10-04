@@ -1,12 +1,13 @@
 /**
- * Pestañas de la sección Calculadora: precio neto, calculadora rápida y todo el módulo de café.
+ * Pestañas de la sección Calculadora: precio neto, calculadora rápida, cacao y todo el módulo de café.
  * Las rutas de detalle (una compra, un lote, un comprobante…) resaltan la pestaña de su lista.
  */
 export const CALC_TABS = [
   { hash: '#/calculadora', label: 'Precio neto' },
   { hash: '#/calculadora-rapida', label: 'Cuánto vale mi café' },
+  { hash: '#/calculadora-cacao', label: '🍫 Cacao' },
   { hash: '#/panel-cafe', label: 'Resumen' },
-  { hash: '#/compras', label: 'Comprar café' },
+  { hash: '#/compras', label: 'Compra de producto' },
   { hash: '#/lotes', label: 'Lotes' },
   { hash: '#/inventario', label: 'Inventario' },
   { hash: '#/ventas-cafe', label: 'Ventas de café' },

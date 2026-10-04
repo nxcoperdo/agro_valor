@@ -3,11 +3,13 @@ const cooperativeService = require('./cooperativeService');
 const forecastService = require('./forecastService');
 const exchangeRateService = require('./exchangeRateService');
 const coffeePriceService = require('./coffeePriceService');
+const cocoaReferenceService = require('./cocoaReferenceService');
 const whatsappService = require('./whatsappService');
 const pushService = require('./pushService');
 const pushDeviceRepository = require('../repositories/pushDeviceRepository');
 const subscriptionService = require('./subscriptionService');
 const env = require('../config/env');
+const { getMarket, cocoaUsdPerTonneToCopKg } = require('../config/markets');
 const { toEpoch } = require('../utils/datetime');
 const logger = require('../utils/logger');
 
@@ -196,13 +198,15 @@ async function sendOnChannels({ alertId = null, userId, phone, channels, built }
 }
 
 async function deliver(alert, built) {
-  const channels = channelsFor({
+  const allChannels = channelsFor({
     userId: alert.user_id,
     phone: alert.phone,
     notifyWhatsapp: Boolean(alert.notify_whatsapp),
     notifyPush: Boolean(alert.notify_push),
     deviceCount: alert.device_count,
   });
+  // Las plantillas de WhatsApp aprobadas en Meta son de café: el cacao avisa solo por la app.
+  const channels = built.pushOnly ? allChannels.filter((c) => c === 'push') : allChannels;
 
   const result = await sendOnChannels({ alertId: alert.id, userId: alert.user_id, phone: alert.phone, channels, built });
 
@@ -226,8 +230,65 @@ function inCooldown(alert) {
   return Date.now() - toEpoch(alert.last_triggered_at) < COOLDOWN_MS;
 }
 
+/**
+ * Cacao: el precio de referencia es el semanal de Agronet (lo mismo que ve el usuario en el
+ * panel). Si todavía no hay dato de Agronet, se usa la cotización ICE convertida con la TRM.
+ */
+function buildCocoaSnapshot() {
+  const reference = cocoaReferenceService.getLatest();
+  if (reference && !reference.isStale) return { referencePrice: reference.priceCopKg, source: 'agronet' };
+
+  const price = coffeePriceService.getCurrentPrice('cocoa');
+  const rate = exchangeRateService.getCurrentRate();
+  if (!price || !rate) return null;
+  return { referencePrice: cocoaUsdPerTonneToCopKg(price.price, rate.rate), source: 'ice' };
+}
+
+function buildCocoaThresholdMessage(alert, snapshot) {
+  const direction = alert.type === 'above' ? 'subió por encima de' : 'bajó por debajo de';
+  const threshold = formatCop(alert.threshold_cop_carga);
+  const now = formatCop(snapshot.referencePrice);
+  return {
+    pushOnly: true,
+    text: `Se cumplió tu alerta de cacao: el precio ${direction} ${threshold} por kilo. Referencia hoy: ${now} por kilo.`,
+    push: {
+      title: `🍫 El cacao ${alert.type === 'above' ? 'subió' : 'bajó'} de ${threshold}/kg`,
+      body:
+        snapshot.source === 'agronet'
+          ? `Referencia semanal de la industria (Agronet): ${now} por kilo.`
+          : `Referencia internacional hoy: ${now} por kilo (ICE convertido con la TRM).`,
+    },
+  };
+}
+
+async function evaluateCocoaAlerts() {
+  const snapshot = buildCocoaSnapshot();
+  if (!snapshot) return { evaluated: 0, sent: 0 };
+
+  const alerts = alertRepository.findActiveByTypes(['above', 'below'], getMarket('cocoa').id);
+  let sent = 0;
+
+  for (const alert of alerts) {
+    if (!isEligible(alert) || inCooldown(alert)) continue;
+    const crossed =
+      alert.type === 'above'
+        ? snapshot.referencePrice >= alert.threshold_cop_carga
+        : snapshot.referencePrice <= alert.threshold_cop_carga;
+    if (!crossed) continue;
+
+    const result = await deliver(alert, buildCocoaThresholdMessage(alert, snapshot));
+    if (result.status === 'sent') sent += 1;
+  }
+
+  if (sent > 0) logger.info(`Alertas de cacao enviadas: ${sent}`);
+  return { evaluated: alerts.length, sent };
+}
+
 /** Revisa las alertas de umbral contra el precio actual. La corre el cron de precios. */
 async function evaluateThresholdAlerts() {
+  // El cacao se evalúa aparte: que falle no debe frenar las alertas de café.
+  evaluateCocoaAlerts().catch((err) => logger.error('Alertas de cacao:', err));
+
   const snapshot = buildMarketSnapshot();
   if (!snapshot) return { evaluated: 0, sent: 0 };
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../format.dart';
+import '../markets.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -58,7 +59,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
   }
 
   Future<void> _newAlert() async {
-    final created = await showFormSheet<bool>(context, title: 'Nueva alerta', child: _NewAlertForm(api: _api));
+    final created = await showFormSheet<bool>(context, title: 'Nueva alerta', child: _NewAlertForm(api: _api, initialMarket: widget.session.market));
     if (created == true) {
       if (mounted) showMessage(context, 'Alerta creada. Te avisaremos apenas se cumpla.');
       _reload();
@@ -181,8 +182,15 @@ class _AlertTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_typeLabels[alert['type']] ?? '${alert['type']}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  if (threshold != null) Text('${formatCop(threshold)} por carga', style: mono(size: 13)),
+                  Text(
+                    '${marketById(alert['market'] as String?).emoji} ${_typeLabels[alert['type']] ?? '${alert['type']}'}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  if (threshold != null)
+                    Text(
+                      '${formatCop(threshold)} por ${marketById(alert['market'] as String?).thresholdUnit}',
+                      style: mono(size: 13),
+                    ),
                   Muted(last != null ? 'Último aviso ${timeAgo(last)}' : 'Todavía no se ha disparado', size: 12),
                 ],
               ),
@@ -244,9 +252,10 @@ class _DeliveryTile extends StatelessWidget {
 }
 
 class _NewAlertForm extends StatefulWidget {
-  const _NewAlertForm({required this.api});
+  const _NewAlertForm({required this.api, required this.initialMarket});
 
   final ApiClient api;
+  final String initialMarket;
 
   @override
   State<_NewAlertForm> createState() => _NewAlertFormState();
@@ -256,7 +265,10 @@ class _NewAlertFormState extends State<_NewAlertForm> {
   final _form = GlobalKey<FormState>();
   final _threshold = TextEditingController();
   String _type = 'above';
+  late String _market = widget.initialMarket;
   bool _busy = false;
+
+  bool get _isCocoa => _market == 'cocoa';
 
   bool get _needsThreshold => _type == 'above' || _type == 'below';
 
@@ -271,6 +283,7 @@ class _NewAlertFormState extends State<_NewAlertForm> {
     setState(() => _busy = true);
     try {
       await widget.api.createAlert({
+        'market': _market,
         'type': _type,
         if (_needsThreshold) 'thresholdCopCarga': parseCop(_threshold.text),
       });
@@ -289,12 +302,23 @@ class _NewAlertFormState extends State<_NewAlertForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          DropdownButtonFormField<String>(
+            initialValue: _market,
+            decoration: const InputDecoration(labelText: 'Mercado'),
+            items: [for (final m in kMarkets) DropdownMenuItem(value: m.id, child: Text('${m.emoji} ${m.name}'))],
+            onChanged: (id) => setState(() {
+              _market = id ?? _market;
+              // Cacao solo tiene alertas de precio (sube/baja), no resúmenes.
+              if (_isCocoa && !_needsThreshold) _type = 'above';
+            }),
+          ),
+          const SizedBox(height: 16),
           SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'above', label: Text('Sube')),
-              ButtonSegment(value: 'below', label: Text('Baja')),
-              ButtonSegment(value: 'daily', label: Text('Diario')),
-              ButtonSegment(value: 'weekly', label: Text('Semanal')),
+            segments: [
+              const ButtonSegment(value: 'above', label: Text('Sube')),
+              const ButtonSegment(value: 'below', label: Text('Baja')),
+              if (!_isCocoa) const ButtonSegment(value: 'daily', label: Text('Diario')),
+              if (!_isCocoa) const ButtonSegment(value: 'weekly', label: Text('Semanal')),
             ],
             selected: {_type},
             showSelectedIcon: false,
@@ -304,7 +328,8 @@ class _NewAlertFormState extends State<_NewAlertForm> {
           if (_needsThreshold)
             NumberField(
               controller: _threshold,
-              label: _type == 'above' ? 'Avísame cuando la carga suba de' : 'Avísame cuando la carga baje de',
+              label:
+                  'Avísame cuando ${_isCocoa ? 'el kilo' : 'la carga'} ${_type == 'above' ? 'suba' : 'baje'} de',
               kind: NumberKind.cop,
               required: true,
               min: 1,

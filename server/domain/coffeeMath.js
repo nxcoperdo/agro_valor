@@ -8,14 +8,15 @@
  *  - factorRendimientoTrilla: 84, 88, 90, 94... Es un factor, NO un porcentaje.
  */
 const { CARGA_KG } = require('../utils/currency');
+const productTypes = require('./productTypes');
 
-const MERMA_POR_TIPO = {
-  cafe_verde: 8,
-  cafe_merma_5: 5,
-  cafe_sin_merma: 0,
-  otro: 0,
-};
 const RENDIMIENTO_SECADO_DEFECTO = 55;
+/** Producto que no se seca: sale lo mismo que entra. */
+const RENDIMIENTO_SIN_SECADO = 100;
+
+/** Rendimiento por defecto de una compra según si requiere secado. */
+const rendimientoPorDefecto = (requiresDrying = true) =>
+  requiresDrying ? RENDIMIENTO_SECADO_DEFECTO : RENDIMIENTO_SIN_SECADO;
 
 function num(value, field) {
   const n = typeof value === 'string' ? parseFloat(value) : value;
@@ -37,8 +38,9 @@ const roundKg = (v) => Math.round((v + Number.EPSILON) * 100) / 100;
 const roundCop = (v) => Math.round(v);
 const roundPct = (v) => Math.round((v + Number.EPSILON) * 100) / 100;
 
-function mermaPorDefecto(tipoCafe) {
-  return Object.prototype.hasOwnProperty.call(MERMA_POR_TIPO, tipoCafe) ? MERMA_POR_TIPO[tipoCafe] : 0;
+function mermaPorDefecto(tipoProducto) {
+  const t = productTypes.get(tipoProducto);
+  return t ? t.mermaDefault : 0;
 }
 
 function sumarPesadas(pesadasKg) {
@@ -57,11 +59,14 @@ function precioKgDesdeCarga(precioCarga) {
   return nonNeg(precioCarga, 'precio por carga') / CARGA_KG;
 }
 
-/** Compra completa: pesadas + merma + precio por carga. */
-function calcularCompra({ pesadasKg, porcentajeMermaInicial, precioCarga }) {
+/**
+ * Compra completa: pesadas + merma + precio. El precio puede venir por carga o por kilo; si vienen
+ * los dos manda el de kilo (el total sale del precio por kilo original, sin pasar por el redondeo de carga).
+ */
+function calcularCompra({ pesadasKg, porcentajeMermaInicial, precioCarga, precioKg: precioKgDirecto }) {
   const pesoTotalCompra = sumarPesadas(pesadasKg);
   const { kgDescontados, pesoPagable } = calcularPesoPagable(pesoTotalCompra, porcentajeMermaInicial);
-  const precioKg = precioKgDesdeCarga(precioCarga);
+  const precioKg = precioKgDirecto != null ? nonNeg(precioKgDirecto, 'precio por kilo') : precioKgDesdeCarga(precioCarga);
   return {
     pesoTotalCompra,
     kgDescontados,
@@ -198,8 +203,10 @@ function calcularRentabilidadVenta({ ingresoVenta, kgVendidos, costoUnitarioKg }
 
 module.exports = {
   CARGA_KG,
-  MERMA_POR_TIPO,
+  MERMA_POR_TIPO: Object.fromEntries(productTypes.PRODUCT_TYPES.map((t) => [t.key, t.mermaDefault])),
   RENDIMIENTO_SECADO_DEFECTO,
+  RENDIMIENTO_SIN_SECADO,
+  rendimientoPorDefecto,
   mermaPorDefecto,
   sumarPesadas,
   calcularPesoPagable,

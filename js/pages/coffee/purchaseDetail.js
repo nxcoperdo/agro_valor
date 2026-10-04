@@ -34,9 +34,11 @@ function projectionPanel(pr) {
     ${card('Costo mínimo por carga', pr.costoMinimoCarga == null ? '—' : formatCopValue(pr.costoMinimoCarga), true)}
     ${pr.ingresoProyectado != null ? card('Ingreso proyectado', formatCopValue(pr.ingresoProyectado)) + card('Utilidad proyectada', formatCopValue(pr.utilidadProyectada)) + card('Margen', pr.margen == null ? '—' : formatPct(pr.margen)) : ''}
   </div>`;
-  return `<div class="panel"><div class="panel-header"><h2>Proyección de secado</h2>${pr.guardada ? '<span class="badge badge-real">Guardada</span>' : ''}</div>
+  return `<div class="panel"><div class="panel-header"><h2>Proyección${pr.requiresDrying ? ' de secado' : ' (sin secado)'}</h2>${pr.guardada ? '<span class="badge badge-real">Guardada</span>' : ''}</div>
     <form id="proj-form"><div class="calc-form">
-      <div class="field"><label for="p-rend">Rendimiento de secado (%)</label><input id="p-rend" name="rendimientoSecadoPct" inputmode="decimal" value="${escapeHtml(e.rendimientoSecadoPct)}" /></div>
+      <div class="field"><label class="check-row"><input type="checkbox" id="p-dry" name="requiereSecado" ${pr.requiresDrying ? 'checked' : ''} /> ¿Requiere proceso de secado?</label>
+        <small id="p-dry-hint">${pr.requiresDrying ? 'Se proyecta con el rendimiento de secado de abajo.' : 'No se seca: la proyección es directa al 100 % y los precios de venta se calculan igual.'}</small></div>
+      <div class="field"><label for="p-rend">Rendimiento de secado (%)</label><input id="p-rend" name="rendimientoSecadoPct" inputmode="decimal" value="${escapeHtml(e.rendimientoSecadoPct)}" ${pr.requiresDrying ? '' : 'disabled'} /></div>
       <div class="field"><label for="p-destare">Destare proyectado (kg)</label><input id="p-destare" name="destareKg" inputmode="decimal" value="${escapeHtml(e.destareKg)}" /></div>
       <div class="field"><label for="p-precio">Precio actual café seco por carga (opcional)</label><input id="p-precio" name="precioVentaCarga" inputmode="numeric" value="${escapeHtml(e.precioVentaCarga ?? '')}" /></div>
     </div>
@@ -81,6 +83,16 @@ export async function renderPurchaseDetail(container) {
     container.querySelectorAll('[data-rm-cost]').forEach((b) => b.addEventListener('click', async () => {
       try { await api.removePurchaseCost(id, b.dataset.rmCost); await load(); } catch (err) { showErr('#cost-error', err); }
     }));
+    // Al apagar el secado el rendimiento queda en 100 % (bloqueado); al encenderlo vuelve a ser editable.
+    container.querySelector('#p-dry')?.addEventListener('change', (e) => {
+      const rend = container.querySelector('#p-rend');
+      rend.disabled = !e.target.checked;
+      if (!e.target.checked) rend.value = '100';
+      else if (parseNumber(rend.value) === 100) rend.value = '55';
+      container.querySelector('#p-dry-hint').textContent = e.target.checked
+        ? 'Se proyecta con el rendimiento de secado de abajo.'
+        : 'No se seca: la proyección es directa al 100 % y los precios de venta se calculan igual.';
+    });
     container.querySelector('#add-proj-cost')?.addEventListener('click', () => {
       const host = container.querySelector('#proj-costs');
       const tpl = host.querySelector('.proj-cost').cloneNode(true);
@@ -97,6 +109,7 @@ export async function renderPurchaseDetail(container) {
       })).filter((c) => c.concepto || Number.isFinite(c.valor));
       try {
         await api.saveProjection(id, {
+          requiereSecado: f.requiereSecado.checked,
           rendimientoSecadoPct: parseNumber(f.rendimientoSecadoPct.value),
           destareKg: parseNumber(f.destareKg.value) || 0,
           precioVentaCarga: f.precioVentaCarga.value.trim() ? parseNumber(f.precioVentaCarga.value) : null,

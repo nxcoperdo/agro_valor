@@ -24,7 +24,9 @@ class _ReportScreenState extends State<ReportScreen> {
   final _price = TextEditingController();
   final _factor = TextEditingController();
   final _humidity = TextEditingController();
-  late final Future<Json> _coops = _api.cooperatives();
+  late final Future<Json> _coops = _api.cooperatives(widget.session.market);
+
+  bool get _isCocoa => widget.session.market == 'cocoa';
   late int? _coopId = widget.cooperativeId;
   DateTime _date = DateTime.now();
   bool _busy = false;
@@ -57,9 +59,10 @@ class _ReportScreenState extends State<ReportScreen> {
     try {
       final res = await _api.reportPrice({
         'cooperativeId': _coopId,
-        'priceCopCarga': parseCop(_price.text),
-        'factor': parseDecimal(_factor.text),
-        'humidity': parseDecimal(_humidity.text),
+        // Café se reporta por carga; cacao, por kilo (el servidor valida cada rango).
+        if (_isCocoa) 'priceCopKg': parseCop(_price.text) else 'priceCopCarga': parseCop(_price.text),
+        if (!_isCocoa) 'factor': parseDecimal(_factor.text),
+        if (!_isCocoa) 'humidity': parseDecimal(_humidity.text),
         'reportedForDate': isoDay(_date),
       });
       if (!mounted) return;
@@ -90,9 +93,12 @@ class _ReportScreenState extends State<ReportScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          const Muted(
-            '¿Vendiste hoy? Cuéntanos cuánto te pagaron por carga. Con dos reportes de caficultores distintos, '
-            'el precio de esa cooperativa deja de ser estimado y pasa a ser real para todos.',
+          Muted(
+            _isCocoa
+                ? '¿Vendiste cacao? Cuéntanos cuánto te pagaron por kilo. Con dos reportes de productores '
+                    'distintos, el precio de ese comprador aparece para todos.'
+                : '¿Vendiste hoy? Cuéntanos cuánto te pagaron por carga. Con dos reportes de caficultores distintos, '
+                    'el precio de esa cooperativa deja de ser estimado y pasa a ser real para todos.',
           ),
           const SizedBox(height: 16),
           SectionCard(
@@ -110,23 +116,25 @@ class _ReportScreenState extends State<ReportScreen> {
                   const SizedBox(height: 12),
                   NumberField(
                     controller: _price,
-                    label: 'Precio pagado por carga de 125 kg',
+                    label: _isCocoa ? 'Precio pagado por kilo' : 'Precio pagado por carga de 125 kg',
                     kind: NumberKind.cop,
                     required: true,
-                    min: 100000,
-                    max: 20000000,
+                    min: _isCocoa ? 1000 : 100000,
+                    max: _isCocoa ? 200000 : 20000000,
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: NumberField(controller: _factor, label: 'Factor', hint: '94', min: 60, max: 140)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: NumberField(controller: _humidity, label: 'Humedad', hint: '12', suffix: '%', min: 0, max: 30),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+                  if (!_isCocoa) ...[
+                    Row(
+                      children: [
+                        Expanded(child: NumberField(controller: _factor, label: 'Factor', hint: '94', min: 60, max: 140)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: NumberField(controller: _humidity, label: 'Humedad', hint: '12', suffix: '%', min: 0, max: 30),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   OutlinedButton.icon(
                     onPressed: _pickDate,
                     icon: const Icon(Icons.event_rounded, size: 18),

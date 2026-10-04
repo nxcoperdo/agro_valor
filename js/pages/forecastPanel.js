@@ -152,11 +152,18 @@ function renderLockedView(kind, count) {
   `;
 }
 
-export async function renderForecastPanel(container) {
+/** El cacao no tiene precio interno: su rango viene directo en COP por kilo, con otros nombres de campo. */
+function normalizeForMarket(items = [], market) {
+  if (market !== 'cocoa') return items;
+  return items.map((f) => ({ ...f, lowImpliedCopPerCarga: f.lowCopPerKg, highImpliedCopPerCarga: f.highCopPerKg }));
+}
+
+export async function renderForecastPanel(container, market = 'coffee') {
+  const isCocoa = market === 'cocoa';
   container.innerHTML = `
     <div class="panel">
       <div class="panel-header">
-        <h2>Proyección del precio</h2>
+        <h2>Proyección del precio${isCocoa ? ' · por kilo' : ''}</h2>
       </div>
       <div class="cal-tabs" id="forecast-tabs" role="tablist"></div>
       <div id="forecast-body" aria-live="polite">
@@ -171,8 +178,11 @@ export async function renderForecastPanel(container) {
   const noteEl = container.querySelector('#forecast-note');
 
   try {
-    const data = await api.forecast();
-    const { daily = [], weekly = [], monthly = [], note, locked } = data;
+    const data = await api.forecast(market);
+    const { note, locked } = data;
+    const daily = normalizeForMarket(data.daily, market);
+    const weekly = normalizeForMarket(data.weekly, market);
+    const monthly = normalizeForMarket(data.monthly, market);
 
     if (!daily.length && !weekly.length && !monthly.length && !locked) {
       bodyEl.innerHTML =
@@ -254,7 +264,7 @@ export async function renderForecastPanel(container) {
     if (err.upgradeRequired) {
       container.innerHTML = paywall(
         'Proyección del precio',
-        'Estima cómo puede moverse el precio del café día a día, semana a semana y mes a mes, para decidir si vender ahora o esperar.'
+        `Estima cómo puede moverse el precio del ${isCocoa ? 'cacao' : 'café'} día a día, semana a semana y mes a mes, para decidir si vender ahora o esperar.`
       );
       return;
     }

@@ -26,14 +26,19 @@ export async function renderProcessing(el, lot, reload) {
   const open = ['CREADO', 'EN_TRANSPORTE', 'EN_SECADO'].includes(lot.status);
   const frozen = ['DISPONIBLE_PARA_VENTA', 'PARCIALMENTE_VENDIDO', 'VENDIDO', 'CERRADO'].includes(lot.status);
   const r = pr.resultadoReal;
+  const sec = pr.secado || { kgSecar: 0, kgDirecto: 0, directoAInventario: false };
+  const direct = open && sec.directoAInventario; // nada del lote requiere secado
+  const mixed = open && !direct && sec.kgDirecto > 0;
   el.innerHTML = `
     <div class="panel"><div class="panel-header"><h2>Procesamiento real</h2></div>
-      ${open ? `<form class="calc-form" id="ship-form">
+      ${direct ? `<p class="panel-intro">Ninguna compra de este lote requiere secado: se proyecta y entra al 100 %. Puedes enviarlo directo a inventario.</p>` : ''}
+      ${mixed ? `<p class="panel-intro">En este lote <strong>${formatKg(sec.kgSecar)}</strong> se secan y <strong>${formatKg(sec.kgDirecto)}</strong> no requieren secado y van directo a inventario. Al registrar la salida del secado, ingresa solo lo que salió de los ${formatKg(sec.kgSecar)} que se secaron; todo entra junto a inventario.</p>` : ''}
+      ${open && !direct ? `<form class="calc-form" id="ship-form">
         <div class="field"><label for="s-date">Fecha de envío</label><input type="date" id="s-date" name="fechaEnvio" value="${escapeHtml(pr.envio?.fechaEnvio || '')}" /></div>
         <div class="field"><label for="s-place">Lugar de procesamiento</label><input id="s-place" name="lugar" value="${escapeHtml(pr.envio?.lugar || '')}" /></div>
         <div class="field"><label for="s-kg">Kilos enviados</label><input id="s-kg" name="kilosEnviados" inputmode="decimal" value="${escapeHtml(pr.envio?.kilosEnviados ?? lot.pesoPagable)}" /></div>
         <button type="submit" class="btn-ghost">Guardar envío</button></form>` :
-        `<p class="panel-intro">${pr.envio ? `Enviado ${escapeHtml(pr.envio.fechaEnvio || '—')} a ${escapeHtml(pr.envio.lugar || '—')} · ${formatKg(pr.envio.kilosEnviados)}` : 'Sin datos de envío.'}</p>`}
+        direct ? '' : `<p class="panel-intro">${pr.envio ? `Enviado ${escapeHtml(pr.envio.fechaEnvio || '—')} a ${escapeHtml(pr.envio.lugar || '—')} · ${formatKg(pr.envio.kilosEnviados)}` : 'Sin datos de envío.'}</p>`}
       <h3>Costos reales de procesamiento</h3>
       ${pr.costos.length ? `<div class="table-scroll"><table class="coop-table"><thead><tr><th>Concepto</th><th>Valor</th><th></th></tr></thead><tbody>
         ${pr.costos.map((c) => `<tr><td data-label="Concepto">${escapeHtml(c.concepto)}</td><td data-label="Valor" class="tabular-nums">${formatCopValue(c.valor)}</td>
@@ -42,11 +47,11 @@ export async function renderProcessing(el, lot, reload) {
         <div class="field"><label for="pc-c">Concepto</label><input id="pc-c" name="concepto" list="pc-list" required /><datalist id="pc-list">${COST_CONCEPTS.map((c) => `<option value="${c}">`).join('')}</datalist></div>
         <div class="field"><label for="pc-v">Valor</label><input id="pc-v" name="valor" inputmode="numeric" required /></div>
         <button type="submit" class="btn-ghost">+ Agregar costo</button></form>`}
-      ${lot.status === 'EN_SECADO' ? `<h3>Salida real del secado</h3><form class="calc-form" id="finish-form">
-        <div class="field"><label for="f-secos">Kilos secos reales</label><input id="f-secos" name="kilosSecosReales" inputmode="decimal" required /></div>
+      ${lot.status === 'EN_SECADO' && !direct ? `<h3>Salida real del secado</h3><form class="calc-form" id="finish-form">
+        <div class="field"><label for="f-secos">${mixed ? `Kilos secos reales (de los ${formatKg(sec.kgSecar)} que se secaron)` : 'Kilos secos reales'}</label><input id="f-secos" name="kilosSecosReales" inputmode="decimal" required /></div>
         <div class="field"><label for="f-destare">Destare real (kg)</label><input id="f-destare" name="destareRealKg" inputmode="decimal" value="0" /></div>
         <button type="submit" class="btn-primary">Registrar salida</button></form>` : ''}
-      ${lot.status === 'SECADO_FINALIZADO' ? `<h3>Entrada a inventario</h3><form class="calc-form" id="inv-form">
+      ${lot.status === 'SECADO_FINALIZADO' || direct ? `<h3>Entrada a inventario</h3><form class="calc-form" id="inv-form">
         <div class="field"><label for="i-loc">Ubicación</label><input id="i-loc" name="ubicacion" placeholder="Bodega" /></div>
         <button type="submit" class="btn-primary">Enviar a inventario</button></form>` : ''}
       <p class="form-error" id="proc-error" role="alert" hidden></p>

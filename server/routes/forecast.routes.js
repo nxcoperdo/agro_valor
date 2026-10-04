@@ -2,11 +2,63 @@ const express = require('express');
 const forecastService = require('../services/forecastService');
 const marketSummaryService = require('../services/marketSummaryService');
 const subscriptionService = require('../services/subscriptionService');
+const { isValidMarket, DEFAULT_MARKET, cocoaUsdPerTonneToCopKg } = require('../config/markets');
 
 const router = express.Router();
 
 // Gratis: solo el día de mañana, como muestra. Semana y mes completos son Pro.
 const FREE_DAILY_STEPS = 1;
+
+/**
+ * Cacao: no hay precio interno de referencia, así que la proyección se entrega en la unidad
+ * de la bolsa (USD/t) y en pesos por kilo con la TRM de hoy. Misma estructura de respuesta
+ * que el café (daily/weekly/monthly + bloqueo Pro) para que el front la pinte igual.
+ */
+function buildCocoaResponse({ forecasts, summary, isPro }) {
+  const current = summary.international ? summary.international.usdPerTonne : null;
+  const trm = summary.exchangeRate ? summary.exchangeRate.rate : null;
+  const toCopKg = (usdPerTonne) => (trm != null && usdPerTonne != null ? cocoaUsdPerTonneToCopKg(usdPerTonne, trm) : null);
+
+  const enrich = (f) => ({
+    step: f.step,
+    predictedForDate: f.predictedForDate,
+    usdPerTonne: f.predictedPrice,
+    copPerKg: toCopKg(f.predictedPrice),
+    lowCopPerKg: toCopKg(f.lowPrice),
+    highCopPerKg: toCopKg(f.highPrice),
+    changePct: current ? ((f.predictedPrice - current) / current) * 100 : null,
+    modelParams: f.modelParams,
+  });
+
+  const daily = forecasts.filter((f) => f.granularity === 'day').map(enrich);
+  const weekly = forecasts.filter((f) => f.granularity === 'week').map(enrich);
+  const monthly = forecasts.filter((f) => f.granularity === 'month').map(enrich);
+  const method = forecasts[0] ? forecasts[0].modelParams.method : null;
+
+  return {
+    market: 'cocoa',
+    daily: isPro ? daily : daily.slice(0, FREE_DAILY_STEPS),
+    weekly: isPro ? weekly : [],
+    monthly: isPro ? monthly : [],
+    isPro,
+    locked: isPro
+      ? null
+      : {
+          dailyCount: Math.max(daily.length - FREE_DAILY_STEPS, 0),
+          weeklyCount: weekly.length,
+          monthlyCount: monthly.length,
+        },
+    currentUsdPerTonne: current,
+    currentCopPerKg: toCopKg(current),
+    note:
+      (method === 'holt-winters-fallback'
+        ? 'No se pudo consultar la curva de futuros de la bolsa; esta proyección es un respaldo estadístico, menos confiable. '
+        : 'El precio central sale de la curva de futuros del cacao en la bolsa de Nueva York (ICE) y el rango ' +
+          '(mínimo–máximo) de la volatilidad real del cacao y del dólar en los últimos meses. ') +
+      'El valor en pesos por kilo usa la tasa de cambio de hoy sobre el precio internacional: no es el precio ' +
+      'que pagará tu comprador, que depende de calidad, humedad y descuentos. Es una estimación, no una garantía.',
+  };
+}
 
 /**
  * El modelo proyecta la cotización internacional, que es la serie que tenemos.
@@ -17,9 +69,14 @@ const FREE_DAILY_STEPS = 1;
  */
 router.get('/', async (req, res, next) => {
   try {
+    const market = req.query.market || DEFAULT_MARKET;
+    if (!isValidMarket(market)) return res.status(400).json({ error: 'Mercado no soportado' });
+
     const isPro = subscriptionService.isPro(req.fullUser);
-    const forecasts = await forecastService.getForecast();
-    const summary = marketSummaryService.getMarketSummary();
+    const forecasts = await forecastService.getForecast(market);
+    const summary = marketSummaryService.getMarketSummary(market);
+
+    if (market === 'cocoa') return res.json(buildCocoaResponse({ forecasts, summary, isPro }));
 
     const currentCents = summary.international ? summary.international.centsPerLb : null;
     const internalNow = summary.internal ? summary.internal.copPerCarga : null;
@@ -67,6 +124,7 @@ router.get('/', async (req, res, next) => {
           'Colombia. Es una estimación, no una garantía de precio de compra.';
 
     res.json({
+      market,
       daily: isPro ? daily : daily.slice(0, FREE_DAILY_STEPS),
       weekly: isPro ? weekly : [],
       monthly: isPro ? monthly : [],

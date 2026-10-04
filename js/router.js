@@ -7,6 +7,7 @@ import { renderLogin } from './pages/login.js';
 import { renderSignup } from './pages/signup.js';
 import { renderDashboard } from './pages/dashboard.js';
 import { renderCalculator } from './pages/calculator.js';
+import { renderCocoaCalculator } from './pages/cocoaCalculator.js';
 import { renderAlerts } from './pages/alerts.js';
 import { renderSales } from './pages/sales.js';
 import { renderPurchases } from './pages/coffee/purchases.js';
@@ -47,6 +48,7 @@ const ROUTES = {
   '#/ventas': { render: renderSales, shell: true },
   '#/compras': { render: renderPurchases, shell: true },
   '#/compra': { render: renderPurchaseDetail, shell: true },
+  '#/calculadora-cacao': { render: renderCocoaCalculator, shell: true },
   '#/calculadora-rapida': { render: renderQuickCalc, shell: true },
   '#/resumen-dia': { render: renderDaySummary, shell: true },
   '#/lotes': { render: renderLots, shell: true },

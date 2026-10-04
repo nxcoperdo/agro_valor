@@ -7,6 +7,7 @@ const projectionService = require('../services/projectionService');
 const quickCalcService = require('../services/quickCalcService');
 const lotService = require('../services/lotService');
 const processingService = require('../services/processingService');
+const productTypes = require('../domain/productTypes');
 const inventoryService = require('../services/inventoryService');
 const customerService = require('../services/customerService');
 const tradeSaleService = require('../services/tradeSaleService');
@@ -33,6 +34,7 @@ const created = (fn) => Object.assign((req) => fn(req), { status: 201 });
 
 router.get('/me', wrap((req) => ({ businessId: req.business.businessId, role: req.business.role, name: req.business.name })));
 
+router.get('/product-types', wrap(() => ({ productTypes: productTypes.selectable().map(({ key, label, mermaDefault, requiresDryingDefault }) => ({ key, label, mermaDefault, requiresDryingDefault })) })));
 router.get('/suppliers', wrap((req) => ({ suppliers: supplierService.search(ctxOf(req), req.query.q) })));
 router.post('/suppliers', requirePermission('registrar'), wrap(created((req) => supplierService.create(ctxOf(req), req.body || {}))));
 

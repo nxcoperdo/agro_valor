@@ -49,6 +49,7 @@ function coopRow(coop) {
   return `
     <tr data-coop-row="${coop.id}">
       <td><input type="text" data-field="name" value="${coop.name}" /></td>
+      <td>${coop.market === 'cocoa' ? '🍫 Cacao' : '☕ Café'}</td>
       <td><input type="text" data-field="region" value="${coop.region || ''}" /></td>
       <td><input type="text" data-field="municipality" value="${coop.municipality || ''}" /></td>
       <td><input type="number" step="0.001" data-field="differentialPct" value="${coop.differential_pct}" /></td>
@@ -118,12 +119,19 @@ export async function renderAdmin(container) {
           <div class="table-scroll">
             <table class="coop-table admin-table">
               <thead>
-                <tr><th>Nombre</th><th>Región</th><th>Municipio</th><th>Diferencial</th><th>Activa</th><th></th></tr>
+                <tr><th>Nombre</th><th>Mercado</th><th>Región</th><th>Municipio</th><th>Diferencial</th><th>Activa</th><th></th></tr>
               </thead>
               <tbody>${cooperatives.map(coopRow).join('')}</tbody>
             </table>
           </div>
           <form class="calc-form" id="new-coop-form">
+            <div class="field">
+              <label for="newCoopMarket">Mercado</label>
+              <select id="newCoopMarket" name="newCoopMarket">
+                <option value="coffee">☕ Café</option>
+                <option value="cocoa">🍫 Cacao</option>
+              </select>
+            </div>
             <div class="field">
               <label for="newCoopName">Nombre</label>
               <input type="text" id="newCoopName" name="newCoopName" required />
@@ -140,7 +148,7 @@ export async function renderAdmin(container) {
               <label for="newCoopDiff">Diferencial (decimal, ej. -0.02)</label>
               <input type="number" id="newCoopDiff" name="newCoopDiff" step="0.001" value="0" />
             </div>
-            <button type="submit" class="btn-primary">Agregar cooperativa</button>
+            <button type="submit" class="btn-primary">Agregar cooperativa o comprador</button>
           </form>
         </div>
 
@@ -239,6 +247,7 @@ export async function renderAdmin(container) {
         e.preventDefault();
         await runAction(addCoopBtn, () =>
           api.createCooperative({
+            market: newCoopForm.newCoopMarket.value,
             name: newCoopForm.newCoopName.value,
             region: newCoopForm.newCoopRegion.value,
             municipality: newCoopForm.newCoopMunicipality.value,

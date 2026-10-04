@@ -10,14 +10,18 @@ function findByIdentification(businessId, idType, idNumber) {
     .get(businessId, idType, idNumber);
 }
 
-function search(businessId, query, limit = 20) {
+/**
+ * Con query vacío devuelve todos los proveedores. El orden alfabético lo aplica el servicio (en español:
+ * SQLite solo ignora mayúsculas en ASCII y mandaría "Ángel" al final), así que aquí no se limita.
+ */
+function search(businessId, query) {
   const like = `%${query}%`;
   return db
     .prepare(
       `SELECT * FROM suppliers WHERE business_id = ? AND (name LIKE ? OR id_number LIKE ? OR legal_name LIKE ?)
-       ORDER BY name LIMIT ?`
+       ORDER BY name`
     )
-    .all(businessId, like, like, like, limit);
+    .all(businessId, like, like, like);
 }
 
 function create(businessId, s) {

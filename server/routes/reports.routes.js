@@ -10,7 +10,7 @@ router.post('/', (req, res, next) => {
     res.status(201).json({
       ok: true,
       report,
-      message: `Gracias por reportar. Con ${priceReportService.MIN_REPORTERS} reportes de caficultores distintos, el precio de esa cooperativa deja de ser estimado y pasa a ser un dato real para todos.`,
+      message: `Gracias por reportar. Con ${priceReportService.MIN_REPORTERS} reportes de productores distintos, el precio de ese comprador pasa a ser un dato real para todos.`,
     });
   } catch (err) {
     next(err);

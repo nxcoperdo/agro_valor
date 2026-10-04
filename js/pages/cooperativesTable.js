@@ -5,7 +5,66 @@ function formatUsdPerCarga(usdPerLb) {
   return `US$ ${formatUsd(usdPerLb * LB_PER_CARGA)}`;
 }
 
-export async function renderCooperativesTable(container) {
+/** Cacao: sin estimaciones. Muestra la referencia de Agronet y el precio solo de quien tenga reportes. */
+async function renderCocoaBuyers(container) {
+  container.innerHTML = `
+    <div class="panel">
+      <div class="panel-header"><h2>Compradores de cacao</h2></div>
+      <div id="cocoa-ref"><span class="skeleton" style="width: 220px; height: 16px;"></span></div>
+      <div class="table-scroll">
+        <table class="coop-table">
+          <thead><tr><th>#</th><th>Comprador</th><th>Región</th><th>Precio reportado (por kilo)</th></tr></thead>
+          <tbody id="cocoa-tbody"></tbody>
+        </table>
+      </div>
+      <p class="highlight-note">¿Vendiste cacao? <a href="#/reportar">Reporta lo que te pagaron</a>: con 2 productores distintos el precio de ese comprador aparece aquí.</p>
+      <p class="disclaimer" id="cocoa-disclaimer"></p>
+    </div>
+  `;
+
+  const refEl = container.querySelector('#cocoa-ref');
+  const tbody = container.querySelector('#cocoa-tbody');
+
+  try {
+    const data = await api.cooperatives('cocoa');
+    container.querySelector('#cocoa-disclaimer').textContent = data.disclaimer;
+
+    refEl.innerHTML = data.reference
+      ? `<p>Referencia semanal de la industria (Agronet, semana del ${data.reference.weekLabel}): <strong class="tabular-nums">${formatCop(
+          data.reference.priceCopKg
+        )}</strong> por kilo ${
+          data.reference.isStale ? '<span class="badge badge-stale">Desactualizado</span>' : '<span class="badge badge-real">Dato real</span>'
+        }</p>`
+      : `<p class="panel-error">${data.error || 'Sin datos disponibles todavía.'}</p>`;
+
+    tbody.innerHTML = data.cooperatives.length
+      ? data.cooperatives
+          .map(
+            (c) => `
+          <tr class="${c.isHighestBuyer ? 'row-highest' : ''} ${c.isLowestBuyer ? 'row-lowest' : ''}">
+            <td data-label="#" class="cell-rank">${c.rank ?? '—'}</td>
+            <td data-label="Comprador" class="cell-name">${c.name} ${
+              c.isHighestBuyer ? '<span class="tag tag-best">Paga más</span>' : ''
+            }${c.isLowestBuyer ? '<span class="tag tag-worst">Paga menos</span>' : ''}</td>
+            <td data-label="Región">${c.region || '—'}</td>
+            <td data-label="Precio por kilo" class="tabular-nums">${
+              c.priceCopKg != null
+                ? `<span class="cop">${formatCop(c.priceCopKg)}</span> <span class="tag tag-reported">Reportado</span>`
+                : '<span class="price-secondary">Sin reportes aún</span>'
+            }</td>
+          </tr>`
+          )
+          .join('')
+      : '<tr><td colspan="4">Todavía no hay compradores registrados.</td></tr>';
+    tbody.classList.add('av-fade-in');
+  } catch (err) {
+    refEl.innerHTML = `<p class="panel-error">No se pudo cargar la comparación: ${err.message}</p>`;
+  }
+}
+
+export async function renderCooperativesTable(container, market = 'coffee') {
+  if (market === 'cocoa') return renderCocoaBuyers(container);
+
   container.innerHTML = `
     <div class="panel">
       <div class="panel-header">

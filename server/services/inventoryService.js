@@ -41,6 +41,11 @@ function enter(ctx, lotId, input = {}) {
   permissionService.assert(ctx.role, 'ver_costos');
   const lot = lotRepository.findById(ctx.businessId, Number(lotId));
   if (!lot) throw fail('Lote no encontrado', 404);
+  // Si nada del lote requiere secado, el paso de secado se registra solo (al 100 %) y entra a inventario.
+  if (['CREADO', 'EN_TRANSPORTE', 'EN_SECADO'].includes(lot.status) && processingService.isDirectToInventory(ctx, lot.id)) {
+    processingService.finishWithoutDrying(ctx, lot.id, { fechaFin: input.fechaEntrada });
+    lot.status = 'SECADO_FINALIZADO';
+  }
   if (lot.status !== 'SECADO_FINALIZADO') throw fail(`El lote debe estar en SECADO_FINALIZADO para entrar a inventario (está ${lot.status})`, 409);
   const enteredOn = input.fechaEntrada || sequenceService.today();
   if (!DATE_RE.test(enteredOn)) throw fail('Fecha inválida (AAAA-MM-DD)');

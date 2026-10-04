@@ -68,8 +68,16 @@ function resolveForPurchase(ctx, { supplierId, supplier }) {
   return row;
 }
 
+const collator = new Intl.Collator('es', { sensitivity: 'base' });
+const MAX_RESULTS = 200;
+
+/** Lista (o filtra) proveedores en orden alfabético; con query vacío se despliega la lista completa. */
 function search(ctx, query) {
-  return supplierRepository.search(ctx.businessId, String(query || '').trim()).map(serialize);
+  return supplierRepository
+    .search(ctx.businessId, String(query || '').trim())
+    .sort((a, b) => collator.compare(a.name, b.name))
+    .slice(0, MAX_RESULTS)
+    .map(serialize);
 }
 
 module.exports = { create, search, resolveForPurchase, serialize };

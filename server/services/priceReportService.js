@@ -8,21 +8,31 @@ const MIN_REPORTERS = 2;
 /** Tope de reportes por usuario al día, para que nadie pueda inflar el promedio. */
 const MAX_REPORTS_PER_DAY = 10;
 
-const LIMITS = { min: 100000, max: 20000000 };
+// Café se reporta por carga de 125 kg; cacao, por kilo. En ambos casos el valor se guarda en
+// price_reports.price_cop_carga (nombre histórico de la columna).
+const LIMITS = {
+  coffee: { min: 100000, max: 20000000, unit: 'por carga de 125 kg' },
+  cocoa: { min: 1000, max: 200000, unit: 'por kilo' },
+};
 
-function createReport(userId, { cooperativeId, municipality, priceCopCarga, factor, humidity, reportedForDate }) {
-  const price = parseFloat(priceCopCarga);
-
-  if (!Number.isFinite(price) || price < LIMITS.min || price > LIMITS.max) {
-    throw Object.assign(
-      new Error('El precio reportado no parece válido. Debe estar en pesos por carga de 125 kg.'),
-      { status: 400 }
-    );
-  }
-
+function createReport(
+  userId,
+  { cooperativeId, municipality, priceCopCarga, priceCopKg, factor, humidity, reportedForDate }
+) {
+  // El mercado lo define la cooperativa/comprador elegido, no un campo aparte que se pueda desajustar.
   const coop = cooperativeRepository.findById(cooperativeId);
   if (!coop) {
     throw Object.assign(new Error('Cooperativa no encontrada'), { status: 400 });
+  }
+
+  const limits = LIMITS[coop.market] || LIMITS.coffee;
+  const price = parseFloat(coop.market === 'cocoa' && priceCopKg != null ? priceCopKg : priceCopCarga);
+
+  if (!Number.isFinite(price) || price < limits.min || price > limits.max) {
+    throw Object.assign(
+      new Error(`El precio reportado no parece válido. Debe estar en pesos ${limits.unit}.`),
+      { status: 400 }
+    );
   }
 
   if (priceReportRepository.countToday(userId) >= MAX_REPORTS_PER_DAY) {

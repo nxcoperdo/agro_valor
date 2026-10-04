@@ -8,6 +8,7 @@ import '../format.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/market_selector.dart';
 
 final _int = NumberFormat('#,##0', 'es_CO');
 final _two = NumberFormat('#,##0.00', 'en_US');
@@ -19,31 +20,47 @@ class PriceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AsyncView<Json>(
-      load: session.api.currentPrice,
-      builder: (context, market) {
-        final internal = market['internal'] as Json?;
-        final international = market['international'] as Json?;
-        final parity = market['exportParity'] as Json?;
-        final exchange = market['exchangeRate'] as Json?;
+    final isCocoa = session.market == 'cocoa';
 
-        return ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          children: [
-            if (internal != null) ...[_InternalCard(internal: internal), const SizedBox(height: 12)],
-            if (international != null) ...[
-              _MarketCard(international: international, exchange: exchange),
-              const SizedBox(height: 12),
-            ],
-            _ChartPanel(session: session),
-            if (parity != null) ...[
-              const SizedBox(height: 12),
-              _ParityCard(parity: parity, international: international, exchange: exchange),
-            ],
-          ],
-        );
-      },
+    return Column(
+      children: [
+        MarketSelector(session: session),
+        Expanded(
+          child: AsyncView<Json>(
+            load: () => session.api.currentPrice(session.market),
+            builder: (context, market) {
+              final internal = market['internal'] as Json?;
+              final international = market['international'] as Json?;
+              final parity = market['exportParity'] as Json?;
+              final exchange = market['exchangeRate'] as Json?;
+
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                children: [
+                  if (isCocoa && international != null) ...[
+                    _CocoaHeroCard(internal: internal, international: international),
+                    const SizedBox(height: 12),
+                    _CocoaMarketCard(international: international, exchange: exchange),
+                    const SizedBox(height: 12),
+                  ] else ...[
+                    if (internal != null) ...[_InternalCard(internal: internal), const SizedBox(height: 12)],
+                    if (international != null) ...[
+                      _MarketCard(international: international, exchange: exchange),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
+                  _ChartPanel(session: session, market: session.market),
+                  if (parity != null) ...[
+                    const SizedBox(height: 12),
+                    _ParityCard(parity: parity, international: international, exchange: exchange),
+                  ],
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -170,6 +187,120 @@ class _InternalCard extends StatelessWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Cacao: no hay precio interno tipo FNC; la cifra principal es la cotización ICE en pesos por kilo.
+class _CocoaHeroCard extends StatelessWidget {
+  const _CocoaHeroCard({required this.internal, required this.international});
+
+  /// Referencia semanal de Agronet (lo que paga la industria); si aún no hay, se usa ICE en pesos.
+  final Json? internal;
+  final Json international;
+
+  @override
+  Widget build(BuildContext context) {
+    final copPerKg = (internal?['copPerKg'] ?? international['copPerKg']) as num?;
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(internal != null ? 'Lo que paga la industria por el cacao' : 'Referencia internacional del cacao', style: _muted13),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                copPerKg != null ? _int.format(copPerKg) : '—',
+                style: mono(size: 36, weight: FontWeight.w700, spacing: -1),
+              ),
+              const SizedBox(width: 6),
+              const Text('\$', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: AvColors.fgMuted)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            internal != null
+                ? 'por kilo · semana del ${internal!['weekLabel']}'
+                : 'por kilo, cotización de la bolsa de Nueva York convertida con la TRM del día',
+            style: _muted13,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            internal != null
+                ? 'Promedio de la industria nacional y exportadores (Agronet). No es el precio de tu comprador.'
+                : 'Todavía no hay referencia semanal de Agronet. No es el precio de tu comprador.',
+            style: _muted11,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CocoaMarketCard extends StatelessWidget {
+  const _CocoaMarketCard({required this.international, required this.exchange});
+
+  final Json international;
+  final Json? exchange;
+
+  @override
+  Widget build(BuildContext context) {
+    final rate = exchange?['rate'] as num?;
+    final change = international['changePct'] as num?;
+    final real = international['source'] == 'real';
+    final meta = [
+      international['exchange'] ?? 'Bolsa',
+      if (international['quotedAt'] != null) 'cotización ${timeAgo(international['quotedAt'] as String)}',
+      if (rate != null) '1 USD ≈ ${_int.format(rate)} \$',
+    ].join(' · ');
+
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Mercado internacional${international['contract'] != null ? ' · ${international['contract']}' : ''}',
+                  style: _muted13,
+                ),
+              ),
+              _Tag(real ? 'En vivo' : 'Simulado', color: real ? AvColors.positive : AvColors.accent, caps: true),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 10,
+            children: [
+              Text(
+                'US\$ ${_int.format(international['usdPerTonne'] as num)}',
+                style: mono(size: 30, weight: FontWeight.w700, spacing: -0.5),
+              ),
+              if (change != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Text(
+                    formatPct(change),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: change >= 0 ? AvColors.positive : AvColors.danger,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text('por tonelada métrica', style: _muted13),
+          const SizedBox(height: 8),
+          Text(meta, style: _muted11),
         ],
       ),
     );
@@ -367,13 +498,13 @@ class Candle {
 }
 
 /// Agrupa el histórico por día (hora de Colombia, UTC-5) en velas de apertura/máximo/mínimo/cierre.
-List<Candle> buildCandles(List<dynamic> history, int days) {
+List<Candle> buildCandles(List<dynamic> history, int days, [String market = 'coffee']) {
   final byDay = <String, Candle>{};
   for (final raw in history) {
     final row = raw as Json;
     final at = DateTime.parse((row['fetchedAt'] ?? row['quotedAt']) as String).toUtc().subtract(const Duration(hours: 5));
     final key = '${at.year}-${at.month}-${at.day}';
-    final value = usdPerLbToCarga(row['usdPerLb'] as num);
+    final value = market == 'cocoa' ? (row['usdPerTonne'] as num).toDouble() : usdPerLbToCarga(row['usdPerLb'] as num);
     final c = byDay[key];
     if (c == null) {
       byDay[key] = Candle(at, value);
@@ -391,9 +522,10 @@ List<Candle> buildCandles(List<dynamic> history, int days) {
 const _periods = [('7D', 7, 3), ('30D', 30, 7), ('90D', 90, 14), ('1A', 365, 30)];
 
 class _ChartPanel extends StatefulWidget {
-  const _ChartPanel({required this.session});
+  const _ChartPanel({required this.session, required this.market});
 
   final Session session;
+  final String market;
 
   @override
   State<_ChartPanel> createState() => _ChartPanelState();
@@ -424,7 +556,7 @@ class _ChartPanelState extends State<_ChartPanel> {
       _hover = null;
     });
     try {
-      _cache[id] ??= buildCandles(await widget.session.api.priceHistory(days), days);
+      _cache[id] ??= buildCandles(await widget.session.api.priceHistory(days, widget.market), days, widget.market);
       if (!mounted || id != _period) return;
       setState(() {
         _data = _cache[id]!;
@@ -503,8 +635,8 @@ class _ChartPanelState extends State<_ChartPanel> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'HISTÓRICO · US\$ POR CARGA',
+              Text(
+                widget.market == 'cocoa' ? 'HISTÓRICO · US\$ POR TONELADA' : 'HISTÓRICO · US\$ POR CARGA',
                 style: TextStyle(fontSize: 10, color: AvColors.fgMuted, letterSpacing: 1, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 5),

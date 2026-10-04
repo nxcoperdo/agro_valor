@@ -32,12 +32,17 @@ function purchaseBase(ctx, lotId) {
   let totalCompra = 0;
   let costosCompra = 0;
   let pesoPagable = 0;
+  let pesoPagableSecar = 0;
   ps.forEach((p) => {
     totalCompra += p.totalCompra;
     pesoPagable += p.pesoPagable;
+    if (p.requiresDrying) pesoPagableSecar += p.pesoPagable;
     costosCompra += purchaseCostService.costsOf(p.id).reduce((a, c) => a + c.amount, 0);
   });
-  return { ps, totalCompra, costosCompra, pesoPagable: coffeeMath.roundKg(pesoPagable) };
+  const total = coffeeMath.roundKg(pesoPagable);
+  const secar = coffeeMath.roundKg(pesoPagableSecar);
+  // pesoPagableSecar: lo que entra al secado. pesoPagableDirecto: lo que no se seca y entra a inventario tal cual.
+  return { ps, totalCompra, costosCompra, pesoPagable: total, pesoPagableSecar: secar, pesoPagableDirecto: coffeeMath.roundKg(total - secar) };
 }
 
 /** Resultado real del lote a partir de lo registrado en procesamiento. */
@@ -66,7 +71,7 @@ function compareProjectedVsReal(ctx, lotId) {
   const real = realResult(ctx, lotId);
   let secos = 0, netos = 0, destare = 0, costoTotal = 0, costosProc = 0, ingreso = 0, withPrice = 0;
   base.ps.forEach((p) => {
-    const saved = projectionService.load(p.id) || { rendimientoSecadoPct: coffeeMath.RENDIMIENTO_SECADO_DEFECTO, destareKg: 0, costos: [], precioVentaCarga: null };
+    const saved = projectionService.load(p.id) || { rendimientoSecadoPct: coffeeMath.rendimientoPorDefecto(p.requiresDrying), destareKg: 0, costos: [], precioVentaCarga: null };
     const c = projectionService.compute(p, saved);
     secos += c.kilosSecosProyectados;
     netos += c.kilosNetosProyectados;
@@ -114,9 +119,12 @@ function get(ctx, lotId) {
   permissionService.assert(ctx.role, 'ver_costos');
   const lot = getLot(ctx, lotId);
   const proc = procRow(lot.id);
+  const base = purchaseBase(ctx, lot.id);
   return {
     lotId: lot.id,
     status: lot.status,
+    // Qué parte del lote se seca y cuál va directo a inventario (lotes mixtos).
+    secado: { kgSecar: base.pesoPagableSecar, kgDirecto: base.pesoPagableDirecto, directoAInventario: base.pesoPagable > 0 && base.pesoPagableSecar <= 0 },
     envio: proc && { fechaEnvio: proc.sent_on, lugar: proc.place, kilosEnviados: proc.kg_sent, fechaFin: proc.finished_on },
     costos: costsOf(lot.id).map((c) => ({ id: c.id, concepto: c.concept, valor: c.amount, observacion: c.notes })),
     resultadoReal: realResult(ctx, lot.id),
@@ -170,22 +178,29 @@ function removeCost(ctx, lotId, costId) {
   return get(ctx, lot.id);
 }
 
-/** Registra la salida real del secado y deja el lote en SECADO_FINALIZADO. */
+/**
+ * Registra la salida real del secado y deja el lote en SECADO_FINALIZADO.
+ * En un lote mixto (compras que se secan + compras que no), `kilosSecosReales` es lo que salió del
+ * secado de las primeras; lo que no se seca se suma al 100 % y todo entra junto a inventario.
+ */
 function finish(ctx, lotId, input) {
   permissionService.assert(ctx.role, 'gestionar_lotes');
   const lot = getLot(ctx, lotId);
   if (lot.status !== 'EN_SECADO') throw fail(`El lote debe estar EN_SECADO para registrar la salida (está ${lot.status})`, 409);
-  const secos = parseFloat(input.kilosSecosReales);
+  const secadoReal = parseFloat(input.kilosSecosReales);
   const destare = input.destareRealKg == null || input.destareRealKg === '' ? 0 : parseFloat(input.destareRealKg);
-  if (!Number.isFinite(secos) || secos <= 0) throw fail('Los kilos secos reales deben ser mayores a cero');
+  if (!Number.isFinite(secadoReal) || secadoReal <= 0) throw fail('Los kilos secos reales deben ser mayores a cero');
   if (!Number.isFinite(destare) || destare < 0) throw fail('El destare no puede ser negativo');
-  if (destare >= secos) throw fail('El destare debe ser menor a los kilos secos');
   const finishedOn = input.fechaFin || require('./sequenceService').today();
   if (!DATE_RE.test(finishedOn)) throw fail('Fecha inválida (AAAA-MM-DD)');
   const base = purchaseBase(ctx, lot.id);
   if (base.pesoPagable <= 0) throw fail('El lote no tiene compras activas', 409);
+  if (base.pesoPagableSecar <= 0) throw fail('Ninguna compra de este lote requiere secado: envíalo directo a inventario', 409);
+  const secos = coffeeMath.roundKg(secadoReal + base.pesoPagableDirecto);
+  if (destare >= secos) throw fail('El destare debe ser menor a los kilos secos');
   const netos = coffeeMath.roundKg(secos - destare);
-  const rend = coffeeMath.roundKg((secos / base.pesoPagable) * 100);
+  // Rendimiento real del secado: solo sobre lo que realmente se secó.
+  const rend = coffeeMath.roundKg((secadoReal / base.pesoPagableSecar) * 100);
   db.transaction(() => {
     db.prepare(
       `INSERT INTO lot_processing (lot_id, kilos_secos_reales, destare_real_kg, kilos_netos_reales, rendimiento_real_pct, finished_on)
@@ -200,4 +215,37 @@ function finish(ctx, lotId, input) {
   return get(ctx, lot.id);
 }
 
-module.exports = { get, saveShipment, addCost, removeCost, finish, realResult, compareProjectedVsReal, purchaseBase };
+/** True si el lote tiene compras activas y ninguna requiere secado (va directo a inventario). */
+function isDirectToInventory(ctx, lotId) {
+  const base = purchaseBase(ctx, lotId);
+  return base.pesoPagable > 0 && base.pesoPagableSecar <= 0;
+}
+
+/**
+ * Atajo para lotes donde nada requiere secado: registra la salida al 100 % (secos = peso pagable,
+ * sin destare) y deja el lote en SECADO_FINALIZADO para poder enviarlo a inventario.
+ */
+function finishWithoutDrying(ctx, lotId, input = {}) {
+  permissionService.assert(ctx.role, 'gestionar_lotes');
+  const lot = getLot(ctx, lotId);
+  if (!PRE_FINISH.includes(lot.status)) throw fail('El lote ya terminó el procesamiento', 409);
+  const base = purchaseBase(ctx, lot.id);
+  if (base.pesoPagable <= 0) throw fail('El lote no tiene compras activas', 409);
+  if (base.pesoPagableSecar > 0) throw fail('Este lote tiene compras que requieren secado', 409);
+  const finishedOn = input.fechaFin || require('./sequenceService').today();
+  if (!DATE_RE.test(finishedOn)) throw fail('Fecha inválida (AAAA-MM-DD)');
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO lot_processing (lot_id, kilos_secos_reales, destare_real_kg, kilos_netos_reales, rendimiento_real_pct, finished_on)
+       VALUES (?, ?, 0, ?, 100, ?)
+       ON CONFLICT(lot_id) DO UPDATE SET kilos_secos_reales = excluded.kilos_secos_reales, destare_real_kg = 0,
+         kilos_netos_reales = excluded.kilos_netos_reales, rendimiento_real_pct = 100,
+         finished_on = excluded.finished_on, updated_at = datetime('now')`
+    ).run(lot.id, base.pesoPagable, base.pesoPagable, finishedOn);
+    lotService.transition(ctx, lot.id, 'SECADO_FINALIZADO', { reason: 'sin secado: salida al 100%' });
+    auditService.log({ businessId: ctx.businessId, userId: ctx.userId, action: 'SALIDA_SIN_SECADO', entity: 'lot', entityId: lot.id, changes: { kg: base.pesoPagable } });
+  })();
+  return get(ctx, lot.id);
+}
+
+module.exports = { get, saveShipment, addCost, removeCost, finish, finishWithoutDrying, isDirectToInventory, realResult, compareProjectedVsReal, purchaseBase };

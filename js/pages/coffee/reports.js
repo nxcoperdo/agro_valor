@@ -5,7 +5,7 @@ import { escapeHtml, formatKg, formatCopValue, formatPct } from '../../utils/for
 
 const TYPES = {
   diario: 'Diario', semanal: 'Semanal', mensual: 'Mensual', proveedor: 'Por proveedor', comprador: 'Por comprador', lote: 'Por lote',
-  factor: 'Por factor', 'tipo-cafe': 'Por tipo de café', jornada: 'Por jornada', ventas: 'Por ventas', rentabilidad: 'Por rentabilidad',
+  factor: 'Por factor', 'tipo-cafe': 'Por tipo de producto', jornada: 'Por jornada', ventas: 'Por ventas', rentabilidad: 'Por rentabilidad',
 };
 const HEAD = {
   label: 'Detalle', compras: 'Compras', kgRecibidos: 'Kg recibidos', kgPagables: 'Kg pagables', totalPagado: 'Total pagado', precioCargaPromedio: 'Precio carga promedio',

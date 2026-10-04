@@ -2,6 +2,8 @@ const cooperativeRepository = require('../repositories/cooperativeRepository');
 const fncScraperService = require('./fncScraperService');
 const exchangeRateService = require('./exchangeRateService');
 const priceReportService = require('./priceReportService');
+const cocoaReferenceService = require('./cocoaReferenceService');
+const { getMarket } = require('../config/markets');
 const { copPerCargaToUsdPerLb } = require('../utils/currency');
 const { toIso, toEpoch } = require('../utils/datetime');
 
@@ -14,9 +16,61 @@ const DISCLAIMER_REPORTED =
 const DISCLAIMER_ESTIMATED =
   'Los precios marcados como ESTIMADOS se calculan aplicando un diferencial de referencia sobre el precio base; no son un dato en vivo de esa cooperativa.';
 
-function getComparison() {
+/**
+ * Cacao: la referencia es el precio semanal de Agronet (promedio de industria y exportadores),
+ * no una "base" sobre la cual estimar. Un comprador solo muestra precio cuando varios usuarios
+ * distintos lo reportaron; si no, queda "sin reportes" en vez de inventar un diferencial.
+ */
+function getCocoaComparison() {
+  const reference = cocoaReferenceService.getLatest();
+  const verifiedPrices = priceReportService.getVerifiedPrices();
+
+  const cooperatives = cooperativeRepository
+    .findAllActive('cocoa')
+    .map((c) => {
+      const verified = verifiedPrices.get(c.id);
+      return {
+        id: c.id,
+        name: c.name,
+        region: c.region,
+        municipality: c.municipality,
+        // Los reportes guardan el valor en priceCopCarga (nombre histórico); en cacao es COP por kilo.
+        priceCopKg: verified ? verified.priceCopCarga : null,
+        priceSource: verified ? 'reported' : 'none',
+        reportInfo: verified
+          ? { reporterCount: verified.reporterCount, reportCount: verified.reportCount, latestDate: verified.latestDate }
+          : null,
+      };
+    })
+    // Los que tienen precio reportado primero, de mayor a menor; el resto por nombre.
+    .sort((a, b) => (b.priceCopKg ?? -1) - (a.priceCopKg ?? -1) || a.name.localeCompare(b.name))
+    .map((c, idx, arr) => {
+      const priced = arr.filter((x) => x.priceCopKg != null);
+      return {
+        ...c,
+        rank: c.priceCopKg != null ? idx + 1 : null,
+        isHighestBuyer: priced.length > 1 && idx === 0,
+        isLowestBuyer: priced.length > 1 && c.priceCopKg != null && idx === priced.length - 1,
+      };
+    });
+
+  return {
+    market: 'cocoa',
+    reference,
+    cooperatives,
+    reportedCount: cooperatives.filter((c) => c.priceSource === 'reported').length,
+    disclaimer:
+      'El precio de referencia es el promedio semanal que publica Agronet (Ministerio de Agricultura) con lo que pagan la industria nacional y los exportadores. ' +
+      'Fedecacao no fija precios de compra. El precio de cada comprador solo aparece cuando varios productores lo reportan; no se estima.',
+    error: reference ? null : 'Aún no hay un precio de referencia del cacao disponible.',
+  };
+}
+
+function getComparison(marketId = 'coffee') {
+  if (getMarket(marketId).id === 'cocoa') return getCocoaComparison();
+
   const fncReference = fncScraperService.getLatest();
-  const cooperatives = cooperativeRepository.findAllActive();
+  const cooperatives = cooperativeRepository.findAllActive('coffee');
   const exchangeRate = exchangeRateService.getCurrentRate();
   const verifiedPrices = priceReportService.getVerifiedPrices();
 
@@ -24,6 +78,7 @@ function getComparison() {
 
   if (!fncReference) {
     return {
+      market: 'coffee',
       fncReference: null,
       cooperatives: [],
       disclaimer,
@@ -67,6 +122,7 @@ function getComparison() {
     }));
 
   return {
+    market: 'coffee',
     fncReference: {
       priceCopCarga: fncReference.price_cop_carga,
       priceUsdPerLb: exchangeRate ? copPerCargaToUsdPerLb(fncReference.price_cop_carga, exchangeRate.rate) : null,

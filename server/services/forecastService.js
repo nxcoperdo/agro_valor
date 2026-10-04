@@ -4,6 +4,7 @@ const coffeePriceService = require('./coffeePriceService');
 const forecastRepository = require('../repositories/forecastRepository');
 const yahooFuturesProvider = require('./providers/yahooFuturesProvider');
 const logger = require('../utils/logger');
+const { getMarket, listMarkets } = require('../config/markets');
 
 /**
  * PROYECCIÓN — cómo se arma y por qué.
@@ -93,14 +94,13 @@ function dailyVolatility(series, fallback) {
 }
 
 // Volatilidad anualizada típica cuando todavía no hay suficiente historia propia guardada:
-// ~28%/año para el contrato de café, ~12%/año para el USD/COP (fuentes: volatilidad
+// ~28%/año para el contrato de café (por mercado en config/markets.js; cacao ~45%), ~12%/año para el USD/COP (fuentes: volatilidad
 // histórica habitual de ICE Coffee C y del peso colombiano). Se pasa a diaria dividiendo
 // por raíz de 252 (días hábiles al año).
 const TRADING_DAYS_PER_YEAR = 252;
-const FALLBACK_COFFEE_ANNUAL_VOL = 0.28;
 const FALLBACK_FX_ANNUAL_VOL = 0.12;
 
-function buildFuturesForecast(curve, lastObserved) {
+function buildFuturesForecast(curve, lastObserved, market) {
   // curve trae { daysFromNow, centsPerLb, symbol } (formato del proveedor); interpolateCurve
   // espera { days, centsPerLb } — de ahí el mapeo, y no un simple spread.
   const fullCurve = [
@@ -109,8 +109,8 @@ function buildFuturesForecast(curve, lastObserved) {
   ];
 
   const coffeeVol = dailyVolatility(
-    coffeePriceRepository.dailySeries(180).map((d) => d.price),
-    FALLBACK_COFFEE_ANNUAL_VOL / Math.sqrt(TRADING_DAYS_PER_YEAR)
+    coffeePriceRepository.dailySeries(180, market.id).map((d) => d.price),
+    market.fallbackAnnualVol / Math.sqrt(TRADING_DAYS_PER_YEAR)
   );
   const fxVol = dailyVolatility(
     exchangeRateRepository.dailySeries(180).map((d) => d.rate),
@@ -123,7 +123,7 @@ function buildFuturesForecast(curve, lastObserved) {
 
   const modelParams = {
     method: 'futures-curve',
-    source: 'yahoo-ice-coffee-c',
+    source: `yahoo-ice-${market.id}`,
     curve: curve.map((p) => ({ symbol: p.symbol, days: p.daysFromNow, centsPerLb: p.centsPerLb })),
     dailyVolPct: combinedDailyVol,
   };
@@ -189,13 +189,13 @@ function dampedTrendSum(trend, horizonDays) {
   return trend * ((phi * (1 - phi ** horizonDays)) / (1 - phi));
 }
 
-function buildHoltFallbackForecast(series) {
+function buildHoltFallbackForecast(series, market) {
   const best = fitBestHolt(series);
   const lastObserved = series[series.length - 1];
   const minPrice = lastObserved * (1 - MAX_FORECAST_MOVE_PCT);
   const maxPrice = lastObserved * (1 + MAX_FORECAST_MOVE_PCT);
 
-  const coffeeVol = dailyVolatility(series, FALLBACK_COFFEE_ANNUAL_VOL / Math.sqrt(TRADING_DAYS_PER_YEAR));
+  const coffeeVol = dailyVolatility(series, market.fallbackAnnualVol / Math.sqrt(TRADING_DAYS_PER_YEAR));
   const fxVol = dailyVolatility(
     exchangeRateRepository.dailySeries(180).map((d) => d.rate),
     FALLBACK_FX_ANNUAL_VOL / Math.sqrt(TRADING_DAYS_PER_YEAR)
@@ -227,35 +227,51 @@ function buildHoltFallbackForecast(series) {
   });
 }
 
-async function computeForecast() {
-  const current = coffeePriceService.getCurrentPrice();
+async function computeForecast(market) {
+  const current = coffeePriceService.getCurrentPrice(market.id);
   if (!current) return null;
 
   const lastObserved = current.price;
 
   try {
-    const curve = await yahooFuturesProvider.fetchCurve();
-    if (curve.length >= 1) return buildFuturesForecast(curve, lastObserved);
+    const curve = await yahooFuturesProvider.fetchCurve(5, market.id);
+    if (curve.length >= 1) return buildFuturesForecast(curve, lastObserved, market);
     throw new Error('curva de futuros vacía');
   } catch (err) {
-    logger.warn(`forecastService: no se pudo obtener la curva de futuros, se usa el respaldo (${err.message})`);
+    logger.warn(
+      `forecastService: no se pudo obtener la curva de futuros de ${market.id}, se usa el respaldo (${err.message})`
+    );
   }
 
-  const series = coffeePriceRepository.dailySeries(180).map((d) => d.price);
+  const series = coffeePriceRepository.dailySeries(180, market.id).map((d) => d.price);
   if (series.length < 2) return null;
 
-  return buildHoltFallbackForecast(series);
+  return buildHoltFallbackForecast(series, market);
 }
 
-async function recomputeAndCache() {
-  const forecasts = await computeForecast();
+async function recomputeAndCache(marketId = 'coffee') {
+  const market = getMarket(marketId);
+  const forecasts = await computeForecast(market);
   if (!forecasts) {
-    logger.warn('forecastService: no hay suficiente historial de precios para proyectar todavía.');
+    logger.warn(`forecastService: no hay suficiente historial de precios de ${market.id} para proyectar todavía.`);
     return [];
   }
-  forecastRepository.replaceAll(forecasts);
-  logger.info(`Proyección de precio recalculada (${forecasts.length} horizontes, ${forecasts[0].modelParams.method}).`);
+  forecastRepository.replaceAll(forecasts, market.id);
+  logger.info(
+    `Proyección de ${market.id} recalculada (${forecasts.length} horizontes, ${forecasts[0].modelParams.method}).`
+  );
   return forecasts;
+}
+
+/** Recalcula todos los mercados; uno que falle no impide que los demás se actualicen. */
+async function recomputeAllMarkets() {
+  for (const market of listMarkets()) {
+    try {
+      await recomputeAndCache(market.id);
+    } catch (err) {
+      logger.error(`forecastService: error recalculando ${market.id}:`, err);
+    }
+  }
 }
 
 function normalizeRow(row) {
@@ -277,10 +293,11 @@ function normalizeRow(row) {
  * curso (no se bloquea el arranque del servidor por ella) — en ese caso se calcula aquí
  * mismo para esta primera petición en vez de devolver un vacío.
  */
-async function getForecast() {
-  const cached = forecastRepository.latestAll();
+async function getForecast(marketId = 'coffee') {
+  const market = getMarket(marketId);
+  const cached = forecastRepository.latestAll(market.id);
   if (cached.length > 0) return cached.map(normalizeRow);
-  return recomputeAndCache();
+  return recomputeAndCache(market.id);
 }
 
-module.exports = { recomputeAndCache, getForecast };
+module.exports = { recomputeAndCache, recomputeAllMarkets, getForecast };

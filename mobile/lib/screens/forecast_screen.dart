@@ -5,6 +5,7 @@ import '../format.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/market_selector.dart';
 import 'pro_screen.dart';
 
 class ForecastScreen extends StatelessWidget {
@@ -14,9 +15,16 @@ class ForecastScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AsyncView<Json>(
-      load: session.api.forecast,
-      builder: (context, data) => _ForecastTabs(data: data, session: session),
+    return Column(
+      children: [
+        MarketSelector(session: session),
+        Expanded(
+          child: AsyncView<Json>(
+            load: () => session.api.forecast(session.market),
+            builder: (context, data) => _ForecastTabs(data: data, session: session),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -128,16 +136,19 @@ class _ForecastList extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        f['impliedInternalCopPerCarga'] != null
-                            ? formatCop(f['impliedInternalCopPerCarga'] as num)
-                            : formatUsd(usdPerLbToCarga(f['usdPerLb'] as num)),
+                        f['copPerKg'] != null
+                            ? '${formatCop(f['copPerKg'] as num)}/kg'
+                            : f['impliedInternalCopPerCarga'] != null
+                                ? formatCop(f['impliedInternalCopPerCarga'] as num)
+                                : formatUsd(usdPerLbToCarga(f['usdPerLb'] as num)),
                         style: const TextStyle(fontWeight: FontWeight.w700, fontFeatures: tabular),
                       ),
                       // Rango probable (mínimo–máximo), no solo el precio central: entre
                       // más lejos la fecha, más ancho — ver la nota al final de la lista.
-                      if (f['lowImpliedCopPerCarga'] != null && f['highImpliedCopPerCarga'] != null)
+                      if ((f['lowCopPerKg'] ?? f['lowImpliedCopPerCarga']) != null &&
+                          (f['highCopPerKg'] ?? f['highImpliedCopPerCarga']) != null)
                         Text(
-                          '${formatCop(f['lowImpliedCopPerCarga'] as num)} – ${formatCop(f['highImpliedCopPerCarga'] as num)}',
+                          '${formatCop((f['lowCopPerKg'] ?? f['lowImpliedCopPerCarga']) as num)} – ${formatCop((f['highCopPerKg'] ?? f['highImpliedCopPerCarga']) as num)}',
                           style: const TextStyle(fontSize: 11, color: AvColors.fgFaint, fontFeatures: tabular),
                         ),
                       if (f['changePct'] != null)

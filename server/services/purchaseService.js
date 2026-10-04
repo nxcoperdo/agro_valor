@@ -1,5 +1,6 @@
 const db = require('../db/connection');
 const coffeeMath = require('../domain/coffeeMath');
+const productTypes = require('../domain/productTypes');
 const purchaseRepository = require('../repositories/purchaseRepository');
 const supplierService = require('./supplierService');
 const workdayService = require('./workdayService');
@@ -8,7 +9,6 @@ const auditService = require('./auditService');
 const permissionService = require('./permissionService');
 const { toIso } = require('../utils/datetime');
 
-const COFFEE_TYPES = ['cafe_verde', 'cafe_merma_5', 'cafe_sin_merma', 'otro'];
 const PAYMENT_METHODS = ['efectivo', 'transferencia', 'credito', 'otro'];
 const fail = (msg, status = 400) => Object.assign(new Error(msg), { status });
 const clean = (v) => (v == null || String(v).trim() === '' ? null : String(v).trim());
@@ -30,6 +30,9 @@ function serialize(row, weighings) {
     workdayId: row.workday_id,
     lot: row.lot_id ? { id: row.lot_id, code: row.lot_code } : null,
     coffeeType: row.coffee_type,
+    productType: row.coffee_type,
+    productLabel: productTypes.label(row.coffee_type),
+    requiresDrying: row.requires_drying !== 0,
     porcentajeMermaInicial: row.merma_inicial_pct,
     pesoTotalCompra: row.peso_total_kg,
     kgDescontados: row.kg_descontados,
@@ -59,8 +62,9 @@ function parseWeighings(input) {
 }
 
 function create(ctx, body) {
-  const coffeeType = body.coffeeType || 'cafe_verde';
-  if (!COFFEE_TYPES.includes(coffeeType)) throw fail('Tipo de café inválido');
+  // La app móvil instalada sigue mandando coffeeType; la web nueva manda productType (mismo valor).
+  const coffeeType = body.productType || body.coffeeType || 'cafe_verde';
+  if (!productTypes.isValid(coffeeType)) throw fail('Tipo de producto inválido');
   const paymentMethod = body.paymentMethod || 'efectivo';
   if (!PAYMENT_METHODS.includes(paymentMethod)) throw fail('Forma de pago inválida');
 
@@ -69,13 +73,24 @@ function create(ctx, body) {
     body.porcentajeMermaInicial != null && body.porcentajeMermaInicial !== ''
       ? parseFloat(body.porcentajeMermaInicial)
       : coffeeMath.mermaPorDefecto(coffeeType);
-  const precioCarga = parseFloat(body.precioCarga);
-  if (!Number.isFinite(precioCarga) || precioCarga <= 0) throw fail('El precio por carga debe ser mayor a cero');
+  // El precio se define por carga (125 kg) o directamente por kilo; si llegan los dos manda el de kilo.
+  const hasKg = body.precioKg != null && body.precioKg !== '';
+  const precioKgIn = hasKg ? parseFloat(body.precioKg) : null;
+  if (hasKg && (!Number.isFinite(precioKgIn) || precioKgIn <= 0)) throw fail('El precio por kilo debe ser mayor a cero');
+  const precioCargaIn = hasKg ? precioKgIn * coffeeMath.CARGA_KG : parseFloat(body.precioCarga);
+  if (!hasKg && (!Number.isFinite(precioCargaIn) || precioCargaIn <= 0)) throw fail('El precio por carga debe ser mayor a cero');
+  const precioCarga = precioCargaIn;
+
+  const requiresDrying =
+    body.requiresDrying == null || body.requiresDrying === ''
+      ? productTypes.get(coffeeType).requiresDryingDefault
+      : body.requiresDrying === true || body.requiresDrying === 1 || body.requiresDrying === 'true' || body.requiresDrying === '1';
 
   const calc = coffeeMath.calcularCompra({
     pesadasKg: pesadas.map((p) => p.pesoKg),
     porcentajeMermaInicial: mermaPct,
     precioCarga,
+    precioKg: hasKg ? precioKgIn : null,
   });
 
   const id = db.transaction(() => {
@@ -98,6 +113,7 @@ function create(ctx, body) {
       paymentReference: clean(body.paymentReference),
       notes: clean(body.notes),
       userId: ctx.userId,
+      requiresDrying,
     });
     pesadas.forEach((p) => purchaseRepository.insertWeighing(purchaseId, { ...p, userId: ctx.userId }));
     auditService.log({
@@ -107,6 +123,21 @@ function create(ctx, body) {
     return purchaseId;
   })();
   return get(ctx, id);
+}
+
+/** Cambia si la compra pasa por secado. No se puede una vez su lote ya terminó el secado o entró a inventario. */
+function setRequiresDrying(ctx, id, requiresDrying) {
+  permissionService.assert(ctx.role, 'gestionar_costos');
+  const row = purchaseRepository.findById(ctx.businessId, Number(id));
+  if (!row) throw fail('Compra no encontrada', 404);
+  if (row.lot_id) {
+    const lot = db.prepare('SELECT status FROM lots WHERE id = ?').get(row.lot_id);
+    if (lot && !['CREADO', 'EN_TRANSPORTE', 'EN_SECADO'].includes(lot.status)) {
+      throw fail('El lote de esta compra ya terminó el procesamiento: no se puede cambiar si requiere secado', 409);
+    }
+  }
+  db.prepare('UPDATE purchases SET requires_drying = ? WHERE id = ?').run(requiresDrying ? 1 : 0, row.id);
+  auditService.log({ businessId: ctx.businessId, userId: ctx.userId, action: 'CAMBIAR_SECADO', entity: 'purchase', entityId: row.id, changes: { requiresDrying } });
 }
 
 function get(ctx, id) {
@@ -145,4 +176,4 @@ function voidPurchase(ctx, id, reason) {
   return get(ctx, row.id);
 }
 
-module.exports = { create, get, list, voidPurchase, COFFEE_TYPES, PAYMENT_METHODS };
+module.exports = { create, get, list, voidPurchase, setRequiresDrying, PAYMENT_METHODS };

@@ -20,6 +20,7 @@ function build(ctx, purchaseId) {
     supplier: { name: p.supplier.name, idType: p.supplier.idType, idNumber: p.supplier.idNumber },
     purchasedAt: p.purchasedAt,
     coffeeType: p.coffeeType,
+    productLabel: p.productLabel,
     weighings: p.weighings.map((w) => ({ pesoKg: w.pesoKg, at: w.at })),
     pesoTotalCompra: p.pesoTotalCompra,
     porcentajeMermaInicial: p.porcentajeMermaInicial,
