@@ -3,4 +3,4 @@
 storePassword=CAMBIAME
 keyPassword=CAMBIAME
 keyAlias=agrovalor
-storeFile=../agrovalor-upload.jks
+storeFile=agrovalor-upload.jks
