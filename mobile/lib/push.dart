@@ -45,6 +45,8 @@ class PushNotifications {
       final settings = await messaging.requestPermission();
       if (settings.authorizationStatus == AuthorizationStatus.denied) return false;
 
+      if (defaultTargetPlatform == TargetPlatform.iOS) await _waitForApnsToken(messaging);
+
       _token = await messaging.getToken();
       if (_token == null) return false;
       await api.registerDevice(_token!, defaultTargetPlatform.name);
@@ -58,6 +60,14 @@ class PushNotifications {
     } catch (e) {
       debugPrint('No se pudo registrar el teléfono para push: $e');
       return false;
+    }
+  }
+
+  /// En iPhone el token de FCM depende del de APNs, que puede tardar unos segundos en llegar tras el permiso.
+  Future<void> _waitForApnsToken(FirebaseMessaging messaging) async {
+    for (var i = 0; i < 10; i++) {
+      if (await messaging.getAPNSToken() != null) return;
+      await Future<void>.delayed(const Duration(milliseconds: 500));
     }
   }
 

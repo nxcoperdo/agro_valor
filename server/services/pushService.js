@@ -65,6 +65,7 @@ async function sendToUser(userId, { title, body, data = {} }) {
       notification: { title, body },
       data,
       android: { priority: 'high', notification: { channelId: 'price_alerts' } },
+      apns: { headers: { 'apns-priority': '10' }, payload: { aps: { sound: 'default' } } },
     });
 
     const dead = res.responses
