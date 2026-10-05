@@ -114,7 +114,7 @@ test('jornada y reportes cuentan facturas, no productos', () => {
   assert.equal(day.proveedores, 1);
   assert.equal(day.totalPagado, 14700000 + 1000000);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = require('../services/sequenceService').today();
   const rep = reports.build(ctx, 'proveedor', { from: today, to: today });
   assert.equal(rep.rows.reduce((a, r) => a + r.compras, 0), 2);
   const byType = reports.build(ctx, 'tipo-cafe', { from: today, to: today });

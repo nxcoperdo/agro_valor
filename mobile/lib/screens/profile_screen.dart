@@ -126,7 +126,7 @@ class _ProfileFormState extends State<_ProfileForm> {
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   value: _notifyPush,
                   onChanged: (v) => setState(() => _notifyPush = v),
                   secondary: const Icon(Icons.notifications_rounded, color: AvColors.accent),
@@ -138,7 +138,7 @@ class _ProfileFormState extends State<_ProfileForm> {
                     style: const TextStyle(color: AvColors.fgMuted, fontSize: 12),
                   ),
                 ),
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   value: _notifyWhatsapp,
                   onChanged: (v) => setState(() => _notifyWhatsapp = v),
                   secondary: const Icon(Icons.chat_rounded, color: AvColors.positive),

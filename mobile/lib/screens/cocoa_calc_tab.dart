@@ -109,7 +109,7 @@ class _CocoaCalcTabState extends State<CocoaCalcTab> with AutomaticKeepAliveClie
                   hint: '0',
                   max: 100000,
                 ),
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Cacao fermentado'),
                   value: _fermented,

@@ -196,7 +196,7 @@ class _CoffeeLineProjectionState extends State<CoffeeLineProjection> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 12),
-          SwitchListTile(
+          SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: const Text('¿Requiere proceso de secado?'),
             subtitle: Muted(
