@@ -340,7 +340,7 @@ class _CoffeeInvoiceFormScreenState extends State<CoffeeInvoiceFormScreen> {
           ),
           const SizedBox(height: 12),
           NumberField(controller: line.merma, label: 'Merma inicial (%)', suffix: '%', required: true, min: 0, max: 100),
-          SwitchListTile(
+          SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             title: const Text('¿Requiere secado?'),
             subtitle: Text(

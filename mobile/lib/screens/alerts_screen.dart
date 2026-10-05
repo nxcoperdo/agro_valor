@@ -196,7 +196,7 @@ class _AlertTile extends StatelessWidget {
               ),
             ),
           ),
-          Switch(value: active, onChanged: onToggle),
+          Switch.adaptive(value: active, onChanged: onToggle),
           IconButton(
             tooltip: 'Eliminar',
             onPressed: onDelete,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../session.dart';
 import '../theme.dart';
+import '../widgets/av_glass.dart';
 import '../widgets/trial_welcome_dialog.dart';
 import 'account_screen.dart';
 import 'alerts_screen.dart';
@@ -63,7 +64,8 @@ class _HomeShellState extends State<HomeShell> {
         ];
 
         return Scaffold(
-          extendBody: false,
+          // En iPhone la barra de vidrio flota sobre el contenido, que pasa por detrás.
+          extendBody: isIOS && kLiquidGlass,
           body: SafeArea(
             bottom: false,
             child: Column(
@@ -134,6 +136,7 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isIOS && kLiquidGlass) return _buildGlass(context);
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -182,6 +185,44 @@ class _BottomNav extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlass(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, MediaQuery.paddingOf(context).bottom + 6),
+      child: AvGlass(
+        radius: 30,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
+          children: [
+            for (var i = 0; i < items.length; i++)
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onTap(i),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(items[i].icon, size: 22, color: i == index ? AvColors.accent : AvColors.fgMuted),
+                      const SizedBox(height: 3),
+                      Text(
+                        items[i].label,
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: i == index ? FontWeight.w700 : FontWeight.w500,
+                          color: i == index ? AvColors.accent : AvColors.fgMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
