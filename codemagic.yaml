@@ -15,10 +15,6 @@ workflows:
         script: flutter analyze
       - name: Pruebas
         script: flutter test
-      - name: Pods
-        script: |
-          cd ios
-          pod install
       - name: Build para simulador
         script: flutter build ios --simulator --debug
       - name: Empaquetar .app para Appetize
@@ -40,10 +36,6 @@ workflows:
     scripts:
       - name: Dependencias
         script: flutter pub get
-      - name: Pods
-        script: |
-          cd ios
-          pod install
       - name: Build para dispositivo (release, sin firma)
         script: flutter build ios --release --no-codesign
       - name: Empaquetar .ipa
