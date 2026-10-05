@@ -22,6 +22,7 @@ workflows:
           cd build/ios/iphonesimulator
           zip -r Runner-simulator.zip Runner.app
     artifacts:
+      - build/ios/iphonesimulator/Runner-simulator.zip
       - mobile/build/ios/iphonesimulator/Runner-simulator.zip
 
   ios-ipa-sideload:
@@ -46,4 +47,5 @@ workflows:
           cp -r Runner.app Payload/
           zip -qr AgroValor-unsigned.ipa Payload
     artifacts:
+      - build/ios/iphoneos/AgroValor-unsigned.ipa
       - mobile/build/ios/iphoneos/AgroValor-unsigned.ipa
