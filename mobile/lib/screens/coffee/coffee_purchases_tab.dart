@@ -8,6 +8,7 @@ import '../../widgets/common.dart';
 import '../../widgets/forms.dart';
 import 'coffee_invoice_form_screen.dart';
 import 'coffee_line_projection.dart';
+import 'coffee_sales_math.dart';
 
 /// Compra de producto: jornada actual, historial de facturas y nueva compra (factura con uno o varios productos).
 class CoffeePurchasesTab extends StatefulWidget {
@@ -197,8 +198,6 @@ class CoffeeInvoiceDetailScreen extends StatelessWidget {
   final Session session;
   final int invoiceId;
 
-  static const _payments = {'efectivo': 'Efectivo', 'transferencia': 'Transferencia', 'credito': 'Crédito', 'otro': 'Otro'};
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -228,7 +227,7 @@ class CoffeeInvoiceDetailScreen extends StatelessWidget {
                     SupplierDetails(supplier: inv['supplier'] as Json),
                     const SizedBox(height: 8),
                     Muted(
-                      'Pago: ${_payments[inv['paymentMethod']] ?? inv['paymentMethod']}'
+                      'Pago: ${paymentLabel(inv['paymentMethod'] as String?)}'
                       '${(inv['paymentReference'] as String?)?.isNotEmpty == true ? ' · ${inv['paymentReference']}' : ''}',
                       size: 12,
                     ),

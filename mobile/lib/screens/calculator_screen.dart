@@ -12,6 +12,7 @@ import 'coffee/coffee_inventory_tab.dart';
 import 'coffee/coffee_lots_tab.dart';
 import 'coffee/coffee_purchases_tab.dart';
 import 'coffee/coffee_quick_calc_tab.dart';
+import 'coffee/coffee_sales_tab.dart';
 import 'pro_screen.dart';
 
 /// Cuánto le queda realmente al caficultor por carga según su café, y en qué cooperativa le conviene vender.
@@ -35,7 +36,7 @@ class CalculatorScreen extends StatelessWidget {
     }
 
     return DefaultTabController(
-      length: 7,
+      length: 8,
       child: Column(
         children: [
           const TabBar(
@@ -48,6 +49,7 @@ class CalculatorScreen extends StatelessWidget {
               Tab(text: 'Compra de producto'),
               Tab(text: 'Lotes'),
               Tab(text: 'Inventario'),
+              Tab(text: 'Ventas'),
               Tab(text: 'Resumen'),
             ],
           ),
@@ -63,6 +65,7 @@ class CalculatorScreen extends StatelessWidget {
                 CoffeePurchasesTab(session: session),
                 CoffeeLotsTab(session: session),
                 CoffeeInventoryTab(session: session),
+                CoffeeSalesTab(session: session),
                 CoffeeDashboardTab(session: session),
               ],
             ),
