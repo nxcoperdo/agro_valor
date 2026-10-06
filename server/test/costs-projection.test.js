@@ -85,3 +85,9 @@ test('proyección: el contador no gestiona; sin ver_margenes se ocultan utilidad
   assert.throws(() => projection.save(ctx, p.id, { rendimientoSecadoPct: 0 }), { status: 400 });
   assert.throws(() => projection.save(ctx, p.id, { costos: [{ concepto: 'a', valor: 1, modo: 'xx' }] }), { status: 400 });
 });
+
+test('proyección: un destare que se come todos los kilos secos se rechaza', () => {
+  const ctx = ctxFor('destare@x.co');
+  const p = main(ctx);
+  assert.throws(() => projection.save(ctx, p.id, { rendimientoSecadoPct: 55, destareKg: 600 }), { status: 400 });
+});

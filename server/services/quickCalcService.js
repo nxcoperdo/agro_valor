@@ -30,8 +30,10 @@ function compare({ kilos, opciones, referencia }) {
     return { factor, precioCarga };
   });
   const t = coffeeMath.compararFactores({ kilos: k, opciones: parsed });
+  // esMayor se marca por posición: con dos opciones del mismo factor, resaltar por factor marcaría las dos.
+  const idxMayor = t.mayorValor ? t.filas.findIndex((f) => f.valorTotal === t.mayorValor.valorTotal) : -1;
   return {
-    filas: t.filas.map((f) => ({ factor: f.factor, precioCarga: f.precioCarga, precioKg: f.precioKg, kilos: f.kilos, cargas: f.numeroCargas, total: f.valorTotal, diferencia: f.diferencia })),
+    filas: t.filas.map((f, i) => ({ factor: f.factor, precioCarga: f.precioCarga, precioKg: f.precioKg, kilos: f.kilos, cargas: f.numeroCargas, total: f.valorTotal, diferencia: f.diferencia, esMayor: i === idxMayor })),
     mayorValor: t.mayorValor ? { factor: t.mayorValor.factor, total: t.mayorValor.valorTotal } : null,
   };
 }

@@ -123,7 +123,7 @@ export async function renderQuickCalc(container) {
     try {
       const r = await api.compareFactors({ kilos: parseNumber(f.kilos.value), opciones, referencia });
       container.querySelector('#cmp-result').innerHTML = `<div class="table-scroll"><table class="coop-table"><thead><tr><th>Factor</th><th>Precio carga</th><th>Precio kg</th><th>Kg</th><th>Cargas</th><th>Total</th><th>Diferencia</th></tr></thead><tbody>
-        ${r.filas.map((x) => `<tr class="${r.mayorValor && x.factor === r.mayorValor.factor ? 'row-highest' : ''}">
+        ${r.filas.map((x) => `<tr class="${x.esMayor ? 'row-highest' : ''}">
           <td data-label="Factor">${formatFactor(x.factor)}</td><td data-label="Precio carga" class="tabular-nums">${formatCopValue(x.precioCarga)}</td>
           <td data-label="Precio kg" class="tabular-nums">${formatCopValue(x.precioKg)}</td><td data-label="Kg" class="tabular-nums">${formatKg(x.kilos)}</td>
           <td data-label="Cargas" class="tabular-nums">${x.cargas.toLocaleString('es-CO')}</td><td data-label="Total" class="tabular-nums">${formatCopValue(x.total)}</td>

@@ -29,3 +29,8 @@ test('validaciones', () => {
   assert.throws(() => q.calculate({ kilos: 10, precioCarga: 'x' }), { status: 400 });
   assert.throws(() => q.compare({ kilos: 10, opciones: [{ factor: 88, precioCarga: 1 }] }), { status: 400 });
 });
+
+test('comparar: con dos opciones del mismo factor solo se marca una como mayor valor', () => {
+  const r = q.compare({ kilos: 1000, opciones: [{ factor: 88, precioCarga: 950000 }, { factor: 88, precioCarga: 950000 }, { factor: 90, precioCarga: 900000 }] });
+  assert.deepEqual(r.filas.map((f) => f.esMayor), [true, false, false]);
+});

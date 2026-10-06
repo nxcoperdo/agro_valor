@@ -20,6 +20,8 @@
  * cooperativa: cada punto de compra aplica sus propios castigos y bonificaciones.
  */
 
+const { CARGA_KG } = require('../utils/currency');
+
 const BASE_FACTOR = 94;
 const BASE_HUMIDITY = 12;
 
@@ -127,7 +129,7 @@ function calculate(input = {}) {
     assumptions: {
       baseFactor: BASE_FACTOR,
       baseHumidity: BASE_HUMIDITY,
-      cargaKg: 125,
+      cargaKg: CARGA_KG,
     },
     disclaimer:
       'Estimación basada en la práctica comercial habitual (factor 94 y 12% de humedad como base). ' +

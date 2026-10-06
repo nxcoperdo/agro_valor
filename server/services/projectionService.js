@@ -86,6 +86,7 @@ function save(ctx, purchaseId, input) {
   if (precioVentaCarga != null && !(precioVentaCarga > 0)) throw fail('El precio de venta debe ser mayor a cero');
   const saved = { rendimientoSecadoPct: rendimiento, destareKg: destare, costos: parseCostos(input.costos), precioVentaCarga };
   const r = compute(p, saved);
+  if (destare > 0 && r.kilosNetosProyectados <= 0) throw fail('El destare debe ser menor a los kilos secos proyectados');
   db.prepare(
     `INSERT INTO purchase_projections (purchase_id, rendimiento_secado_pct, kilos_secos, destare_kg, kilos_netos, costos_procesamiento,
        costos_json, costo_total, costo_minimo_kg, costo_minimo_carga, precio_venta_carga, ingreso, utilidad, margen)
