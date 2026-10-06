@@ -68,7 +68,8 @@ export async function renderTradeSales(container) {
       const t = [...lines.querySelectorAll('.sale-line')].reduce((a, l) => {
         const kg = parseNumber(l.querySelector('[data-f=kg]').value) || 0;
         const precio = parseNumber(l.querySelector('[data-f=precio]').value) || 0;
-        return a + Math.round((kg * precio) / 125);
+        // El precio puede estar por carga de 125 kg (café) o por kilo (cacao).
+        return a + Math.round(l.querySelector('[data-f=unidad]').value === 'kg' ? kg * precio : (kg * precio) / 125);
       }, 0);
       container.querySelector('#sale-total').textContent = formatCopValue(t);
     };
@@ -78,10 +79,11 @@ export async function renderTradeSales(container) {
       d.innerHTML = `<div class="field"><label>Lote</label><select data-f="lot">${lotOptions}</select></div>
         <div class="field"><label>Kg a vender</label><input data-f="kg" inputmode="decimal" /></div>
         <div class="field"><label>Factor</label><input data-f="factor" inputmode="decimal" /></div>
-        <div class="field"><label>Precio por carga</label><input data-f="precio" inputmode="numeric" /></div>
+        <div class="field"><label>Precio</label><input data-f="precio" inputmode="decimal" /></div>
+        <div class="field"><label>Por</label><select data-f="unidad"><option value="carga">Carga (125 kg)</option><option value="kg">Kilo</option></select></div>
         <button type="button" class="btn-ghost" data-rm>Quitar</button>`;
       d.querySelector('[data-rm]').addEventListener('click', () => { d.remove(); total(); });
-      d.querySelectorAll('input').forEach((i) => i.addEventListener('input', total));
+      d.querySelectorAll('input, select[data-f=unidad]').forEach((i) => i.addEventListener('input', total));
       lines.appendChild(d);
     };
     addLine();
@@ -118,7 +120,9 @@ export async function renderTradeSales(container) {
           inventoryLotId: Number(l.querySelector('[data-f=lot]').value),
           kg: parseNumber(l.querySelector('[data-f=kg]').value),
           factor: l.querySelector('[data-f=factor]').value.trim() ? parseNumber(l.querySelector('[data-f=factor]').value) : null,
-          precioCarga: parseNumber(l.querySelector('[data-f=precio]').value),
+          ...(l.querySelector('[data-f=unidad]').value === 'kg'
+            ? { precioKg: parseNumber(l.querySelector('[data-f=precio]').value) }
+            : { precioCarga: parseNumber(l.querySelector('[data-f=precio]').value) }),
         })),
       };
       if (customerId) payload.customerId = customerId;

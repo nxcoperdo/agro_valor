@@ -1,5 +1,6 @@
 const db = require('../db/connection');
 const coffeeMath = require('../domain/coffeeMath');
+const productTypes = require('../domain/productTypes');
 const purchaseService = require('./purchaseService');
 const purchaseCostService = require('./purchaseCostService');
 const auditService = require('./auditService');
@@ -42,7 +43,7 @@ function compute(purchase, saved) {
 function stripMargins(role, result) {
   if (permissionService.can(role, 'ver_margenes')) return result;
   const { ingresoProyectado, utilidadProyectada, margen, precioVentaKg, ...rest } = result;
-  rest.entradas = { ...rest.entradas, precioVentaCarga: undefined };
+  rest.entradas = { ...rest.entradas, precioVentaCarga: undefined, precioVentaKg: undefined };
   return rest;
 }
 
@@ -62,7 +63,15 @@ function get(ctx, purchaseId) {
   const p = purchaseService.get(ctx, purchaseId);
   const saved =
     load(p.id) || { rendimientoSecadoPct: coffeeMath.rendimientoPorDefecto(p.requiresDrying), destareKg: 0, costos: [], precioVentaCarga: null };
-  return { requiresDrying: p.requiresDrying, guardada: Boolean(load(p.id)), ...stripMargins(ctx.role, compute(p, saved)) };
+  const result = compute(p, saved);
+  // El precio de venta se guarda por carga; precioVentaKg es solo la misma cifra para productos que se hablan por kilo.
+  result.entradas = { ...result.entradas, precioVentaKg: saved.precioVentaCarga == null ? null : saved.precioVentaCarga / coffeeMath.CARGA_KG };
+  return {
+    requiresDrying: p.requiresDrying,
+    priceUnit: productTypes.priceUnit(p.productType),
+    guardada: Boolean(load(p.id)),
+    ...stripMargins(ctx.role, result),
+  };
 }
 
 function save(ctx, purchaseId, input) {
@@ -80,7 +89,11 @@ function save(ctx, purchaseId, input) {
       ? coffeeMath.rendimientoPorDefecto(true)
       : parseFloat(input.rendimientoSecadoPct);
   const destare = input.destareKg == null || input.destareKg === '' ? 0 : parseFloat(input.destareKg);
-  const precioVentaCarga = input.precioVentaCarga == null || input.precioVentaCarga === '' ? null : parseFloat(input.precioVentaCarga);
+  const blank = (v) => v == null || v === '';
+  // Acepta el precio por kilo (cacao) o por carga (café); si llegan los dos manda el de kilo.
+  const precioVentaKg = blank(input.precioVentaKg) ? null : parseFloat(input.precioVentaKg);
+  if (precioVentaKg != null && !(precioVentaKg > 0)) throw fail('El precio de venta debe ser mayor a cero');
+  const precioVentaCarga = precioVentaKg != null ? precioVentaKg * coffeeMath.CARGA_KG : blank(input.precioVentaCarga) ? null : parseFloat(input.precioVentaCarga);
   if (!Number.isFinite(rendimiento) || rendimiento <= 0 || rendimiento > 100) throw fail('El rendimiento de secado debe estar entre 0 y 100');
   if (!Number.isFinite(destare) || destare < 0) throw fail('El destare no puede ser negativo');
   if (precioVentaCarga != null && !(precioVentaCarga > 0)) throw fail('El precio de venta debe ser mayor a cero');

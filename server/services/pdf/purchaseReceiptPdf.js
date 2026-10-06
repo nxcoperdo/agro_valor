@@ -26,7 +26,8 @@ async function render(receipt) {
     ['Kg recibidos', kg(receipt.pesoTotalCompra)],
     [`Merma (${pct(receipt.porcentajeMermaInicial)})`, kg(receipt.kgDescontados)],
     ['Kg pagables', kg(receipt.pesoPagable), true],
-    ['Precio por carga (125 kg)', cop(receipt.precioCarga)],
+    // Lo que se habla por kilo (cacao) no lleva la línea por carga, que sería una cifra derivada.
+    ...(productTypes.priceUnit(receipt.productType) === 'kg' ? [] : [['Precio por carga (125 kg)', cop(receipt.precioCarga)]]),
     ['Precio por kg', cop(receipt.precioKg)],
     ['TOTAL PAGADO', cop(receipt.totalCompra), true],
     ['Forma de pago', PAYMENTS[receipt.paymentMethod] || receipt.paymentMethod],

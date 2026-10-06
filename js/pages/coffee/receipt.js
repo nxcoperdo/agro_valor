@@ -42,7 +42,7 @@ export async function renderReceipt(container) {
         ${row('Kg recibidos', formatKg(l.pesoTotalCompra))}
         ${row(`Merma (${formatPct(l.porcentajeMermaInicial)})`, formatKg(l.kgDescontados))}
         ${row('Kg pagables', formatKg(l.pesoPagable), true)}
-        ${row('Precio por carga (125 kg)', formatCopValue(l.precioCarga))}
+        ${l.priceUnit === 'kg' ? '' : row('Precio por carga (125 kg)', formatCopValue(l.precioCarga))}
         ${row('Precio por kg', formatCopValue(l.precioKg))}
         ${lines.length > 1 ? row('Subtotal', formatCopValue(l.totalCompra), true) : ''}`).join('<hr />')}
       <hr />
