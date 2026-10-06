@@ -36,7 +36,7 @@ function purchasesBy(businessId, { from, to }, groupExpr, labelExpr = groupExpr,
   return db.prepare(
     `SELECT ${labelExpr} AS label, COUNT(DISTINCT COALESCE(p.invoice_id, -p.id)) AS compras, COALESCE(SUM(p.peso_total_kg), 0) AS kg_recibidos,
             COALESCE(SUM(p.peso_pagable_kg), 0) AS kg_pagables, COALESCE(SUM(p.total_compra), 0) AS total_pagado,
-            COALESCE(AVG(p.precio_carga), 0) AS precio_carga_promedio,
+            COALESCE(SUM(p.precio_carga * p.peso_pagable_kg) / NULLIF(SUM(p.peso_pagable_kg), 0), 0) AS precio_carga_promedio,
             COALESCE(SUM(p.kg_descontados), 0) AS kg_descontados
      FROM purchases p ${extraJoin}
      WHERE p.business_id = ? AND p.status = 'ACTIVA' AND ${LOCAL_DATE} BETWEEN ? AND ?
@@ -72,8 +72,12 @@ function build(ctx, type, q = {}) {
     ).all(b, r.from, r.to);
     rows.forEach((row) => {
       const lotIds = [...new Set(bySupplier.filter((x) => x.label === row.label).map((x) => x.lot_id))];
-      const vals = lotIds.map((id) => processingService.realResult(ctx, id)).filter(Boolean).map((x) => x.rendimientoReal).filter((v) => v != null);
-      row.rendimientoLotes = vals.length ? coffeeMath.roundKg(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
+      // Rendimiento del secado (no el mezclado con lo que no se seca), ponderado por los kg que entraron a secar.
+      const dried = lotIds
+        .map((id) => ({ rend: db.prepare('SELECT rendimiento_real_pct FROM lot_processing WHERE lot_id = ?').get(id), w: processingService.purchaseBase(ctx, id).pesoPagableSecar }))
+        .filter((x) => x.rend && x.rend.rendimiento_real_pct != null && x.w > 0);
+      const kg = dried.reduce((a, x) => a + x.w, 0);
+      row.rendimientoLotes = kg > 0 ? coffeeMath.roundKg(dried.reduce((a, x) => a + x.rend.rendimiento_real_pct * x.w, 0) / kg) : null;
     });
   } else if (type === 'comprador') {
     columns = ['Comprador', 'Compras', 'Kg recibidos', 'Kg pagables', 'Total pagado'];
