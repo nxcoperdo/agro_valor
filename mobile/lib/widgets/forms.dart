@@ -89,6 +89,7 @@ class NumberField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: TextInputType.numberWithOptions(decimal: !cop),
+      textInputAction: TextInputAction.done,
       inputFormatters: cop ? [CopInputFormatter()] : [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
       style: mono(size: 16),
       decoration: InputDecoration(
