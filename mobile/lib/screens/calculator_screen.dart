@@ -132,7 +132,7 @@ class _CalculatorState extends State<_Calculator> with AutomaticKeepAliveClientM
     final result = _result;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.paddingOf(context).bottom + 32),
       children: [
         SectionCard(
           child: Form(
@@ -206,6 +206,13 @@ class _CalculatorState extends State<_Calculator> with AutomaticKeepAliveClientM
               const SizedBox(height: 12),
               Muted('Total por ${decimalInputText(cargas)} cargas'),
               Text(formatCop(ref['total'] as num), style: mono(size: 20, weight: FontWeight.w600)),
+            ],
+            if (result['referenceIsStale'] == true) ...[
+              const SizedBox(height: 12),
+              Text(
+                'El precio de referencia es del ${formatDate(result['referenceScrapedAt'] as String?)} y puede estar desactualizado.',
+                style: const TextStyle(fontSize: 12, color: AvColors.danger),
+              ),
             ],
             const Divider(height: 28),
             for (final step in (ref['breakdown'] as List<dynamic>).cast<Json>()) _BreakdownRow(step: step),

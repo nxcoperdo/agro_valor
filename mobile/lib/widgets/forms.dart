@@ -25,8 +25,22 @@ double? parseCop(String text) {
   return digits.isEmpty ? null : double.parse(digits);
 }
 
-/// Decimales escritos con coma o con punto ("12,5" o "12.5").
-double? parseDecimal(String text) => double.tryParse(text.trim().replaceAll(',', '.'));
+final _thousandsGroups = RegExp(r'^[1-9]\d{0,2}(\.\d{3})+$');
+
+/// Misma regla que parseNumber en la web: la coma es el decimal; el punto solo es miles cuando agrupa
+/// de a 3 dígitos ("1.250" = 1250), si no es decimal ("12.5", "9500.5", "0.500").
+double? parseDecimal(String text) {
+  final raw = text.replaceAll(RegExp(r'\s'), '');
+  final String clean;
+  if (raw.contains(',')) {
+    clean = raw.replaceAll('.', '').replaceFirst(',', '.');
+  } else if (_thousandsGroups.hasMatch(raw)) {
+    clean = raw.replaceAll('.', '');
+  } else {
+    clean = raw;
+  }
+  return double.tryParse(clean);
+}
 
 String decimalInputText(num? value) {
   if (value == null) return '';

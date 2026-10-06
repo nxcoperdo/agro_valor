@@ -26,13 +26,13 @@ export async function renderQuickCalc(container) {
       <form class="calc-form" id="qc-form" novalidate>
         <div class="field"><label for="qc-kilos">Cantidad (kg)</label><input id="qc-kilos" name="kilos" inputmode="decimal" autocomplete="off" /></div>
         <div class="field"><label for="qc-precio">Precio por carga (${CARGA_KG} kg)</label><input id="qc-precio" name="precioCarga" inputmode="numeric" autocomplete="off" /></div>
-        <div class="field"><label for="qc-factor">Factor de rendimiento (opcional)</label><input id="qc-factor" name="factor" inputmode="decimal" placeholder="Ej. 88" value="${escapeHtml(defaultFactor)}" /></div>
+        <div class="field"><label for="qc-factor">Factor de rendimiento (opcional, solo informativo)</label><input id="qc-factor" name="factor" inputmode="decimal" placeholder="Ej. 88" value="${escapeHtml(defaultFactor)}" /></div>
       </form>
       <p class="form-error" id="qc-error" role="alert" hidden></p>
       <div id="qc-result" aria-live="polite"><p class="form-hint">Escribe los kilos y el precio para ver el resultado.</p></div></div>
     <div class="panel"><div class="panel-header"><h2>Comparar factores</h2></div>
       <p class="panel-intro">Escribe el precio por carga que te ofrecen para un factor y calculamos cuánto sería con los demás
-        (factor de referencia ÷ factor evaluado × precio de referencia). También puedes poner un precio propio a cada factor.</p>
+        (factor de referencia ÷ factor evaluado × precio de referencia). Si no escribes la referencia, pon el precio por carga de cada factor; con referencia, esos precios se ignoran.</p>
       <form id="cmp-form" novalidate>
         <div class="calc-form">
           <div class="field"><label for="cmp-kilos">Cantidad (kg)</label><input id="cmp-kilos" name="kilos" inputmode="decimal" autocomplete="off" /></div>
