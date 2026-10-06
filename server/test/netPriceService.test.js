@@ -22,10 +22,9 @@ test('humedad por encima de 12% descuenta agua', () => {
   close(r.netPerCarga, (BASE * 85) / 88);
 });
 
-test('humedad por debajo de 12% hoy sube el precio (sin tope)', () => {
-  // Se fija el comportamiento actual para que un cambio futuro sea consciente (ver auditoría M5).
+test('humedad por debajo de 12% no da bonificación', () => {
   const r = net.calculate({ basePriceCopCarga: BASE, humidity: 0 });
-  close(r.netPerCarga, (BASE * 100) / 88);
+  close(r.netPerCarga, BASE);
 });
 
 test('la pasilla se descuenta como proporción', () => {
@@ -52,16 +51,22 @@ test('el último paso del desglose es el neto por carga', () => {
   close(r.breakdown[r.breakdown.length - 1].amount, r.netPerCarga);
 });
 
-test('valores fuera de rango se limitan y quedan visibles en inputs', () => {
-  const r = net.calculate({ basePriceCopCarga: BASE, factor: 50, humidity: 99, pasillaPct: 90, cargas: -2 });
-  assert.equal(r.inputs.factor, 60);
-  assert.equal(r.inputs.humidity, 30);
-  assert.equal(r.inputs.pasillaPct, 40);
-  assert.equal(r.inputs.cargas, 0);
+test('valores fuera de rango se rechazan con 400 y un mensaje claro', () => {
+  const bad = [
+    [{ factor: 50 }, /factor.*entre 60 y 140/i],
+    [{ humidity: 99 }, /humedad.*entre 0 y 30/i],
+    [{ pasillaPct: 90 }, /pasilla.*entre 0 y 40/i],
+    [{ cargas: -2 }, /cargas.*entre 0 y 10000/i],
+    [{ transportCostCopCarga: -1 }, /transporte/i],
+  ];
+  for (const [extra, msg] of bad) {
+    assert.throws(() => net.calculate({ basePriceCopCarga: BASE, ...extra }), (e) => e.status === 400 && msg.test(e.message));
+  }
 });
 
-test('entradas vacías o no numéricas usan los valores base', () => {
-  const r = net.calculate({ basePriceCopCarga: BASE, factor: '', humidity: 'abc', cargas: null });
+test('un valor que no es número se rechaza; vacío o ausente usa el valor base', () => {
+  assert.throws(() => net.calculate({ basePriceCopCarga: BASE, humidity: 'abc' }), (e) => e.status === 400);
+  const r = net.calculate({ basePriceCopCarga: BASE, factor: '', humidity: undefined, cargas: null });
   assert.equal(r.inputs.factor, net.BASE_FACTOR);
   assert.equal(r.inputs.humidity, net.BASE_HUMIDITY);
   assert.equal(r.inputs.cargas, 1);

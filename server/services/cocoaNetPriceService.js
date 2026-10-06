@@ -1,4 +1,5 @@
 const { getMarket } = require('../config/markets');
+const { numberInRange } = require('../utils/inputs');
 
 /**
  * Calculadora de precio neto para el cacaotero.
@@ -28,10 +29,6 @@ const LIMITS = {
   transport: { min: 0, max: 100000 },
 };
 
-function clamp(value, { min, max }) {
-  return Math.min(Math.max(value, min), max);
-}
-
 function toNumber(value, fallback) {
   const n = parseFloat(value);
   return Number.isFinite(n) ? n : fallback;
@@ -56,16 +53,17 @@ function calculate(input = {}) {
   }
 
   const market = getMarket('cocoa');
-  const kg = clamp(toNumber(input.kg, 0), LIMITS.kg);
-  const humidity = clamp(toNumber(input.humidity, BASE_HUMIDITY), LIMITS.humidity);
-  const defectPct = clamp(toNumber(input.defectPct, 0), LIMITS.defectPct);
-  const buyerDiscountPct = clamp(toNumber(input.buyerDiscountPct, 0), LIMITS.buyerDiscountPct);
-  const transport = clamp(toNumber(input.transportCostCopKg, 0), LIMITS.transport);
+  const kg = numberInRange(input.kg, 'Los kilos', LIMITS.kg, 0);
+  const humidity = numberInRange(input.humidity, 'La humedad', LIMITS.humidity, BASE_HUMIDITY);
+  const defectPct = numberInRange(input.defectPct, 'El grano defectuoso', LIMITS.defectPct, 0);
+  const buyerDiscountPct = numberInRange(input.buyerDiscountPct, 'El descuento del comprador', LIMITS.buyerDiscountPct, 0);
+  const transport = numberInRange(input.transportCostCopKg, 'El transporte', LIMITS.transport, 0);
   const fermented = input.fermented !== false && input.fermented !== 'false';
 
   const referenceSource = agronetCopPerKg > 0 ? 'agronet' : 'ice';
   const referenceCopPerKg = agronetCopPerKg > 0 ? agronetCopPerKg : iceCopPerKg * market.farmgateFactor;
-  const humidityFactor = (100 - humidity) / (100 - BASE_HUMIDITY);
+  // Más seco que la base no se paga de más: solo se descuenta el agua que sobra.
+  const humidityFactor = Math.min((100 - humidity) / (100 - BASE_HUMIDITY), 1);
   const defectFactor = 1 - defectPct / 100;
   const fermentationFactor = fermented ? 1 : UNFERMENTED_FACTOR;
   const discountFactor = 1 - buyerDiscountPct / 100;

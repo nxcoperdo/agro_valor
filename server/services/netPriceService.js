@@ -21,6 +21,7 @@
  */
 
 const { CARGA_KG } = require('../utils/currency');
+const { numberInRange } = require('../utils/inputs');
 
 const BASE_FACTOR = 94;
 const BASE_HUMIDITY = 12;
@@ -32,10 +33,6 @@ const LIMITS = {
   cargas: { min: 0, max: 10000 },
   transport: { min: 0, max: 1000000 },
 };
-
-function clamp(value, { min, max }) {
-  return Math.min(Math.max(value, min), max);
-}
 
 function toNumber(value, fallback) {
   const n = parseFloat(value);
@@ -58,14 +55,15 @@ function calculate(input = {}) {
     throw Object.assign(new Error('Se necesita un precio base válido para calcular'), { status: 400 });
   }
 
-  const factor = clamp(toNumber(input.factor, BASE_FACTOR), LIMITS.factor);
-  const humidity = clamp(toNumber(input.humidity, BASE_HUMIDITY), LIMITS.humidity);
-  const pasillaPct = clamp(toNumber(input.pasillaPct, 0), LIMITS.pasillaPct);
-  const cargas = clamp(toNumber(input.cargas, 1), LIMITS.cargas);
-  const transportCost = clamp(toNumber(input.transportCostCopCarga, 0), LIMITS.transport);
+  const factor = numberInRange(input.factor, 'El factor de rendimiento', LIMITS.factor, BASE_FACTOR);
+  const humidity = numberInRange(input.humidity, 'La humedad', LIMITS.humidity, BASE_HUMIDITY);
+  const pasillaPct = numberInRange(input.pasillaPct, 'La pasilla', LIMITS.pasillaPct, 0);
+  const cargas = numberInRange(input.cargas, 'Las cargas', LIMITS.cargas, 1);
+  const transportCost = numberInRange(input.transportCostCopCarga, 'El transporte', LIMITS.transport, 0);
 
   const factorMultiplier = BASE_FACTOR / factor;
-  const humidityMultiplier = (100 - humidity) / (100 - BASE_HUMIDITY);
+  // Más seco que la base no se paga de más: solo se descuenta el agua que sobra.
+  const humidityMultiplier = Math.min((100 - humidity) / (100 - BASE_HUMIDITY), 1);
   const pasillaMultiplier = 1 - pasillaPct / 100;
 
   const afterFactor = basePrice * factorMultiplier;
@@ -98,7 +96,7 @@ function calculate(input = {}) {
       label: `Ajuste por humedad (${humidity}%)`,
       detail:
         humidity <= BASE_HUMIDITY
-          ? 'Está en el punto de humedad o más seco'
+          ? 'Está en el punto de humedad o más seco: no hay bonificación por café más seco'
           : 'Humedad por encima del 12%: parte del peso es agua',
       amount: afterHumidity,
       delta: afterHumidity - afterFactor,
