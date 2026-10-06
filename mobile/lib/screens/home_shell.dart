@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets/av_glass.dart';
+import '../widgets/av_glass_nav.dart';
 import '../widgets/trial_welcome_dialog.dart';
 import 'account_screen.dart';
 import 'alerts_screen.dart';
@@ -63,16 +64,34 @@ class _HomeShellState extends State<HomeShell> {
           AccountScreen(session: widget.session),
         ];
 
+        final glass = isIOS && kLiquidGlass;
+        // Se mide aquí, fuera del Scaffold, donde el inset inferior todavía es el real del dispositivo.
+        final navHeight = glass ? AvGlassNav.heightOf(context) : 0.0;
+
         return Scaffold(
           // En iPhone la barra de vidrio flota sobre el contenido, que pasa por detrás.
-          extendBody: isIOS && kLiquidGlass,
+          extendBody: glass,
           body: SafeArea(
             bottom: false,
             child: Column(
               children: [
                 _Header(title: _tabs[_index].title),
                 // IndexedStack conserva cada pestaña cargada al cambiar de una a otra.
-                Expanded(child: IndexedStack(index: _index, children: pages)),
+                Expanded(
+                  child: glass
+                      ? Builder(
+                          // El Scaffold externo recorta viewPadding.bottom a 0 dentro del body; sin esto los FAB
+                          // de las pestañas quedan a 16 px del borde, debajo de la barra de vidrio.
+                          builder: (context) {
+                            final mq = MediaQuery.of(context);
+                            return MediaQuery(
+                              data: mq.copyWith(viewPadding: mq.viewPadding.copyWith(bottom: navHeight)),
+                              child: IndexedStack(index: _index, children: pages),
+                            );
+                          },
+                        )
+                      : IndexedStack(index: _index, children: pages),
+                ),
               ],
             ),
           ),
@@ -136,7 +155,7 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isIOS && kLiquidGlass) return _buildGlass(context);
+    if (isIOS && kLiquidGlass) return AvGlassNav(items: items, index: index, onTap: onTap);
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -185,44 +204,6 @@ class _BottomNav extends StatelessWidget {
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGlass(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, MediaQuery.paddingOf(context).bottom + 6),
-      child: AvGlass(
-        radius: 30,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        child: Row(
-          children: [
-            for (var i = 0; i < items.length; i++)
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => onTap(i),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(items[i].icon, size: 22, color: i == index ? AvColors.accent : AvColors.fgMuted),
-                      const SizedBox(height: 3),
-                      Text(
-                        items[i].label,
-                        maxLines: 1,
-                        overflow: TextOverflow.clip,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: i == index ? FontWeight.w700 : FontWeight.w500,
-                          color: i == index ? AvColors.accent : AvColors.fgMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
         ),
       ),
     );

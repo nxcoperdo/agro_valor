@@ -129,7 +129,7 @@ class _ForecastList extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.paddingOf(context).bottom + 24),
       children: [
         if (items.isEmpty) const Muted('Todavía no hay proyección calculada.'),
         for (final f in items)

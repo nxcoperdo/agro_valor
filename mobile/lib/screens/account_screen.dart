@@ -41,7 +41,7 @@ class AccountScreen extends StatelessWidget {
           color: AvColors.accent,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.paddingOf(context).bottom + 24),
             children: [
               SectionCard(
                 child: Column(

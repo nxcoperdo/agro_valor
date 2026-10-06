@@ -98,7 +98,7 @@ class _CoffeePurchasesTabState extends State<CoffeePurchasesTab> {
           final products = summary['productos'];
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.paddingOf(context).bottom + 80),
             children: [
               SectionCard(
                 child: Column(

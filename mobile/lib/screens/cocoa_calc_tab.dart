@@ -68,7 +68,7 @@ class _CocoaCalcTabState extends State<CocoaCalcTab> with AutomaticKeepAliveClie
     final r = _result;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.paddingOf(context).bottom + 32),
       children: [
         SectionCard(
           child: Form(

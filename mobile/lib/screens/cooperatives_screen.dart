@@ -40,7 +40,7 @@ class CooperativesScreen extends StatelessWidget {
 
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.paddingOf(context).bottom + 24),
                 children: [
                   _ReportPrompt(session: session),
                   const SizedBox(height: 12),

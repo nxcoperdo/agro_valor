@@ -76,7 +76,7 @@ class _CoffeeLotsTabState extends State<CoffeeLotsTab> {
           final lots = (data['lots'] as List<dynamic>? ?? const []).cast<Json>();
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.paddingOf(context).bottom + 80),
             children: [
               const Muted('Junta las compras de un cliente en un lote, sigue su secado y envíalo a inventario.', size: 12),
               const SizedBox(height: 12),
