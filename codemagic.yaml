@@ -38,7 +38,15 @@ workflows:
       - name: Dependencias
         script: flutter pub get
       - name: Build para dispositivo (release, sin firma)
-        script: flutter build ios --release --no-codesign
+        script: |
+          # Si flutter exige un Development Team pese a --no-codesign, se compila con xcodebuild sin firma.
+          if ! flutter build ios --release --no-codesign; then
+            flutter build ios --release --no-codesign --config-only
+            xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release               -sdk iphoneos -derivedDataPath build/xc               CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+            mkdir -p build/ios/iphoneos
+            rm -rf build/ios/iphoneos/Runner.app
+            cp -r build/xc/Build/Products/Release-iphoneos/Runner.app build/ios/iphoneos/
+          fi
       - name: Empaquetar .ipa
         script: |
           cd build/ios/iphoneos
