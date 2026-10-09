@@ -267,7 +267,7 @@ class _CoffeeInvoiceDetailScreenState extends State<CoffeeInvoiceDetailScreen> {
                     SupplierDetails(supplier: inv['supplier'] as Json),
                     const SizedBox(height: 8),
                     Muted(
-                      'Pago: ${_payments[inv['paymentMethod']] ?? inv['paymentMethod']}'
+                      'Pago: ${CoffeeInvoiceDetailScreen._payments[inv['paymentMethod']] ?? inv['paymentMethod']}'
                       '${(inv['paymentReference'] as String?)?.isNotEmpty == true ? ' · ${inv['paymentReference']}' : ''}',
                       size: 12,
                     ),
