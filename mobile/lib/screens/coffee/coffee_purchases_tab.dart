@@ -9,6 +9,7 @@ import '../../widgets/forms.dart';
 import 'coffee_invoice_form_screen.dart';
 import 'coffee_lot_detail_screen.dart';
 import 'coffee_line_projection.dart';
+import 'coffee_sales_math.dart';
 
 /// Compra de producto: jornada actual, historial de facturas y nueva compra (factura con uno o varios productos).
 class CoffeePurchasesTab extends StatefulWidget {
@@ -101,7 +102,7 @@ class _CoffeePurchasesTabState extends State<CoffeePurchasesTab> {
           final products = summary['productos'];
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.paddingOf(context).bottom + 80),
             children: [
               SectionCard(
                 child: Column(
@@ -200,8 +201,6 @@ class CoffeeInvoiceDetailScreen extends StatefulWidget {
   final Session session;
   final int invoiceId;
 
-  static const _payments = {'efectivo': 'Efectivo', 'transferencia': 'Transferencia', 'credito': 'Crédito', 'otro': 'Otro'};
-
   @override
   State<CoffeeInvoiceDetailScreen> createState() => _CoffeeInvoiceDetailScreenState();
 }
@@ -267,7 +266,7 @@ class _CoffeeInvoiceDetailScreenState extends State<CoffeeInvoiceDetailScreen> {
                     SupplierDetails(supplier: inv['supplier'] as Json),
                     const SizedBox(height: 8),
                     Muted(
-                      'Pago: ${CoffeeInvoiceDetailScreen._payments[inv['paymentMethod']] ?? inv['paymentMethod']}'
+                      'Pago: ${paymentLabel(inv['paymentMethod'] as String?)}'
                       '${(inv['paymentReference'] as String?)?.isNotEmpty == true ? ' · ${inv['paymentReference']}' : ''}',
                       size: 12,
                     ),

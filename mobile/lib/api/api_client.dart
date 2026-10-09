@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -140,7 +141,8 @@ class ApiClient {
   Future<Json> coffeeQuickCalc(Json payload) async => await _request('POST', '/coffee/calculator', payload) as Json;
   Future<Json> coffeeCompareFactors(Json payload) async =>
       await _request('POST', '/coffee/calculator/compare', payload) as Json;
-  Future<Json> coffeeInventory() async => await _request('GET', '/coffee/inventory') as Json;
+  Future<Json> coffeeInventory({bool onlyAvailable = false}) async =>
+      await _request('GET', '/coffee/inventory${onlyAvailable ? '?available=1' : ''}') as Json;
   Future<Json> coffeeLots() async => await _request('GET', '/coffee/lots') as Json;
   Future<Json> coffeeLot(int id) async => await _request('GET', '/coffee/lots/$id') as Json;
   Future<Json> coffeeCreateLot(List<int> purchaseIds, String notes) async =>
@@ -162,4 +164,34 @@ class ApiClient {
       await _request('POST', '/coffee/invoices/$invoiceId/inventory', <String, dynamic>{}) as Json;
   Future<Json> coffeeEnterInventory(int lotId, Json payload) async =>
       await _request('POST', '/coffee/lots/$lotId/inventory', payload) as Json;
+
+  // Ventas de café (no confundir con /sales, el diario de ventas contra la referencia).
+  Future<Json> coffeeSales() async => await _request('GET', '/coffee/sales') as Json;
+  Future<Json> coffeeSale(int id) async => await _request('GET', '/coffee/sales/$id') as Json;
+  Future<Json> coffeeCreateSale(Json payload) async => await _request('POST', '/coffee/sales', payload) as Json;
+  Future<Json> coffeeVoidSale(int id, String reason) async =>
+      await _request('POST', '/coffee/sales/$id/void', {'reason': reason}) as Json;
+  Future<Json> coffeeSearchCustomers(String q) async =>
+      await _request('GET', '/coffee/customers?q=${Uri.encodeQueryComponent(q)}') as Json;
+
+  /// Recibo de la venta en PDF. No pasa por [_request] porque la respuesta es binaria, no JSON.
+  Future<Uint8List> coffeeSaleReceiptPdf(int id) async {
+    final http.Response res;
+    try {
+      res = await http
+          .get(Uri.parse('$apiBaseUrl/api/coffee/sales/$id/receipt.pdf?download=1'), headers: _headers)
+          .timeout(const Duration(seconds: 30));
+    } catch (_) {
+      throw ApiError('No hay conexión con el servidor. Revisa tu internet.', 0);
+    }
+    if (res.statusCode >= 400) {
+      var message = 'No se pudo generar el recibo (error ${res.statusCode})';
+      try {
+        final payload = jsonDecode(utf8.decode(res.bodyBytes));
+        if (payload is Json && payload['error'] is String) message = payload['error'] as String;
+      } catch (_) {}
+      throw ApiError(message, res.statusCode);
+    }
+    return res.bodyBytes;
+  }
 }

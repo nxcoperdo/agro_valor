@@ -122,7 +122,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.paddingOf(context).bottom + 80),
       children: [
         _ChannelsCard(
           data: data,

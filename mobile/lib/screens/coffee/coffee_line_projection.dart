@@ -50,6 +50,8 @@ class _CoffeeLineProjectionState extends State<CoffeeLineProjection> {
   bool _busy = false;
   bool _expanded = false;
   bool _requiresDrying = true;
+  // 'kg' para el cacao, 'carga' para el café: el servidor decide en qué unidad se habla el precio.
+  bool _priceByKg = false;
   String? _error;
 
   @override
@@ -94,9 +96,10 @@ class _CoffeeLineProjectionState extends State<CoffeeLineProjection> {
   void _fill(Json data) {
     final e = data['entradas'] as Json;
     _requiresDrying = data['requiresDrying'] == true;
+    _priceByKg = data['priceUnit'] == 'kg';
     _rend.text = decimalInputText(e['rendimientoSecadoPct'] as num?);
     _destare.text = decimalInputText(e['destareKg'] as num?);
-    _precio.text = copInputText(e['precioVentaCarga'] as num?);
+    _precio.text = _priceByKg ? decimalInputText(e['precioVentaKg'] as num?) : copInputText(e['precioVentaCarga'] as num?);
     for (final c in _costs) {
       c.dispose();
     }
@@ -124,7 +127,7 @@ class _CoffeeLineProjectionState extends State<CoffeeLineProjection> {
         'requiereSecado': _requiresDrying,
         'rendimientoSecadoPct': _requiresDrying ? parseDecimal(_rend.text) : 100,
         'destareKg': parseDecimal(_destare.text) ?? 0,
-        'precioVentaCarga': parseCop(_precio.text),
+        if (_priceByKg) 'precioVentaKg': parseDecimal(_precio.text) else 'precioVentaCarga': parseCop(_precio.text),
         'costos': costos,
       });
       if (!mounted) return;
@@ -218,7 +221,11 @@ class _CoffeeLineProjectionState extends State<CoffeeLineProjection> {
           ],
           NumberField(controller: _destare, label: 'Destare proyectado', suffix: 'kg', min: 0),
           const SizedBox(height: 12),
-          NumberField(controller: _precio, label: 'Precio actual café seco por carga (opcional)', kind: NumberKind.cop),
+          NumberField(
+            controller: _precio,
+            label: _priceByKg ? 'Precio actual del producto seco por kg (opcional)' : 'Precio actual café seco por carga (opcional)',
+            kind: _priceByKg ? NumberKind.decimal : NumberKind.cop,
+          ),
           const SizedBox(height: 16),
           const Text('Costos proyectados', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),

@@ -21,10 +21,18 @@ export function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-/** Convierte "900.000" o "1.234,5" escritos por el usuario en número. */
+/**
+ * Convierte lo que escribe el usuario en número (es-CO). Misma regla que parseDecimal en la app:
+ * la coma es el decimal; el punto solo es miles cuando agrupa de a 3 dígitos ("900.000", "1.250"),
+ * si no es decimal ("12.5", "9500.5", "0.500").
+ */
 export function parseNumber(text) {
   if (typeof text === 'number') return text;
-  const clean = String(text ?? '').trim().replace(/\./g, '').replace(',', '.');
-  const n = parseFloat(clean);
-  return Number.isFinite(n) ? n : NaN;
+  const raw = String(text ?? '').trim().replace(/\s/g, '');
+  let clean;
+  if (raw.includes(',')) clean = raw.replace(/\./g, '').replace(',', '.');
+  else if (/^[1-9]\d{0,2}(\.\d{3})+$/.test(raw)) clean = raw.replace(/\./g, '');
+  else clean = raw;
+  const n = Number(clean);
+  return clean !== '' && Number.isFinite(n) ? n : NaN;
 }

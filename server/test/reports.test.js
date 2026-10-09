@@ -93,3 +93,13 @@ test('rango explícito, validaciones, permisos y PDF', async () => {
   assert.equal(buf.subarray(0, 5).toString(), '%PDF-');
   assert.equal(reports.build(ctxFor('z@x.co'), 'proveedor').rows.length, 0);
 });
+
+test('precio por carga promedio ponderado por kg pagables, no promedio simple', () => {
+  const ctx = ctxFor(`w${Math.random()}@x.co`);
+  const mk = (n, kg, precioCarga) => purchases.create(ctx, { supplier: { idNumber: String(n), name: `P ${n}` }, coffeeType: 'cafe_verde', precioCarga, weighings: [kg] });
+  mk(1, 1000, 800000); // 920 kg pagables
+  mk(2, 500, 1000000); // 460 kg pagables
+  const row = reports.build(ctx, 'diario').rows[0];
+  // (800.000 × 920 + 1.000.000 × 460) / 1.380 = 866.667; el promedio simple daría 900.000
+  assert.equal(row.precioCargaPromedio, 866667);
+});

@@ -6,9 +6,7 @@ import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/forms.dart';
 import 'coffee_math.dart';
-
-/// Tipos de identificación que acepta el servidor.
-const _idTypes = ['CC', 'NIT', 'CE', 'PASAPORTE', 'OTRO'];
+import 'coffee_sales_math.dart';
 
 /// Un producto de la factura con sus campos en edición.
 class _LineDraft {
@@ -119,7 +117,7 @@ class _CoffeeInvoiceFormScreenState extends State<CoffeeInvoiceFormScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => SupplierPickerSheet(api: widget.api),
+      builder: (_) => PartyPickerSheet.suppliers(api: widget.api),
     );
     if (picked == null || !mounted) return;
     setState(() {
@@ -216,12 +214,7 @@ class _CoffeeInvoiceFormScreenState extends State<CoffeeInvoiceFormScreen> {
             DropdownButtonFormField<String>(
               initialValue: _payment,
               decoration: const InputDecoration(labelText: 'Forma de pago'),
-              items: const [
-                DropdownMenuItem(value: 'efectivo', child: Text('Efectivo')),
-                DropdownMenuItem(value: 'transferencia', child: Text('Transferencia')),
-                DropdownMenuItem(value: 'credito', child: Text('Crédito')),
-                DropdownMenuItem(value: 'otro', child: Text('Otro')),
-              ],
+              items: [for (final e in paymentLabels.entries) DropdownMenuItem(value: e.key, child: Text(e.value))],
               onChanged: (v) => setState(() => _payment = v ?? 'efectivo'),
             ),
             const SizedBox(height: 12),
@@ -275,7 +268,7 @@ class _CoffeeInvoiceFormScreenState extends State<CoffeeInvoiceFormScreen> {
         DropdownButtonFormField<String>(
           initialValue: _idType,
           decoration: const InputDecoration(labelText: 'Tipo de identificación'),
-          items: [for (final t in _idTypes) DropdownMenuItem(value: t, child: Text(t))],
+          items: [for (final t in idTypes) DropdownMenuItem(value: t, child: Text(t))],
           onChanged: (v) => setState(() => _idType = v ?? 'CC'),
         ),
         const SizedBox(height: 12),
@@ -457,20 +450,54 @@ class SupplierDetails extends StatelessWidget {
   }
 }
 
-/// Lista de proveedores registrados en orden alfabético (el servidor ya la entrega ordenada), con todos
-/// sus datos. Al escribir se filtra; "Proveedor nuevo" devuelve {'new': true}.
-class SupplierPickerSheet extends StatefulWidget {
-  const SupplierPickerSheet({super.key, required this.api});
+/// Lista de personas registradas (proveedores o clientes) con todos sus datos. Al escribir se filtra;
+/// la fila de "nuevo" devuelve {'new': true}. [search] consulta al servidor y [listKey] es la clave de la lista
+/// en su respuesta ('suppliers' o 'customers').
+class PartyPickerSheet extends StatefulWidget {
+  const PartyPickerSheet({
+    super.key,
+    required this.search,
+    required this.listKey,
+    required this.searchLabel,
+    required this.newLabel,
+    required this.noneLabel,
+  });
 
-  final ApiClient api;
+  /// Proveedores de compras.
+  PartyPickerSheet.suppliers({Key? key, required ApiClient api})
+      : this(
+          key: key,
+          search: api.coffeeSearchSuppliers,
+          listKey: 'suppliers',
+          searchLabel: 'Buscar proveedor',
+          newLabel: 'Proveedor nuevo',
+          noneLabel: 'Todavía no hay proveedores registrados.',
+        );
+
+  /// Clientes de ventas.
+  PartyPickerSheet.customers({Key? key, required ApiClient api})
+      : this(
+          key: key,
+          search: api.coffeeSearchCustomers,
+          listKey: 'customers',
+          searchLabel: 'Buscar cliente por nombre o documento',
+          newLabel: 'Cliente nuevo',
+          noneLabel: 'Todavía no hay clientes registrados.',
+        );
+
+  final Future<Json> Function(String q) search;
+  final String listKey;
+  final String searchLabel;
+  final String newLabel;
+  final String noneLabel;
 
   @override
-  State<SupplierPickerSheet> createState() => _SupplierPickerSheetState();
+  State<PartyPickerSheet> createState() => _PartyPickerSheetState();
 }
 
-class _SupplierPickerSheetState extends State<SupplierPickerSheet> {
+class _PartyPickerSheetState extends State<PartyPickerSheet> {
   final _query = TextEditingController();
-  late Future<Json> _future = widget.api.coffeeSearchSuppliers('');
+  late Future<Json> _future = widget.search('');
 
   @override
   void dispose() {
@@ -478,7 +505,7 @@ class _SupplierPickerSheetState extends State<SupplierPickerSheet> {
     super.dispose();
   }
 
-  void _search(String q) => setState(() => _future = widget.api.coffeeSearchSuppliers(q.trim()));
+  void _search(String q) => setState(() => _future = widget.search(q.trim()));
 
   @override
   Widget build(BuildContext context) {
@@ -493,13 +520,13 @@ class _SupplierPickerSheetState extends State<SupplierPickerSheet> {
             TextField(
               controller: _query,
               onChanged: _search,
-              decoration: const InputDecoration(labelText: 'Buscar proveedor', prefixIcon: Icon(Icons.search_rounded)),
+              decoration: InputDecoration(labelText: widget.searchLabel, prefixIcon: const Icon(Icons.search_rounded)),
             ),
             const SizedBox(height: 8),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.person_add_alt_1_rounded, color: AvColors.accent),
-              title: const Text('Proveedor nuevo'),
+              title: Text(widget.newLabel),
               onTap: () => Navigator.pop(context, <String, dynamic>{'new': true}),
             ),
             const Divider(height: 1),
@@ -511,10 +538,10 @@ class _SupplierPickerSheetState extends State<SupplierPickerSheet> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snap.hasError) return Center(child: Muted('${snap.error}'));
-                  final list = (snap.data?['suppliers'] as List<dynamic>? ?? const []).cast<Json>();
+                  final list = (snap.data?[widget.listKey] as List<dynamic>? ?? const []).cast<Json>();
                   if (list.isEmpty) {
                     return Center(
-                      child: Muted(_query.text.trim().isEmpty ? 'Todavía no hay proveedores registrados.' : 'Sin resultados.'),
+                      child: Muted(_query.text.trim().isEmpty ? widget.noneLabel : 'Sin resultados.'),
                     );
                   }
                   return ListView.separated(

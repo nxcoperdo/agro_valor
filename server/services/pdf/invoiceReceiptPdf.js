@@ -1,4 +1,5 @@
 const { newDoc, header, keyValues, rule, signatures, cop, kg, pct, dateTime } = require('./pdfCommon');
+const productTypes = require('../../domain/productTypes');
 
 const PAYMENTS = { efectivo: 'Efectivo', transferencia: 'Transferencia', credito: 'Crédito', otro: 'Otro' };
 
@@ -30,7 +31,8 @@ async function render(receipt) {
       ['Kg recibidos', kg(line.pesoTotalCompra)],
       [`Merma (${pct(line.porcentajeMermaInicial)})`, kg(line.kgDescontados)],
       ['Kg pagables', kg(line.pesoPagable), true],
-      ['Precio por carga (125 kg)', cop(line.precioCarga)],
+      // Lo que se habla por kilo (cacao) no lleva la línea por carga, que sería una cifra derivada.
+      ...(productTypes.priceUnit(line.productType) === 'kg' ? [] : [['Precio por carga (125 kg)', cop(line.precioCarga)]]),
       ['Precio por kg', cop(line.precioKg)],
       ['Subtotal', cop(line.totalCompra), true],
     ]);

@@ -36,7 +36,7 @@ class PriceScreen extends StatelessWidget {
 
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.paddingOf(context).bottom + 24),
                 children: [
                   if (isCocoa && international != null) ...[
                     _CocoaHeroCard(internal: internal, international: international),

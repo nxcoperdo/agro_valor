@@ -2,6 +2,7 @@ import { api } from '../services/api.js';
 import { isPro } from '../services/auth.js';
 import { paywall } from '../ui/shell.js';
 import { formatCop } from '../utils/currency.js';
+import { formatDateTime } from '../utils/format.js';
 
 function breakdownRow(step) {
   const sign = step.delta > 0 ? 'delta-up' : step.delta < 0 ? 'delta-down' : 'delta-flat';
@@ -142,6 +143,11 @@ export async function renderCalculator(container) {
               ${r.differenceVsBase >= 0 ? '+' : ''}${r.differenceVsBasePct.toFixed(1)}% vs. el precio de referencia
             </span>
           </p>
+          ${
+            data.referenceIsStale
+              ? `<p class="highlight-note">El precio de referencia es del ${formatDateTime(data.referenceScrapedAt)} y puede estar desactualizado.</p>`
+              : ''
+          }
           <ul class="breakdown">${r.breakdown.map(breakdownRow).join('')}</ul>
           <p class="disclaimer">${r.disclaimer}</p>
         </div>

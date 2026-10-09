@@ -38,6 +38,7 @@ function serialize(row, weighings) {
     coffeeType: row.coffee_type,
     productType: row.coffee_type,
     productLabel: productTypes.label(row.coffee_type),
+    priceUnit: productTypes.priceUnit(row.coffee_type),
     requiresDrying: row.requires_drying !== 0,
     porcentajeMermaInicial: row.merma_inicial_pct,
     pesoTotalCompra: row.peso_total_kg,

@@ -9,6 +9,7 @@ import 'screens/login_screen.dart';
 import 'push.dart';
 import 'session.dart';
 import 'theme.dart';
+import 'widgets/keyboard_dismisser.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,7 @@ class _AgroValorAppState extends State<AgroValorApp> {
       debugShowCheckedModeBanner: false,
       scaffoldMessengerKey: messengerKey,
       theme: buildTheme(),
+      builder: (context, child) => KeyboardDismisser(child: child ?? const SizedBox.shrink()),
       home: ListenableBuilder(
         listenable: session,
         builder: (context, _) {

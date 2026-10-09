@@ -46,6 +46,9 @@ router.post('/', (req, res, next) => {
     res.json({
       againstReference,
       referencePriceCopCarga: comparison.fncReference.priceCopCarga,
+      // El café sigue calculando con un precio viejo (la fuente FNC suele cargarse a mano), pero se avisa.
+      referenceIsStale: comparison.fncReference.isStale,
+      referenceScrapedAt: comparison.fncReference.scrapedAt,
       usedProfileDefaults: {
         factor: body.factor == null || body.factor === '',
         humidity: body.humidity == null || body.humidity === '',

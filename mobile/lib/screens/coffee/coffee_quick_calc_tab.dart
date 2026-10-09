@@ -54,7 +54,7 @@ class _CoffeeQuickCalcTabState extends State<CoffeeQuickCalcTab> {
   Widget build(BuildContext context) {
     final r = _result;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.paddingOf(context).bottom + 16),
       children: [
         SectionCard(
           child: Form(
@@ -64,7 +64,7 @@ class _CoffeeQuickCalcTabState extends State<CoffeeQuickCalcTab> {
               children: [
                 NumberField(controller: _kilos, label: 'Cantidad (kg)', suffix: 'kg', required: true, min: 0.01),
                 const SizedBox(height: 12),
-                NumberField(controller: _factor, label: 'Factor de rendimiento', hint: 'Ej. 88', min: 1),
+                NumberField(controller: _factor, label: 'Factor de rendimiento (opcional, solo informativo)', hint: 'Ej. 88', min: 1),
                 const SizedBox(height: 12),
                 NumberField(
                   controller: _price,

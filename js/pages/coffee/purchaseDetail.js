@@ -40,7 +40,9 @@ function projectionPanel(pr) {
         <small id="p-dry-hint">${pr.requiresDrying ? 'Se proyecta con el rendimiento de secado de abajo.' : 'No se seca: la proyección es directa al 100 % y los precios de venta se calculan igual.'}</small></div>
       <div class="field"><label for="p-rend">Rendimiento de secado (%)</label><input id="p-rend" name="rendimientoSecadoPct" inputmode="decimal" value="${escapeHtml(e.rendimientoSecadoPct)}" ${pr.requiresDrying ? '' : 'disabled'} /></div>
       <div class="field"><label for="p-destare">Destare proyectado (kg)</label><input id="p-destare" name="destareKg" inputmode="decimal" value="${escapeHtml(e.destareKg)}" /></div>
-      <div class="field"><label for="p-precio">Precio actual café seco por carga (opcional)</label><input id="p-precio" name="precioVentaCarga" inputmode="numeric" value="${escapeHtml(e.precioVentaCarga ?? '')}" /></div>
+      ${pr.priceUnit === 'kg'
+        ? `<div class="field"><label for="p-precio">Precio actual del producto seco por kg (opcional)</label><input id="p-precio" name="precioVentaKg" inputmode="decimal" value="${escapeHtml(e.precioVentaKg ?? '')}" /></div>`
+        : `<div class="field"><label for="p-precio">Precio actual café seco por carga (opcional)</label><input id="p-precio" name="precioVentaCarga" inputmode="numeric" value="${escapeHtml(e.precioVentaCarga ?? '')}" /></div>`}
     </div>
     <h3>Costos proyectados</h3>
     <div id="proj-costs">${rows.map((c, i) => `<div class="calc-form proj-cost" data-i="${i}">
@@ -104,7 +106,9 @@ export async function mountLinePanels(el, id, reload) {
         requiereSecado: f.requiereSecado.checked,
         rendimientoSecadoPct: parseNumber(f.rendimientoSecadoPct.value),
         destareKg: parseNumber(f.destareKg.value) || 0,
-        precioVentaCarga: f.precioVentaCarga.value.trim() ? parseNumber(f.precioVentaCarga.value) : null,
+        ...(f.precioVentaKg
+          ? { precioVentaKg: f.precioVentaKg.value.trim() ? parseNumber(f.precioVentaKg.value) : null }
+          : { precioVentaCarga: f.precioVentaCarga.value.trim() ? parseNumber(f.precioVentaCarga.value) : null }),
         costos,
       });
       await reload();

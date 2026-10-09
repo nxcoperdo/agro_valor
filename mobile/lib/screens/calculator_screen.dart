@@ -12,6 +12,7 @@ import 'coffee/coffee_inventory_tab.dart';
 import 'coffee/coffee_lots_tab.dart';
 import 'coffee/coffee_purchases_tab.dart';
 import 'coffee/coffee_quick_calc_tab.dart';
+import 'coffee/coffee_sales_tab.dart';
 import 'pro_screen.dart';
 
 /// Cuánto le queda realmente al caficultor por carga según su café, y en qué cooperativa le conviene vender.
@@ -35,7 +36,7 @@ class CalculatorScreen extends StatelessWidget {
     }
 
     return DefaultTabController(
-      length: 7,
+      length: 8,
       child: Column(
         children: [
           const TabBar(
@@ -48,6 +49,7 @@ class CalculatorScreen extends StatelessWidget {
               Tab(text: 'Compra de producto'),
               Tab(text: 'Procesamiento'),
               Tab(text: 'Inventario'),
+              Tab(text: 'Ventas'),
               Tab(text: 'Resumen'),
             ],
           ),
@@ -63,6 +65,7 @@ class CalculatorScreen extends StatelessWidget {
                 CoffeePurchasesTab(session: session),
                 CoffeeLotsTab(session: session),
                 CoffeeInventoryTab(session: session),
+                CoffeeSalesTab(session: session),
                 CoffeeDashboardTab(session: session),
               ],
             ),
@@ -132,7 +135,7 @@ class _CalculatorState extends State<_Calculator> with AutomaticKeepAliveClientM
     final result = _result;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.paddingOf(context).bottom + 32),
       children: [
         SectionCard(
           child: Form(
@@ -206,6 +209,13 @@ class _CalculatorState extends State<_Calculator> with AutomaticKeepAliveClientM
               const SizedBox(height: 12),
               Muted('Total por ${decimalInputText(cargas)} cargas'),
               Text(formatCop(ref['total'] as num), style: mono(size: 20, weight: FontWeight.w600)),
+            ],
+            if (result['referenceIsStale'] == true) ...[
+              const SizedBox(height: 12),
+              Text(
+                'El precio de referencia es del ${formatDate(result['referenceScrapedAt'] as String?)} y puede estar desactualizado.',
+                style: const TextStyle(fontSize: 12, color: AvColors.danger),
+              ),
             ],
             const Divider(height: 28),
             for (final step in (ref['breakdown'] as List<dynamic>).cast<Json>()) _BreakdownRow(step: step),

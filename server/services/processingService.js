@@ -196,6 +196,8 @@ function finish(ctx, lotId, input) {
   const base = purchaseBase(ctx, lot.id);
   if (base.pesoPagable <= 0) throw fail('El lote no tiene compras activas', 409);
   if (base.pesoPagableSecar <= 0) throw fail('Ninguna compra de este lote requiere secado: envíalo directo a inventario', 409);
+  // El secado solo pierde peso: más kilos secos que los que entraron a secar es un error de digitación.
+  if (secadoReal > coffeeMath.roundKg(base.pesoPagableSecar)) throw fail('Los kilos secos reales no pueden superar el peso que entró a secado');
   const secos = coffeeMath.roundKg(secadoReal + base.pesoPagableDirecto);
   if (destare >= secos) throw fail('El destare debe ser menor a los kilos secos');
   const netos = coffeeMath.roundKg(secos - destare);

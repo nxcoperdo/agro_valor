@@ -85,3 +85,22 @@ test('proyección: el contador no gestiona; sin ver_margenes se ocultan utilidad
   assert.throws(() => projection.save(ctx, p.id, { rendimientoSecadoPct: 0 }), { status: 400 });
   assert.throws(() => projection.save(ctx, p.id, { costos: [{ concepto: 'a', valor: 1, modo: 'xx' }] }), { status: 400 });
 });
+
+test('proyección: un destare que se come todos los kilos secos se rechaza', () => {
+  const ctx = ctxFor('destare@x.co');
+  const p = main(ctx);
+  assert.throws(() => projection.save(ctx, p.id, { rendimientoSecadoPct: 55, destareKg: 600 }), { status: 400 });
+});
+
+test('cacao: la proyección se habla por kilo y equivale al precio por carga', () => {
+  const ctx = ctxFor('cacao-kg@x.co');
+  const p = purchases.create(ctx, { supplier: { idNumber: '7', name: 'Rosa' }, productType: 'cacao', precioKg: 9500, weighings: [100] });
+  const r = projection.save(ctx, p.id, { precioVentaKg: 12000 });
+  assert.equal(r.priceUnit, 'kg');
+  assert.equal(r.entradas.precioVentaKg, 12000);
+  assert.equal(r.entradas.precioVentaCarga, 1500000);
+  assert.equal(r.ingresoProyectado, 1200000);
+  // El café sigue hablándose por carga.
+  assert.equal(projection.get(ctx, main(ctx).id).priceUnit, 'carga');
+  assert.throws(() => projection.save(ctx, p.id, { precioVentaKg: 0 }), { status: 400 });
+});

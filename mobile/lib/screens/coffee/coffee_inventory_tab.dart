@@ -20,7 +20,7 @@ class CoffeeInventoryTab extends StatelessWidget {
         final items = (data['items'] as List<dynamic>? ?? const []).cast<Json>();
         return ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.paddingOf(context).bottom + 16),
           children: [
             SectionCard(
               child: Column(

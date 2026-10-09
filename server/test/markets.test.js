@@ -118,3 +118,12 @@ test('histórico: cada vela diaria de Yahoo se guarda en 4 filas que el gráfico
   assert.deepEqual(rows, [...rows].sort((a, b) => a.at.localeCompare(b.at)));
   assert.equal(candlesToRows([1], { open: [null], high: [1], low: [1], close: [1] }).length, 0);
 });
+
+test('calculadora de cacao: sin bonificación por humedad baja y rangos con 400', () => {
+  const dry = cocoaCalc.calculate({ iceCopPerKg: 20000, humidity: 0, kg: 10 });
+  const base = cocoaCalc.calculate({ iceCopPerKg: 20000, humidity: 7, kg: 10 });
+  assert.equal(dry.netCopPerKg, base.netCopPerKg);
+  assert.equal(dry.adjustments.humidityBonusCopPerKg, 0);
+  assert.throws(() => cocoaCalc.calculate({ iceCopPerKg: 20000, humidity: 50 }), { status: 400 });
+  assert.throws(() => cocoaCalc.calculate({ iceCopPerKg: 20000, kg: -5 }), { status: 400 });
+});

@@ -68,6 +68,8 @@ test('reglas de procesamiento: estado, validaciones y permisos', () => {
   lots.changeStatus(ctx, lot.id, 'EN_SECADO');
   assert.throws(() => processing.finish(ctx, lot.id, { kilosSecosReales: 0 }), { status: 400 });
   assert.throws(() => processing.finish(ctx, lot.id, { kilosSecosReales: 100, destareRealKg: 100 }), { status: 400 });
+  // El lote tiene 920 kg pagables: el secado no puede devolver más peso del que entró.
+  assert.throws(() => processing.finish(ctx, lot.id, { kilosSecosReales: 921 }), { status: 400 });
   assert.throws(() => processing.addCost(ctx, lot.id, { concepto: '', valor: 5 }), { status: 400 });
   const op = { ...ctx, role: 'operador' };
   assert.throws(() => processing.get(op, lot.id), { status: 403 });
