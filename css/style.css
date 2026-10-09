@@ -2949,6 +2949,18 @@ body.nav-locked {
 .pv-ohlc-label { font-size: 9px; color: var(--pv-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
 .pv .pv-ohlc-value { margin-top: 3px; font-size: 13px; font-weight: 700; }
 
+/* Velas proyectadas de los días siguientes */
+.pv-fcst { border-top: 1px solid var(--pv-border); padding: 10px 0 12px; }
+.pv-fcst-title { font-size: 10px; color: var(--pv-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; padding: 0 12px 8px; }
+.pv-fcst-row { display: flex; gap: 8px; overflow-x: auto; padding: 0 12px 4px; scroll-snap-type: x proximity; }
+.pv-fcst-card { flex: 0 0 132px; scroll-snap-align: start; border: 1px solid var(--pv-border); border-radius: 10px; padding: 8px 10px; }
+.pv-fcst-date { font-size: 11px; font-weight: 700; text-transform: capitalize; }
+.pv-fcst-pct { font-size: 12px; font-weight: 700; margin: 2px 0 6px; color: var(--pv-muted); }
+.pv .pv-fcst-pct.is-down { color: var(--pv-down, #f87171); }
+.pv-fcst-line { display: flex; justify-content: space-between; font-size: 11px; padding: 1px 0; }
+.pv-fcst-line > span:first-child { color: var(--pv-muted); }
+.pv-fcst-lock { font-size: 11px; color: var(--pv-muted); padding: 6px 12px 0; }
+
 /* Paridad de exportación */
 .pv-parity-toggle {
   width: 100%;

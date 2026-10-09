@@ -26,7 +26,7 @@ String lotStatusLabel(String? status) => lotStatusLabels[status] ?? (status ?? '
 const lotNextStep = {
   'CREADO': ('EN_TRANSPORTE', 'Enviar a transporte'),
   'EN_TRANSPORTE': ('EN_SECADO', 'Iniciar secado'),
-  'VENDIDO': ('CERRADO', 'Cerrar lote'),
+  'VENDIDO': ('CERRADO', 'Cerrar procesamiento'),
 };
 
 /// Lotes: lista y creación juntando compras que todavía no tienen lote.
@@ -54,7 +54,7 @@ class _CoffeeLotsTabState extends State<CoffeeLotsTab> {
   }
 
   Future<void> _create() async {
-    final lot = await showFormSheet<Json>(context, title: 'Crear lote', child: _NewLotForm(api: _api));
+    final lot = await showFormSheet<Json>(context, title: 'Crear procesamiento', child: _NewLotForm(api: _api));
     if (lot == null || !mounted) return;
     _reload();
     await _open(lot['id'] as int);
@@ -67,7 +67,7 @@ class _CoffeeLotsTabState extends State<CoffeeLotsTab> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _create,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Crear lote'),
+        label: const Text('Crear procesamiento'),
       ),
       body: AsyncView<Json>(
         key: _viewKey,
@@ -78,9 +78,9 @@ class _CoffeeLotsTabState extends State<CoffeeLotsTab> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             children: [
-              const Muted('Junta las compras de un cliente en un lote, sigue su secado y envíalo a inventario.', size: 12),
+              const Muted('Junta las compras de un cliente en un procesamiento, sigue su secado y envíalo a inventario.', size: 12),
               const SizedBox(height: 12),
-              if (lots.isEmpty) const Muted('Aún no hay lotes. Toca "Crear lote" para juntar compras.'),
+              if (lots.isEmpty) const Muted('Aún no hay procesamientos. Toca "Crear procesamiento" para juntar compras.'),
               for (final l in lots) ...[_LotTile(lot: l, onTap: () => _open(l['id'] as int)), const SizedBox(height: 8)],
             ],
           );
@@ -178,7 +178,7 @@ class _NewLotFormState extends State<_NewLotForm> {
         }
         if (snap.hasError) return Muted('${snap.error}');
         final purchases = (snap.data?['purchases'] as List<dynamic>? ?? const []).cast<Json>();
-        if (purchases.isEmpty) return const Muted('No hay compras activas sin lote.');
+        if (purchases.isEmpty) return const Muted('No hay compras activas sin procesamiento.');
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -201,7 +201,7 @@ class _NewLotFormState extends State<_NewLotForm> {
             const SizedBox(height: 8),
             TextField(controller: _notes, decoration: const InputDecoration(labelText: 'Observaciones')),
             const SizedBox(height: 16),
-            BusyButton(label: 'Crear lote', busy: _busy, onPressed: _save),
+            BusyButton(label: 'Crear procesamiento', busy: _busy, onPressed: _save),
           ],
         );
       },

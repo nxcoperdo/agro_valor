@@ -106,6 +106,7 @@ export const api = {
   finishLot: (id, payload) => request(`/coffee/lots/${id}/processing/finish`, { method: 'POST', ...body(payload) }),
   inventory: (available) => request(`/coffee/inventory${available ? '?available=1' : ''}`),
   inventoryMovements: (id) => request(`/coffee/inventory/${id}/movements`),
+  invoiceToInventory: (id, payload = {}) => request(`/coffee/invoices/${id}/inventory`, { method: 'POST', ...body(payload) }),
   enterInventory: (lotId, payload) => request(`/coffee/lots/${lotId}/inventory`, { method: 'POST', ...body(payload) }),
   searchCustomers: (q) => request(`/coffee/customers?q=${encodeURIComponent(q || '')}`),
   tradeSales: () => request('/coffee/sales'),

@@ -156,7 +156,7 @@ class _ForecastList extends StatelessWidget {
                       ),
                       if (f['changePct'] != null)
                         Text(
-                          formatPct(f['changePct'] as num),
+                          (f['changePct'] as num).abs() < 0.005 ? '● Estable' : formatPct(f['changePct'] as num),
                           style: TextStyle(
                             fontSize: 12,
                             color: (f['changePct'] as num) >= 0 ? AvColors.positive : AvColors.danger,

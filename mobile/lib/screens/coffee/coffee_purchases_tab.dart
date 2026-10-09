@@ -7,6 +7,7 @@ import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/forms.dart';
 import 'coffee_invoice_form_screen.dart';
+import 'coffee_lot_detail_screen.dart';
 import 'coffee_line_projection.dart';
 
 /// Compra de producto: jornada actual, historial de facturas y nueva compra (factura con uno o varios productos).
@@ -32,12 +33,14 @@ class _CoffeePurchasesTabState extends State<CoffeePurchasesTab> {
   }
 
   Future<void> _newInvoice() async {
-    final created = await Navigator.of(context).push<bool>(
+    final created = await Navigator.of(context).push<Json>(
       MaterialPageRoute(builder: (_) => CoffeeInvoiceFormScreen(api: _api)),
     );
-    if (created == true) {
-      if (mounted) showMessage(context, 'Compra registrada');
+    if (created != null && mounted) {
+      showMessage(context, 'Compra registrada');
       _reload();
+      // Se abre la factura con su proyección y el botón de enviar a inventario.
+      await _open(created);
     }
   }
 
@@ -191,7 +194,7 @@ class _InvoiceTile extends StatelessWidget {
 }
 
 /// Detalle de una factura: datos completos del proveedor, forma de pago y cada producto con su subtotal.
-class CoffeeInvoiceDetailScreen extends StatelessWidget {
+class CoffeeInvoiceDetailScreen extends StatefulWidget {
   const CoffeeInvoiceDetailScreen({super.key, required this.session, required this.invoiceId});
 
   final Session session;
@@ -200,14 +203,50 @@ class CoffeeInvoiceDetailScreen extends StatelessWidget {
   static const _payments = {'efectivo': 'Efectivo', 'transferencia': 'Transferencia', 'credito': 'Crédito', 'otro': 'Otro'};
 
   @override
+  State<CoffeeInvoiceDetailScreen> createState() => _CoffeeInvoiceDetailScreenState();
+}
+
+class _CoffeeInvoiceDetailScreenState extends State<CoffeeInvoiceDetailScreen> {
+  Key _viewKey = UniqueKey();
+  bool _sending = false;
+
+  Session get session => widget.session;
+  int get invoiceId => widget.invoiceId;
+
+  /// Crea el procesamiento con los productos pendientes. Sin secado entra directo a inventario;
+  /// con secado se abre el procesamiento para registrarlo. La proyección de cada compra no se toca.
+  Future<void> _sendToInventory() async {
+    setState(() => _sending = true);
+    try {
+      final r = await session.api.coffeeInvoiceToInventory(invoiceId);
+      if (!mounted) return;
+      if (r['needsDrying'] == true) {
+        showMessage(context, 'Procesamiento ${r['lotCode']} creado: registra el secado');
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(builder: (_) => CoffeeLotDetailScreen(session: session, lotId: r['lotId'] as int)),
+        );
+      } else {
+        showMessage(context, 'Enviado a inventario');
+      }
+      if (mounted) setState(() => _viewKey = UniqueKey());
+    } catch (e) {
+      if (mounted) showMessage(context, '$e', error: true);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Factura de compra')),
       body: AsyncView<Json>(
+        key: _viewKey,
         load: () => session.api.coffeeInvoice(invoiceId),
         builder: (context, inv) {
           final lines = (inv['lines'] as List<dynamic>).cast<Json>();
           final voided = inv['status'] == 'ANULADA';
+          final canSend = !voided && lines.any((l) => l['status'] == 'ACTIVA' && l['lot'] == null);
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -273,10 +312,18 @@ class CoffeeInvoiceDetailScreen extends StatelessWidget {
                 ]),
               ),
               const SizedBox(height: 8),
-              const Muted(
-                'Para clasificar estos productos en lotes, ve a la pestaña Lotes.',
-                size: 12,
-              ),
+              if (canSend) ...[
+                BusyButton(label: 'Enviar a inventario', busy: _sending, onPressed: _sendToInventory),
+                const SizedBox(height: 8),
+                const Muted(
+                  'Sin secado entra directo a inventario; si algún producto se seca, se crea el procesamiento. La proyección se conserva.',
+                  size: 12,
+                ),
+              ] else
+                const Muted(
+                  'Para clasificar estos productos en un procesamiento, ve a la pestaña Procesamiento.',
+                  size: 12,
+                ),
             ],
           );
         },

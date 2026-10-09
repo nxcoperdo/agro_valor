@@ -31,8 +31,8 @@ export async function renderProcessing(el, lot, reload) {
   const mixed = open && !direct && sec.kgDirecto > 0;
   el.innerHTML = `
     <div class="panel"><div class="panel-header"><h2>Procesamiento real</h2></div>
-      ${direct ? `<p class="panel-intro">Ninguna compra de este lote requiere secado: se proyecta y entra al 100 %. Puedes enviarlo directo a inventario.</p>` : ''}
-      ${mixed ? `<p class="panel-intro">En este lote <strong>${formatKg(sec.kgSecar)}</strong> se secan y <strong>${formatKg(sec.kgDirecto)}</strong> no requieren secado y van directo a inventario. Al registrar la salida del secado, ingresa solo lo que salió de los ${formatKg(sec.kgSecar)} que se secaron; todo entra junto a inventario.</p>` : ''}
+      ${direct ? `<p class="panel-intro">Ninguna compra de este procesamiento requiere secado: se proyecta y entra al 100 %. Puedes enviarlo directo a inventario.</p>` : ''}
+      ${mixed ? `<p class="panel-intro">En este procesamiento <strong>${formatKg(sec.kgSecar)}</strong> se secan y <strong>${formatKg(sec.kgDirecto)}</strong> no requieren secado y van directo a inventario. Al registrar la salida del secado, ingresa solo lo que salió de los ${formatKg(sec.kgSecar)} que se secaron; todo entra junto a inventario.</p>` : ''}
       ${open && !direct ? `<form class="calc-form" id="ship-form">
         <div class="field"><label for="s-date">Fecha de envío</label><input type="date" id="s-date" name="fechaEnvio" value="${escapeHtml(pr.envio?.fechaEnvio || '')}" /></div>
         <div class="field"><label for="s-place">Lugar de procesamiento</label><input id="s-place" name="lugar" value="${escapeHtml(pr.envio?.lugar || '')}" /></div>

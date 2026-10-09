@@ -6,6 +6,22 @@ const { isValidMarket, DEFAULT_MARKET, cocoaUsdPerTonneToCopKg } = require('../c
 
 const router = express.Router();
 
+/**
+ * Vela proyectada de cada día: abre donde cerró el día anterior (el primero, en el precio de
+ * hoy), cierra en el precio central y el rango mínimo–máximo hace de mecha. `dayChangePct` es el
+ * cambio contra el día anterior; `changePct` (ya existente) es el acumulado contra hoy.
+ * Las unidades son las del mercado: centavos/libra en café, USD/tonelada en cacao.
+ */
+function addCandles(daily, current, closeKey, openKey, dayKey) {
+  let prev = current;
+  return daily.map((d) => {
+    const close = d[closeKey];
+    const out = { ...d, [openKey]: prev, [dayKey]: prev ? ((close - prev) / prev) * 100 : null };
+    prev = close;
+    return out;
+  });
+}
+
 // Gratis: solo el día de mañana, como muestra. Semana y mes completos son Pro.
 const FREE_DAILY_STEPS = 1;
 
@@ -23,6 +39,8 @@ function buildCocoaResponse({ forecasts, summary, isPro }) {
     step: f.step,
     predictedForDate: f.predictedForDate,
     usdPerTonne: f.predictedPrice,
+    lowUsdPerTonne: f.lowPrice,
+    highUsdPerTonne: f.highPrice,
     copPerKg: toCopKg(f.predictedPrice),
     lowCopPerKg: toCopKg(f.lowPrice),
     highCopPerKg: toCopKg(f.highPrice),
@@ -30,7 +48,13 @@ function buildCocoaResponse({ forecasts, summary, isPro }) {
     modelParams: f.modelParams,
   });
 
-  const daily = forecasts.filter((f) => f.granularity === 'day').map(enrich);
+  const daily = addCandles(
+    forecasts.filter((f) => f.granularity === 'day').map(enrich),
+    current,
+    'usdPerTonne',
+    'openUsdPerTonne',
+    'dayChangePct'
+  );
   const weekly = forecasts.filter((f) => f.granularity === 'week').map(enrich);
   const monthly = forecasts.filter((f) => f.granularity === 'month').map(enrich);
   const method = forecasts[0] ? forecasts[0].modelParams.method : null;
@@ -98,6 +122,8 @@ router.get('/', async (req, res, next) => {
         predictedForDate: f.predictedForDate,
         usdPerLb: f.predictedPrice / 100,
         centsPerLb: f.predictedPrice,
+        lowCentsPerLb: f.lowPrice ?? null,
+        highCentsPerLb: f.highPrice ?? null,
         changePct,
         impliedInternalCopPerCarga: impliedCop(f.predictedPrice),
         lowImpliedCopPerCarga: f.lowPrice != null ? impliedCop(f.lowPrice) : null,
@@ -106,7 +132,13 @@ router.get('/', async (req, res, next) => {
       };
     };
 
-    const daily = forecasts.filter((f) => f.granularity === 'day').map(enrich);
+    const daily = addCandles(
+      forecasts.filter((f) => f.granularity === 'day').map(enrich),
+      currentCents,
+      'centsPerLb',
+      'openCentsPerLb',
+      'dayChangePct'
+    );
     const weekly = forecasts.filter((f) => f.granularity === 'week').map(enrich);
     const monthly = forecasts.filter((f) => f.granularity === 'month').map(enrich);
 

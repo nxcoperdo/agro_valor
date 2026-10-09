@@ -371,7 +371,7 @@ export async function renderPurchases(container) {
     const state = freshState(productTypes);
     const root = container.querySelector('#stepper-root');
     const steps = [stepSupplier, stepProducts, stepPayment, stepConfirm];
-    const stepper = mountStepper(root, { steps, state, finishLabel: 'Registrar compra', onFinish: async (s) => { await api.createInvoice(toPayload(s)); await load(); } });
+    const stepper = mountStepper(root, { steps, state, finishLabel: 'Registrar compra', onFinish: async (s) => { const inv = await api.createInvoice(toPayload(s)); window.location.hash = `#/factura?id=${inv.id}`; } });
     state.rerender = () => stepper.redraw();
 
     container.querySelector('#business-form').addEventListener('submit', async (e) => {

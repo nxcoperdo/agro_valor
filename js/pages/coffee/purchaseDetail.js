@@ -157,9 +157,12 @@ export async function renderInvoiceDetail(container) {
     }
     const voided = inv.status === 'ANULADA';
     const sum = (key) => inv.lines.reduce((a, l) => a + l[key], 0);
+    const canSend = !voided && inv.lines.some((l) => l.status === 'ACTIVA' && !l.lot);
     container.innerHTML = `
       <div class="rc-actions"><a class="btn-ghost" href="#/compras">← Compras</a>
-        <a class="btn-ghost" href="#/comprobante?factura=${inv.id}">Comprobante</a></div>
+        <a class="btn-ghost" href="#/comprobante?factura=${inv.id}">Comprobante</a>
+        ${canSend ? '<button type="button" class="btn-primary" id="to-inventory">Enviar a inventario</button>' : ''}</div>
+      <p class="form-error" id="inv-error" role="alert" hidden></p>
       <div class="panel"><div class="panel-header"><h2>${escapeHtml(inv.code)} · ${escapeHtml(inv.supplier.name)}</h2>
         <span class="badge ${voided ? 'badge-stale' : 'badge-real'}">${inv.status}</span></div>
         <p class="panel-intro">${formatDateTime(inv.purchasedAt)}${inv.workdayCode ? ` · Jornada ${escapeHtml(inv.workdayCode)}` : ''} · ${escapeHtml(inv.supplier.idType)} ${escapeHtml(inv.supplier.idNumber)}</p>
@@ -173,6 +176,19 @@ export async function renderInvoiceDetail(container) {
           <div class="summary-cards">${card('Kg recibidos', formatKg(l.pesoTotalCompra))}${card(`Merma ${formatPct(l.porcentajeMermaInicial)}`, formatKg(l.kgDescontados))}
           ${card('Peso pagable', formatKg(l.pesoPagable), true)}${card('Precio por kg', formatCopValue(l.precioKg))}${card('Subtotal', formatCopValue(l.totalCompra), true)}</div></div>
         <div class="line-panels"></div></section>`).join('')}`;
+    container.querySelector('#to-inventory')?.addEventListener('click', async (e) => {
+      e.target.disabled = true;
+      try {
+        const r = await api.invoiceToInventory(inv.id);
+        // Con secado pendiente se abre el procesamiento; sin secado ya quedó en inventario.
+        window.location.hash = r.needsDrying ? `#/lote?id=${r.lotId}` : '#/inventario';
+      } catch (err) {
+        e.target.disabled = false;
+        const el = container.querySelector('#inv-error');
+        el.textContent = err.message;
+        el.hidden = false;
+      }
+    });
     await Promise.all(
       inv.lines.filter((l) => l.status === 'ACTIVA').map((l) =>
         mountLinePanels(container.querySelector(`[data-line="${l.id}"] .line-panels`), l.id, load))

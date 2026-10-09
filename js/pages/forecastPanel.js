@@ -26,10 +26,11 @@ function parseCalendarDate(dateStr) {
 
 function changeBadge(changePct) {
   if (changePct == null) return '';
+  if (Math.abs(changePct) < 0.005) return '<span class="cal-change tabular-nums">● Estable</span>';
   const up = changePct >= 0;
   return `<span class="cal-change ${up ? 'delta-up' : 'delta-down'} tabular-nums">${up ? '▲' : '▼'} ${
     up ? '+' : ''
-  }${changePct.toFixed(1)}%</span>`;
+  }${changePct.toFixed(2)}%</span>`;
 }
 
 /**

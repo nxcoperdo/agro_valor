@@ -10,12 +10,12 @@ export const LOT_STATUS = {
 };
 export const statusBadge = (s) => `<span class="badge badge-real">${escapeHtml(LOT_STATUS[s] || s)}</span>`;
 const card = (t, v, hl) => `<div class="summary-card ${hl ? 'highlight' : ''}"><h3>${t}</h3><strong class="tabular-nums">${v}</strong></div>`;
-const NEXT = { CREADO: ['EN_TRANSPORTE', 'Enviar a transporte'], EN_TRANSPORTE: ['EN_SECADO', 'Iniciar secado'], VENDIDO: ['CERRADO', 'Cerrar lote'] };
+const NEXT = { CREADO: ['EN_TRANSPORTE', 'Enviar a transporte'], EN_TRANSPORTE: ['EN_SECADO', 'Iniciar secado'], VENDIDO: ['CERRADO', 'Cerrar procesamiento'] };
 
 /** Lotes: lista, y creación agrupando compras sin lote. */
 export async function renderLots(container) {
   if (!isPro()) {
-    container.innerHTML = paywall('Lotes y procesamiento', 'Agrupa compras en lotes y sigue el secado, el inventario y la rentabilidad.');
+    container.innerHTML = paywall('Procesamiento', 'Agrupa compras en un procesamiento y sigue el secado, el inventario y la rentabilidad.');
     return;
   }
   async function load() {
@@ -28,21 +28,21 @@ export async function renderLots(container) {
       return;
     }
     container.innerHTML = `
-      <div class="panel"><div class="panel-header"><h2>Crear lote</h2></div>
+      <div class="panel"><div class="panel-header"><h2>Crear procesamiento</h2></div>
         ${free.length ? `<form id="lot-form"><div class="pick-grid">${free.map((p) => `
           <label class="pick-check"><input type="checkbox" name="purchase" value="${p.id}" />
             <span><strong>${escapeHtml(p.code)}</strong> · ${escapeHtml(p.supplier.name)}<br /><small>${escapeHtml(p.productLabel || '')} · ${formatKg(p.pesoPagable)} pagables · ${formatCopValue(p.totalCompra)}${p.requiresDrying === false ? ' · sin secado' : ''}</small></span></label>`).join('')}</div>
           <div class="field"><label for="lot-notes">Observaciones</label><input id="lot-notes" name="notes" /></div>
-          <button type="submit" class="btn-primary">Crear lote</button></form>`
-          : '<p class="empty-state">No hay compras activas sin lote.</p>'}
+          <button type="submit" class="btn-primary">Crear procesamiento</button></form>`
+          : '<p class="empty-state">No hay compras activas sin procesamiento.</p>'}
         <p class="form-error" id="lot-error" role="alert" hidden></p></div>
-      <div class="panel"><div class="panel-header"><h2>Lotes</h2></div>
-        ${lots.length ? `<div class="table-scroll"><table class="coop-table"><thead><tr><th>Lote</th><th>Estado</th><th>Compras</th><th>Proveedores</th><th>Peso pagable</th><th>Peso proyectado</th><th>Total compra</th></tr></thead><tbody>
-          ${lots.map((l) => `<tr><td data-label="Lote"><a href="#/lote?id=${l.id}">${escapeHtml(l.code)}</a></td><td data-label="Estado">${statusBadge(l.status)}</td>
+      <div class="panel"><div class="panel-header"><h2>Procesamientos</h2></div>
+        ${lots.length ? `<div class="table-scroll"><table class="coop-table"><thead><tr><th>Procesamiento</th><th>Estado</th><th>Compras</th><th>Proveedores</th><th>Peso pagable</th><th>Peso proyectado</th><th>Total compra</th></tr></thead><tbody>
+          ${lots.map((l) => `<tr><td data-label="Procesamiento"><a href="#/lote?id=${l.id}">${escapeHtml(l.code)}</a></td><td data-label="Estado">${statusBadge(l.status)}</td>
             <td data-label="Compras" class="tabular-nums">${l.compras}</td><td data-label="Proveedores" class="tabular-nums">${l.proveedores}</td>
             <td data-label="Peso pagable" class="tabular-nums">${formatKg(l.pesoPagable)}</td><td data-label="Peso proyectado" class="tabular-nums">${formatKg(l.pesoProyectado)}</td>
             <td data-label="Total compra" class="tabular-nums">${formatCopValue(l.totalCompra)}</td></tr>`).join('')}</tbody></table></div>`
-          : '<p class="empty-state">Aún no hay lotes.</p>'}</div>`;
+          : '<p class="empty-state">Aún no hay procesamientos.</p>'}</div>`;
     container.querySelector('#lot-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const purchaseIds = [...e.target.querySelectorAll('[name=purchase]:checked')].map((i) => Number(i.value));
@@ -67,7 +67,7 @@ export async function renderLotDetail(container) {
     }
     const next = NEXT[l.status];
     container.innerHTML = `
-      <div class="rc-actions"><a class="btn-ghost" href="#/lotes">← Lotes</a>
+      <div class="rc-actions"><a class="btn-ghost" href="#/lotes">← Procesamiento</a>
         ${next ? `<button type="button" class="btn-primary" id="lot-next">${next[1]}</button>` : ''}</div>
       <div class="panel"><div class="panel-header"><h2>${escapeHtml(l.code)}</h2>${statusBadge(l.status)}</div>
         <p class="panel-intro">Creado ${formatDateTime(l.createdAt)}${l.notes ? ` · ${escapeHtml(l.notes)}` : ''}</p>

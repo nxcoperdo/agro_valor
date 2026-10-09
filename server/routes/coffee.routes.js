@@ -42,6 +42,7 @@ router.post('/suppliers', requirePermission('registrar'), wrap(created((req) => 
 router.get('/invoices', wrap((req) => ({ invoices: invoiceService.list(ctxOf(req), req.query) })));
 router.post('/invoices', requirePermission('registrar'), wrap(created((req) => invoiceService.create(ctxOf(req), req.body || {}))));
 router.get('/invoices/:id', wrap((req) => invoiceService.get(ctxOf(req), req.params.id)));
+router.post('/invoices/:id/inventory', wrap(created((req) => inventoryService.enterFromInvoice(ctxOf(req), req.params.id, req.body || {}))));
 router.post('/invoices/:id/void', requirePermission('anular'), wrap((req) => invoiceService.voidInvoice(ctxOf(req), req.params.id, (req.body || {}).reason)));
 router.get('/purchases', wrap((req) => ({ purchases: purchaseService.list(ctxOf(req), req.query) })));
 router.post('/purchases', requirePermission('registrar'), wrap(created((req) => purchaseService.create(ctxOf(req), req.body || {}))));

@@ -8,7 +8,7 @@ export const CALC_TABS = [
   { hash: '#/calculadora-cacao', label: '🍫 Cacao' },
   { hash: '#/panel-cafe', label: 'Resumen' },
   { hash: '#/compras', label: 'Compra de producto' },
-  { hash: '#/lotes', label: 'Lotes' },
+  { hash: '#/lotes', label: 'Procesamiento' },
   { hash: '#/inventario', label: 'Inventario' },
   { hash: '#/ventas-cafe', label: 'Ventas de café' },
   { hash: '#/rentabilidad', label: 'Rentabilidad' },

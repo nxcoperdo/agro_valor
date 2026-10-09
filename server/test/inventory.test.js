@@ -84,3 +84,28 @@ test('listado: totales, solo disponibles y costos ocultos al operador; aislamien
   assert.equal(inventory.list(ctxFor('d@x.co')).items.length, 0);
   assert.throws(() => inventory.get(ctxFor('e@x.co'), inv1.id), { status: 404 });
 });
+
+test('ENVIAR FACTURA A INVENTARIO: sin secado entra directo; con secado crea el procesamiento', () => {
+  const ctx = ctxFor('fact@x.co');
+  const invoices = require('../services/invoiceService');
+  const supplier = { idNumber: '77', name: 'Mixto', idType: 'CC' };
+
+  const directa = invoices.create(ctx, { supplier, items: [{ productType: 'cacao', precioKg: 15000, weighings: [500] }] });
+  const r1 = inventory.enterFromInvoice(ctx, directa.id);
+  assert.equal(r1.needsDrying, false);
+  assert.equal(r1.inventory.kgIniciales, 500);
+  assert.throws(() => inventory.enterFromInvoice(ctx, directa.id), { status: 409 });
+
+  const mixta = invoices.create(ctx, {
+    supplier,
+    items: [
+      { productType: 'cafe', porcentajeMermaInicial: 0, precioKg: 7200, weighings: [600, 400] },
+      { productType: 'cacao', precioKg: 15000, weighings: [500] },
+    ],
+  });
+  const r2 = inventory.enterFromInvoice(ctx, mixta.id);
+  assert.equal(r2.needsDrying, true);
+  assert.equal(r2.inventory, null);
+  assert.ok(r2.lotId);
+  assert.throws(() => inventory.enterFromInvoice({ ...ctx, role: 'operador' }, mixta.id), { status: 403 });
+});

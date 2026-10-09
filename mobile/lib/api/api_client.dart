@@ -158,6 +158,8 @@ class ApiClient {
       await _request('DELETE', '/coffee/lots/$id/processing/costs/$costId') as Json;
   Future<Json> coffeeFinishLot(int id, Json payload) async =>
       await _request('POST', '/coffee/lots/$id/processing/finish', payload) as Json;
+  Future<Json> coffeeInvoiceToInventory(int invoiceId) async =>
+      await _request('POST', '/coffee/invoices/$invoiceId/inventory', <String, dynamic>{}) as Json;
   Future<Json> coffeeEnterInventory(int lotId, Json payload) async =>
       await _request('POST', '/coffee/lots/$lotId/inventory', payload) as Json;
 }

@@ -46,7 +46,7 @@ class CalculatorScreen extends StatelessWidget {
               Tab(text: 'Cuánto vale mi café'),
               Tab(text: '🍫 Cacao'),
               Tab(text: 'Compra de producto'),
-              Tab(text: 'Lotes'),
+              Tab(text: 'Procesamiento'),
               Tab(text: 'Inventario'),
               Tab(text: 'Resumen'),
             ],

@@ -127,4 +127,24 @@ function restoreStock(ctx, inventoryLotId, kg, { refType = 'sale', refId = null 
   syncLotStatus(ctx, { ...row, kg_sold: sold }, 'anulación de venta');
 }
 
-module.exports = { enter, get, list, movements, removeStock, restoreStock, findLotRow };
+/**
+ * "Enviar a inventario" desde la factura: agrupa en un procesamiento (lote) los productos activos
+ * que aún no tienen uno. Si ninguno requiere secado entra directo a inventario; si alguno lo
+ * requiere solo se crea el procesamiento y se avisa (needsDrying) para registrar el secado.
+ * La proyección de cada compra no se toca: sigue en purchase_projections.
+ */
+function enterFromInvoice(ctx, invoiceId, input = {}) {
+  permissionService.assert(ctx.role, 'gestionar_lotes');
+  permissionService.assert(ctx.role, 'ver_costos');
+  const invoiceService = require('./invoiceService'); // perezoso: evita dependencia circular
+  const invoice = invoiceService.get(ctx, invoiceId);
+  if (invoice.status !== 'ACTIVA') throw fail('La factura está anulada', 409);
+  const pending = invoice.lines.filter((l) => l.status === 'ACTIVA' && !l.lot);
+  if (!pending.length) throw fail('Todos los productos de esta factura ya están en un procesamiento', 409);
+  const lot = lotService.create(ctx, { purchaseIds: pending.map((l) => l.id), notes: input.notes || `Factura ${invoice.code}` });
+  if (pending.some((l) => l.requiresDrying)) return { lotId: lot.id, lotCode: lot.code, needsDrying: true, inventory: null };
+  const inv = enter(ctx, lot.id, { ubicacion: input.ubicacion, fechaEntrada: input.fechaEntrada });
+  return { lotId: lot.id, lotCode: lot.code, needsDrying: false, inventory: inv };
+}
+
+module.exports = { enterFromInvoice, enter, get, list, movements, removeStock, restoreStock, findLotRow };

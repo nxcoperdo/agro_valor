@@ -171,14 +171,14 @@ class _CoffeeInvoiceFormScreenState extends State<CoffeeInvoiceFormScreen> {
     }
     setState(() => _busy = true);
     try {
-      await widget.api.coffeeCreateInvoice({
+      final created = await widget.api.coffeeCreateInvoice({
         if (_supplier != null) 'supplierId': _supplier!['id'] else 'supplier': _supplierPayload(),
         'paymentMethod': _payment,
         'paymentReference': _reference.text.trim(),
         'notes': _notes.text.trim(),
         'items': [for (final l in _lines) l.toPayload()],
       });
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) Navigator.of(context).pop(created);
     } catch (e) {
       if (mounted) showMessage(context, '$e', error: true);
     } finally {

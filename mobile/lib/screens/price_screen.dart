@@ -521,6 +521,21 @@ List<Candle> buildCandles(List<dynamic> history, int days, [String market = 'cof
 
 const _periods = [('7D', 7, 3), ('30D', 30, 7), ('90D', 90, 14), ('1A', 365, 30)];
 
+class _FutureCandle {
+  const _FutureCandle({
+    required this.date,
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+    required this.pct,
+  });
+
+  final DateTime date;
+  final double open, high, low, close;
+  final double? pct;
+}
+
 class _ChartPanel extends StatefulWidget {
   const _ChartPanel({required this.session, required this.market});
 
@@ -539,6 +554,8 @@ class _ChartPanelState extends State<_ChartPanel> {
   List<Candle> _data = const [];
   String? _error;
   bool _loading = true;
+  List<_FutureCandle> _future = const [];
+  int _lockedDays = 0;
 
   (String, int, int) get _p => _periods.firstWhere((p) => p.$1 == _period);
 
@@ -546,6 +563,36 @@ class _ChartPanelState extends State<_ChartPanel> {
   void initState() {
     super.initState();
     _load();
+    _loadForecast();
+  }
+
+  /// Velas de los días siguientes: abren donde cerró el día anterior y cierran en el precio central.
+  Future<void> _loadForecast() async {
+    try {
+      final data = await widget.session.api.forecast(widget.market);
+      final cocoa = widget.market == 'cocoa';
+      double conv(Object? cents, Object? usdT) =>
+          cocoa ? ((usdT as num?) ?? 0).toDouble() : usdPerLbToCarga(((cents as num?) ?? 0) / 100);
+      final days = [
+        for (final f in (data['daily'] as List? ?? const []).cast<Map>())
+          _FutureCandle(
+            date: DateTime.parse('${f['predictedForDate']}T12:00:00'),
+            open: conv(f['openCentsPerLb'], f['openUsdPerTonne']),
+            high: conv(f['highCentsPerLb'], f['highUsdPerTonne']),
+            low: conv(f['lowCentsPerLb'], f['lowUsdPerTonne']),
+            close: conv(f['centsPerLb'], f['usdPerTonne']),
+            pct: (f['dayChangePct'] as num?)?.toDouble(),
+          ),
+      ];
+      final locked = (data['locked'] as Map?)?['dailyCount'] as num?;
+      if (!mounted) return;
+      setState(() {
+        _future = days;
+        _lockedDays = locked?.toInt() ?? 0;
+      });
+    } catch (_) {
+      // Sin proyección el panel simplemente no se muestra.
+    }
   }
 
   Future<void> _load() async {
@@ -615,6 +662,7 @@ class _ChartPanelState extends State<_ChartPanel> {
                       ),
           ),
           if (enough) _ohlc(_data.last),
+          if (_future.isNotEmpty) _futureStrip(),
         ],
       ),
     );
@@ -757,6 +805,92 @@ class _ChartPanelState extends State<_ChartPanel> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _futureStrip() {
+    String pct(double? v) => v == null
+        ? ''
+        : v.abs() < 0.005
+            ? '● 0,00%'
+            : '${v > 0 ? '▲ +' : '▼ '}${v.toStringAsFixed(2).replaceAll('.', ',')}%';
+    return Container(
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AvColors.border))),
+      padding: const EdgeInsets.only(top: 10, bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Text(
+              'PROYECCIÓN · DÍAS SIGUIENTES',
+              style: TextStyle(fontSize: 10, color: AvColors.fgMuted, letterSpacing: 0.5, fontWeight: FontWeight.w700),
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                for (final d in _future)
+                  Container(
+                    width: 132,
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AvColors.border),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          DateFormat('EEE d MMM', 'es').format(d.date),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          pct(d.pct),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: (d.pct ?? 0) > 0.005
+                                ? AvColors.positive
+                                : (d.pct ?? 0) < -0.005
+                                    ? AvColors.danger
+                                    : AvColors.fgMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        for (final (k, v) in [
+                          ('Apertura', d.open),
+                          ('Máximo', d.high),
+                          ('Mínimo', d.low),
+                          ('Cierre', d.close),
+                        ])
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 1),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(k, style: const TextStyle(fontSize: 11, color: AvColors.fgMuted)),
+                                Text(_two.format(v), style: mono(size: 11, weight: FontWeight.w600, color: AvColors.fg)),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (_lockedDays > 0)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+              child: Text('Con Pro ves $_lockedDays días más.', style: const TextStyle(fontSize: 11, color: AvColors.fgMuted)),
+            ),
+        ],
+      ),
     );
   }
 

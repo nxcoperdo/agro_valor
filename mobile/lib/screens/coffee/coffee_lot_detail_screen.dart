@@ -57,7 +57,7 @@ class _CoffeeLotDetailScreenState extends State<CoffeeLotDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Lote')),
+      appBar: AppBar(title: const Text('Procesamiento')),
       body: AsyncView<List<Json?>>(
         key: _viewKey,
         load: _load,
@@ -166,12 +166,12 @@ class _CoffeeLotDetailScreenState extends State<CoffeeLotDetailScreen> {
       const SectionLabel('Procesamiento'),
       if (direct)
         const SectionCard(
-          child: Muted('Ninguna compra de este lote requiere secado: se proyecta y entra al 100 %. Puedes enviarlo directo a inventario.'),
+          child: Muted('Ninguna compra de este procesamiento requiere secado: se proyecta y entra al 100 %. Puedes enviarlo directo a inventario.'),
         ),
       if (mixed)
         SectionCard(
           child: Muted(
-            'En este lote ${formatKg(kgSecar)} se secan y ${formatKg(kgDirecto)} no requieren secado y van directo a '
+            'En este procesamiento ${formatKg(kgSecar)} se secan y ${formatKg(kgDirecto)} no requieren secado y van directo a '
             'inventario. Al registrar la salida del secado, ingresa solo lo que salió de los ${formatKg(kgSecar)} que se secaron.',
           ),
         ),
@@ -468,7 +468,7 @@ class _InventoryCardState extends State<_InventoryCard> {
           FilledButton(
             onPressed: () => widget.run(
               () => widget.api.coffeeEnterInventory(widget.lotId, {'ubicacion': _place.text.trim()}),
-              success: 'Lote enviado a inventario',
+              success: 'Procesamiento enviado a inventario',
             ),
             child: const Text('Enviar a inventario'),
           ),
