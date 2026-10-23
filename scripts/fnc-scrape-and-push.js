@@ -33,25 +33,52 @@ async function fetchWithTimeout(url, options, timeoutMs, label) {
   }
 }
 
+// La FNC corta conexiones desde los runners de GitHub de forma intermitente
+// (ECONNRESET): una corrida falla y la siguiente pasa. Se reintenta con espera creciente.
+const FNC_MAX_ATTEMPTS = 5;
+const FNC_RETRY_BASE_MS = 5000;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchFncPage() {
+  let lastError;
+  for (let attempt = 1; attempt <= FNC_MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetchWithTimeout(
+        FNC_SOURCE_URL,
+        {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'es-CO,es;q=0.9',
+          },
+        },
+        15000,
+        'FNC'
+      );
+      if (res.ok) return res;
+      lastError = new Error(`HTTP ${res.status} al pedir ${FNC_SOURCE_URL}`);
+      const retryable = res.status >= 500 || res.status === 403 || res.status === 429;
+      if (!retryable) throw lastError;
+    } catch (err) {
+      lastError = err;
+      if (/^HTTP 4(?!03|29)/.test(err.message)) throw err;
+    }
+    if (attempt < FNC_MAX_ATTEMPTS) {
+      const wait = FNC_RETRY_BASE_MS * attempt;
+      console.warn(`Intento ${attempt}/${FNC_MAX_ATTEMPTS} falló (${lastError.message}). Reintentando en ${wait / 1000}s…`);
+      await sleep(wait);
+    }
+  }
+  throw lastError;
+}
+
 async function main() {
   if (!VPS_BASE_URL || !FNC_INGEST_TOKEN) {
     throw new Error('Faltan VPS_BASE_URL o FNC_INGEST_TOKEN en el entorno');
   }
 
-  const res = await fetchWithTimeout(
-    FNC_SOURCE_URL,
-    {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'es-CO,es;q=0.9',
-      },
-    },
-    15000,
-    'FNC'
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status} al pedir ${FNC_SOURCE_URL}`);
+  const res = await fetchFncPage();
 
   const html = await res.text();
   const extracted = extractPriceFromHtml(html);
