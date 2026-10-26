@@ -6,6 +6,7 @@ import '../session.dart';
 import '../theme.dart';
 import '../widgets/av_glass.dart';
 import '../widgets/av_glass_nav.dart';
+import '../widgets/guide_dialog.dart';
 import '../widgets/trial_welcome_dialog.dart';
 import 'account_screen.dart';
 import 'alerts_screen.dart';
@@ -30,10 +31,15 @@ class _HomeShellState extends State<HomeShell> {
   void initState() {
     super.initState();
     final s = widget.session;
-    if (s.pendingTrialWelcome && s.user != null) {
+    if ((s.pendingTrialWelcome || s.pendingGuide) && s.user != null) {
+      final welcome = s.pendingTrialWelcome;
+      final guide = s.pendingGuide;
       s.pendingTrialWelcome = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) showTrialWelcomeDialog(context, s.user!);
+      s.pendingGuide = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        // Primero la bienvenida de la prueba y, al cerrarla, la guía.
+        if (welcome && mounted) await showTrialWelcomeDialog(context, s.user!);
+        if (guide && mounted) await showGuideDialog(context);
       });
     }
   }

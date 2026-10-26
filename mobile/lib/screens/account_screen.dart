@@ -8,6 +8,7 @@ import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/forms.dart';
+import '../widgets/guide_dialog.dart';
 import 'legal_screen.dart';
 import 'pro_screen.dart';
 import 'profile_screen.dart';
@@ -130,6 +131,12 @@ class AccountScreen extends StatelessWidget {
                       open: () => ReportScreen(session: session),
                     ),
                     _ThemeTile(session: session),
+                    _ActionTile(
+                      icon: Icons.help_outline_rounded,
+                      title: 'Guía de uso',
+                      subtitle: 'Un recorrido rápido por AgroValor',
+                      onTap: () => showGuideDialog(context),
+                    ),
                     _ActionTile(
                       icon: Icons.star_rate_rounded,
                       title: 'Calificar AgroValor',

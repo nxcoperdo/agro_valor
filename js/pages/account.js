@@ -1,5 +1,6 @@
 import { api } from '../services/api.js';
 import { refreshUser, setCachedUser } from '../services/auth.js';
+import { showGuideModal } from '../ui/guideModal.js';
 
 function planCard(plan, current) {
   const isCurrent = plan.id === current.plan;
@@ -124,6 +125,12 @@ export async function renderAccount(container) {
       </div>
 
       <div class="panel">
+        <div class="panel-header"><h2>Guía de uso</h2></div>
+        <p class="panel-intro">Un recorrido rápido por AgroValor.</p>
+        <button type="button" class="btn-ghost" id="open-guide-btn">Ver guía</button>
+      </div>
+
+      <div class="panel">
         <div class="panel-header"><h2>Legal</h2></div>
         <p class="panel-intro">
           <a href="#/privacidad">Política de privacidad</a> ·
@@ -175,6 +182,8 @@ export async function renderAccount(container) {
         mpConfirmBtn.disabled = false;
       }
     });
+
+    container.querySelector('#open-guide-btn').addEventListener('click', () => showGuideModal());
 
     container.querySelector('#share-app-btn').addEventListener('click', async () => {
       const text = 'Mira AgroValor: el precio del café y del cacao al día, calculadoras e inventario.';

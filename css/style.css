@@ -1687,6 +1687,31 @@ body.nav-locked {
   width: 100%;
 }
 
+.guide-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: var(--av-space-3) 0;
+}
+
+.guide-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--av-border);
+  transition: width var(--av-duration) var(--av-ease-out), background var(--av-duration) var(--av-ease-out);
+}
+
+.guide-dots span.is-active {
+  width: 18px;
+  background: var(--av-accent);
+}
+
+.guide-skip {
+  width: 100%;
+  margin-top: var(--av-space-2);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .trial-modal-scrim,
   .trial-modal {

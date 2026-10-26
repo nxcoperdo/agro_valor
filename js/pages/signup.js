@@ -1,6 +1,7 @@
 import { api } from '../services/api.js';
 import { setCachedUser } from '../services/auth.js';
 import { showTrialWelcomeModal } from '../ui/trialWelcomeModal.js';
+import { showGuideModal } from '../ui/guideModal.js';
 
 const ICONS = {
   mail: '<rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" />',
@@ -197,12 +198,15 @@ export function renderSignup(root) {
     try {
       const { user } = await api.signup({ email, phone, password, birthDate });
       setCachedUser(user);
-      if (user.isTrialing) {
-        showTrialWelcomeModal(user, () => {
-          window.location.hash = '#/dashboard';
-        });
-      } else {
+      // Primero la bienvenida de la prueba (si hay) y luego la guía; después se entra al panel.
+      const openGuide = () => {
         window.location.hash = '#/dashboard';
+        showGuideModal();
+      };
+      if (user.isTrialing) {
+        showTrialWelcomeModal(user, openGuide);
+      } else {
+        openGuide();
       }
     } catch (err) {
       errorEl.textContent = err.message || 'No se pudo crear la cuenta';

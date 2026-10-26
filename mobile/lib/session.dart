@@ -88,6 +88,9 @@ class Session extends ChangeNotifier {
   /// HomeShell lo consume una vez para mostrar el modal de bienvenida.
   bool pendingTrialWelcome = false;
 
+  /// Igual que pendingTrialWelcome: la guía de uso se ofrece una vez, al crear la cuenta.
+  bool pendingGuide = false;
+
   Future<void> signup(Json payload) => _start(api.signup(payload), isSignup: true);
 
   Future<void> refreshUser() async {
@@ -119,6 +122,7 @@ class Session extends ChangeNotifier {
     api.token = token;
     user = res['user'] as Json;
     pendingTrialWelcome = isSignup && user?['isTrialing'] == true;
+    pendingGuide = isSignup;
     await _storage.write(key: _tokenKey, value: token);
     notifyListeners();
     unawaited(push.register());
