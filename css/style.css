@@ -1712,6 +1712,30 @@ body.nav-locked {
   margin-top: var(--av-space-2);
 }
 
+.roadmap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--av-space-3);
+}
+
+.roadmap-list p {
+  margin: var(--av-space-1) 0 0;
+  color: var(--av-fg-muted);
+  font-size: 0.9rem;
+}
+
+.roadmap-status {
+  margin-left: var(--av-space-2);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--av-accent-soft);
+  color: var(--av-accent);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .trial-modal-scrim,
   .trial-modal {
@@ -1741,7 +1765,8 @@ body.nav-locked {
 }
 
 .calc-form input,
-.calc-form select {
+.calc-form select,
+.calc-form textarea {
   min-height: 44px;
   padding: 0.6rem 0.75rem;
   background: var(--av-muted-bg);
@@ -1754,7 +1779,8 @@ body.nav-locked {
 }
 
 .calc-form input:focus-visible,
-.calc-form select:focus-visible {
+.calc-form select:focus-visible,
+.calc-form textarea:focus-visible {
   border-color: var(--av-accent);
   box-shadow: 0 0 0 3px var(--av-accent-soft);
   outline: none;

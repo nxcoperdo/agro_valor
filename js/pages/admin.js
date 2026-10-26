@@ -1,5 +1,6 @@
 import { api } from '../services/api.js';
 import { formatCop } from '../utils/currency.js';
+import { escapeHtml } from '../utils/format.js';
 
 function metricTile(label, value) {
   return `
@@ -73,21 +74,51 @@ function reportRow(r) {
   `;
 }
 
+const FEEDBACK_STATUSES = [
+  ['nuevo', 'Nuevo'],
+  ['en_revision', 'En revisión'],
+  ['resuelto', 'Resuelto'],
+];
+
+function feedbackRow(f) {
+  const date = new Date(`${f.created_at.replace(' ', 'T')}Z`).toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'short',
+  });
+  return `
+    <tr>
+      <td>${date}</td>
+      <td>${escapeHtml(f.username || '—')}</td>
+      <td>${escapeHtml(f.type)}${f.platform ? ` · ${escapeHtml(f.platform)}` : ''}</td>
+      <td>${escapeHtml(f.message)}</td>
+      <td>
+        <select data-feedback-status="${f.id}" aria-label="Estado">
+          ${FEEDBACK_STATUSES.map(
+            ([value, label]) => `<option value="${value}" ${f.status === value ? 'selected' : ''}>${label}</option>`
+          ).join('')}
+        </select>
+      </td>
+    </tr>
+  `;
+}
+
 export async function renderAdmin(container) {
   async function load() {
     container.innerHTML = '<div class="panel"><span class="skeleton" style="width:100%;height:160px;"></span></div>';
 
     try {
-      const [metrics, usersRes, coopsRes, reportsRes] = await Promise.all([
+      const [metrics, usersRes, coopsRes, reportsRes, feedbackRes] = await Promise.all([
         api.adminMetrics(),
         api.adminUsers(),
         api.adminCooperatives(),
         api.adminReports(),
+        api.adminFeedback(),
       ]);
 
       const { users } = usersRes;
       const { cooperatives } = coopsRes;
       const { reports } = reportsRes;
+      const { feedback } = feedbackRes;
 
       container.innerHTML = `
         <p class="form-error" id="admin-error" role="alert" hidden></p>
@@ -101,6 +132,7 @@ export async function renderAdmin(container) {
             ${metricTile('Reportes 7 días', metrics.reportsLast7d)}
             ${metricTile('Cooperativas', metrics.cooperativesCount)}
             ${metricTile('Reportadas', metrics.reportedCooperativesCount)}
+            ${metricTile('Mensajes nuevos', metrics.feedbackPending)}
           </div>
         </div>
 
@@ -165,6 +197,22 @@ export async function renderAdmin(container) {
                    </table>
                  </div>`
               : '<p class="empty-state">No hay reportes todavía.</p>'
+          }
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><h2>Sugerencias y reportes de problemas</h2></div>
+          ${
+            feedback.length
+              ? `<div class="table-scroll">
+                   <table class="coop-table">
+                     <thead>
+                       <tr><th>Fecha</th><th>Usuario</th><th>Tipo</th><th>Mensaje</th><th>Estado</th></tr>
+                     </thead>
+                     <tbody>${feedback.map(feedbackRow).join('')}</tbody>
+                   </table>
+                 </div>`
+              : '<p class="empty-state">No hay mensajes todavía.</p>'
           }
         </div>
       `;
@@ -232,6 +280,10 @@ export async function renderAdmin(container) {
             });
           })
         );
+      });
+
+      container.querySelectorAll('[data-feedback-status]').forEach((select) => {
+        select.addEventListener('change', runAction(select, () => api.setFeedbackStatus(select.dataset.feedbackStatus, select.value)));
       });
 
       container.querySelectorAll('[data-delete-report]').forEach((btn) => {

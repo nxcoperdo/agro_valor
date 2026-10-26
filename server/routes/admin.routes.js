@@ -4,6 +4,8 @@ const userRepository = require('../repositories/userRepository');
 const cooperativeRepository = require('../repositories/cooperativeRepository');
 const { isValidMarket } = require('../config/markets');
 const priceReportRepository = require('../repositories/priceReportRepository');
+const feedbackRepository = require('../repositories/feedbackRepository');
+const feedbackService = require('../services/feedbackService');
 const subscriptionService = require('../services/subscriptionService');
 const cooperativeService = require('../services/cooperativeService');
 
@@ -113,6 +115,19 @@ router.delete('/reports/:id', (req, res, next) => {
   }
 });
 
+router.get('/feedback', (req, res) => {
+  res.json({ feedback: feedbackRepository.findRecent(100) });
+});
+
+router.patch('/feedback/:id', (req, res, next) => {
+  try {
+    const feedback = feedbackService.setStatus(parseInt(req.params.id, 10), (req.body || {}).status);
+    res.json({ ok: true, feedback });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/metrics', (req, res) => {
   const users = userRepository.listAll(1000);
   const comparison = cooperativeService.getComparison();
@@ -124,6 +139,7 @@ router.get('/metrics', (req, res) => {
     reportsLast7d: priceReportRepository.countAllRecent(7),
     cooperativesCount: comparison.cooperatives.length,
     reportedCooperativesCount: comparison.reportedCount || 0,
+    feedbackPending: feedbackRepository.countPending(),
   });
 });
 

@@ -100,6 +100,9 @@ class ApiClient {
   // Reportes de precio (gratis: alimentan el dato de todos)
   Future<Json> reportPrice(Json payload) async => await _request('POST', '/reports', payload) as Json;
   Future<Json> myReports() async => await _request('GET', '/reports/mine') as Json;
+  Future<Json> sendFeedback(Json payload) async => await _request('POST', '/feedback', payload) as Json;
+  Future<Json> myFeedback() async => await _request('GET', '/feedback/mine') as Json;
+  Future<Json> roadmap() async => await _request('GET', '/public/roadmap') as Json;
 
   // Pro
   Future<Json> forecast([String market = 'coffee']) async =>

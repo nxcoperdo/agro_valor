@@ -3,6 +3,7 @@ const marketSummaryService = require('../services/marketSummaryService');
 const cooperativeService = require('../services/cooperativeService');
 const subscriptionService = require('../services/subscriptionService');
 const legalContentService = require('../services/legalContentService');
+const roadmap = require('../config/roadmap.json');
 const mercadoPagoService = require('../services/mercadoPagoService');
 const mercadoPagoBillingService = require('../services/mercadoPagoBillingService');
 
@@ -24,6 +25,11 @@ router.get('/market', (req, res) => {
     reportedCount: comparison.reportedCount,
     disclaimer: comparison.disclaimer,
   });
+});
+
+/** Próximas funciones; se edita en config/roadmap.json sin publicar una versión nueva de la app. */
+router.get('/roadmap', (req, res) => {
+  res.json(roadmap);
 });
 
 router.get('/plans', (req, res) => {

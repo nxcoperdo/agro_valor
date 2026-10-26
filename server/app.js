@@ -13,6 +13,7 @@ const accountRoutes = require('./routes/account.routes');
 const alertsRoutes = require('./routes/alerts.routes');
 const calculatorRoutes = require('./routes/calculator.routes');
 const reportsRoutes = require('./routes/reports.routes');
+const feedbackRoutes = require('./routes/feedback.routes');
 const salesRoutes = require('./routes/sales.routes');
 const coffeeRoutes = require('./routes/coffee.routes');
 const { requireBusiness } = require('./middleware/requireBusiness');
@@ -57,6 +58,7 @@ function createApp() {
   app.use('/api/cooperatives', authMiddleware, cooperativesRoutes);
   app.use('/api/account', authMiddleware, loadUser, accountRoutes);
   app.use('/api/reports', authMiddleware, loadUser, reportsRoutes);
+  app.use('/api/feedback', authMiddleware, loadUser, feedbackRoutes);
 
   // Vista previa gratis, cálculo/detalle completo requiere Pro (ver gating dentro de la ruta).
   app.use('/api/forecast', authMiddleware, loadUser, forecastRoutes);

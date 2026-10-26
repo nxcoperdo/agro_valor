@@ -124,6 +124,11 @@ export const api = {
   createReport: (payload) => request('/reports', { method: 'POST', ...body(payload) }),
   myReports: () => request('/reports/mine'),
 
+  // Sugerencias y reportes de problemas, y hoja de ruta
+  sendFeedback: (payload) => request('/feedback', { method: 'POST', ...body(payload) }),
+  myFeedback: () => request('/feedback/mine'),
+  roadmap: () => request('/public/roadmap'),
+
   // Admin
   adminUsers: () => request('/admin/users'),
   activatePro: (userId, months) => request(`/admin/users/${userId}/activate-pro`, { method: 'POST', ...body({ months }) }),
@@ -134,6 +139,8 @@ export const api = {
   adminReports: () => request('/admin/reports'),
   deleteReport: (id) => request(`/admin/reports/${id}`, { method: 'DELETE' }),
   adminMetrics: () => request('/admin/metrics'),
+  adminFeedback: () => request('/admin/feedback'),
+  setFeedbackStatus: (id, status) => request(`/admin/feedback/${id}`, { method: 'PATCH', ...body({ status }) }),
   resetUserPassword: (userId, newPassword) =>
     request(`/admin/users/${userId}/reset-password`, { method: 'POST', ...body({ newPassword }) }),
 };

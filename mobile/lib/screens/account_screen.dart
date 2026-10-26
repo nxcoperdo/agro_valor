@@ -9,10 +9,12 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/forms.dart';
 import '../widgets/guide_dialog.dart';
+import 'feedback_screen.dart';
 import 'legal_screen.dart';
 import 'pro_screen.dart';
 import 'profile_screen.dart';
 import 'report_screen.dart';
+import 'roadmap_screen.dart';
 import 'sales_screen.dart';
 
 class AccountScreen extends StatelessWidget {
@@ -131,6 +133,18 @@ class AccountScreen extends StatelessWidget {
                       open: () => ReportScreen(session: session),
                     ),
                     _ThemeTile(session: session),
+                    _MenuTile(
+                      icon: Icons.feedback_outlined,
+                      title: 'Sugerencias y reportes',
+                      subtitle: 'Cuéntanos una idea o un problema',
+                      open: () => FeedbackScreen(session: session),
+                    ),
+                    _MenuTile(
+                      icon: Icons.upcoming_outlined,
+                      title: 'Próximamente',
+                      subtitle: 'Las funciones que estamos preparando',
+                      open: () => RoadmapScreen(session: session),
+                    ),
                     _ActionTile(
                       icon: Icons.help_outline_rounded,
                       title: 'Guía de uso',

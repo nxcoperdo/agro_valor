@@ -113,6 +113,19 @@ CREATE TABLE IF NOT EXISTS price_reports (
 );
 CREATE INDEX IF NOT EXISTS idx_price_reports_coop_date ON price_reports(cooperative_id, reported_for_date);
 
+/* Sugerencias y reportes de problemas que los usuarios envían desde la app y la web. */
+CREATE TABLE IF NOT EXISTS feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  type TEXT NOT NULL,
+  message TEXT NOT NULL,
+  platform TEXT,
+  app_version TEXT,
+  status TEXT NOT NULL DEFAULT 'nuevo',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_status_created ON feedback(status, created_at);
+
 /* Registro de ventas del usuario, para su historial y para medir si vendió bien. */
 CREATE TABLE IF NOT EXISTS sales (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

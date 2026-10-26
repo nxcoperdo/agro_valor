@@ -1,6 +1,7 @@
 import { api } from '../services/api.js';
 import { refreshUser, setCachedUser } from '../services/auth.js';
 import { showGuideModal } from '../ui/guideModal.js';
+import { escapeHtml } from '../utils/format.js';
 
 function planCard(plan, current) {
   const isCurrent = plan.id === current.plan;
@@ -125,6 +126,33 @@ export async function renderAccount(container) {
       </div>
 
       <div class="panel">
+        <div class="panel-header"><h2>Sugerencias y reportes</h2></div>
+        <p class="panel-intro">¿Una idea para mejorar AgroValor o algo que no funciona? Escríbenos, lo leemos todo.</p>
+        <form class="calc-form" id="feedback-form">
+          <div class="field">
+            <label for="feedbackType">Tipo</label>
+            <select id="feedbackType" name="type">
+              <option value="sugerencia">Sugerencia</option>
+              <option value="error">Algo falla</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="feedbackMessage">Mensaje</label>
+            <textarea id="feedbackMessage" name="message" rows="4" maxlength="1000" required></textarea>
+          </div>
+          <button type="submit" class="btn-primary">Enviar</button>
+        </form>
+        <p class="form-error" id="feedback-error" role="alert" hidden></p>
+        <p class="form-success" id="feedback-success" role="status" hidden></p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Próximamente</h2></div>
+        <ul class="roadmap-list" id="roadmap-list"><li class="panel-intro">Cargando…</li></ul>
+      </div>
+
+      <div class="panel">
         <div class="panel-header"><h2>Guía de uso</h2></div>
         <p class="panel-intro">Un recorrido rápido por AgroValor.</p>
         <button type="button" class="btn-ghost" id="open-guide-btn">Ver guía</button>
@@ -184,6 +212,52 @@ export async function renderAccount(container) {
     });
 
     container.querySelector('#open-guide-btn').addEventListener('click', () => showGuideModal());
+
+    const ROADMAP_STATUS = { en_desarrollo: 'En desarrollo', planeado: 'Planeado', pronto: 'Muy pronto' };
+    const roadmapEl = container.querySelector('#roadmap-list');
+    api
+      .roadmap()
+      .then(({ items }) => {
+        roadmapEl.innerHTML = items
+          .map(
+            (item) => `
+              <li>
+                <strong>${escapeHtml(item.title)}</strong>
+                <span class="roadmap-status">${escapeHtml(ROADMAP_STATUS[item.status] || item.status)}</span>
+                <p>${escapeHtml(item.description)}</p>
+              </li>`
+          )
+          .join('');
+      })
+      .catch(() => {
+        roadmapEl.innerHTML = '<li class="panel-intro">No se pudo cargar. Intenta de nuevo más tarde.</li>';
+      });
+
+    const feedbackForm = container.querySelector('#feedback-form');
+    const feedbackError = container.querySelector('#feedback-error');
+    const feedbackSuccess = container.querySelector('#feedback-success');
+    feedbackForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      feedbackError.hidden = true;
+      feedbackSuccess.hidden = true;
+      const submit = feedbackForm.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      try {
+        const res = await api.sendFeedback({
+          type: feedbackForm.type.value,
+          message: feedbackForm.message.value.trim(),
+          platform: 'web',
+        });
+        feedbackForm.message.value = '';
+        feedbackSuccess.textContent = res.message || 'Gracias, lo vamos a revisar.';
+        feedbackSuccess.hidden = false;
+      } catch (err) {
+        feedbackError.textContent = err.message;
+        feedbackError.hidden = false;
+      } finally {
+        submit.disabled = false;
+      }
+    });
 
     container.querySelector('#share-app-btn').addEventListener('click', async () => {
       const text = 'Mira AgroValor: el precio del café y del cacao al día, calculadoras e inventario.';

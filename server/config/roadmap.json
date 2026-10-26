@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "frijol-maiz",
+      "title": "Frijol y maíz",
+      "description": "Precios y calculadora para más productos, además del café y el cacao.",
+      "status": "planeado"
+    },
+    {
+      "id": "app-iphone",
+      "title": "AgroValor para iPhone",
+      "description": "La misma app que ya tienes en Android, en tu iPhone.",
+      "status": "en_desarrollo"
+    },
+    {
+      "id": "alertas-cacao-whatsapp",
+      "title": "Alertas de cacao por WhatsApp",
+      "description": "Hoy las alertas de cacao llegan como notificación; también llegarán por WhatsApp.",
+      "status": "planeado"
+    }
+  ]
+}
