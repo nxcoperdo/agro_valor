@@ -134,6 +134,8 @@ router.get('/metrics', (req, res) => {
 
   res.json({
     totalUsers: users.length,
+    newUsers7d: userRepository.countCreatedSince(7),
+    newUsers30d: userRepository.countCreatedSince(30),
     proUsers: users.filter((u) => u.plan === 'pro').length,
     reportsToday: priceReportRepository.countAllToday(),
     reportsLast7d: priceReportRepository.countAllRecent(7),

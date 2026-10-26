@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 
 const authRoutes = require('./routes/auth.routes');
 const publicRoutes = require('./routes/public.routes');
+const healthService = require('./services/healthService');
 const pricesRoutes = require('./routes/prices.routes');
 const cooperativesRoutes = require('./routes/cooperatives.routes');
 const forecastRoutes = require('./routes/forecast.routes');
@@ -41,6 +42,12 @@ function createApp() {
       return res.redirect(301, `${env.publicBaseUrl}${req.originalUrl}`);
     }
     next();
+  });
+
+  // Para vigilancia externa: 200 si la base responde (aunque haya datos viejos), 503 si no.
+  app.get('/api/health', (req, res) => {
+    const result = healthService.check();
+    res.status(result.status === 'error' ? 503 : 200).json(result);
   });
 
   // Páginas públicas renderizadas en el servidor (precio del día, sitemap) para Google.

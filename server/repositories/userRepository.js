@@ -90,6 +90,11 @@ function findAllWithMpPaymentStatus(status) {
   return db.prepare('SELECT * FROM users WHERE mp_payment_status = ?').all(status);
 }
 
+/** Cuentas creadas en los últimos N días, para las métricas del panel de administración. */
+function countCreatedSince(days) {
+  return db.prepare("SELECT COUNT(*) AS n FROM users WHERE created_at >= datetime('now', ?)").get(`-${days} days`).n;
+}
+
 function listAll(limit = 200) {
   return db.prepare(`SELECT ${PUBLIC_FIELDS} FROM users ORDER BY created_at DESC LIMIT ?`).all(limit);
 }
@@ -105,6 +110,7 @@ function deleteById(id) {
 }
 
 module.exports = {
+  countCreatedSince,
   count,
   findByUsername,
   findById,

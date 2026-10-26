@@ -127,6 +127,8 @@ export async function renderAdmin(container) {
           <div class="panel-header"><h2>Métricas</h2></div>
           <div class="metric-grid">
             ${metricTile('Usuarios', metrics.totalUsers)}
+            ${metricTile('Nuevos 7 días', metrics.newUsers7d)}
+            ${metricTile('Nuevos 30 días', metrics.newUsers30d)}
             ${metricTile('Pro', metrics.proUsers)}
             ${metricTile('Reportes hoy', metrics.reportsToday)}
             ${metricTile('Reportes 7 días', metrics.reportsLast7d)}
