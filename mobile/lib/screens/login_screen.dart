@@ -321,7 +321,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     onPressed: () => setState(() => _showPassword = !_showPassword),
                     tooltip: _showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña',
                     icon: Icon(
-                      _showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _showPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                       size: 20,
                       color: const Color(0xFF6E8176),
                     ),

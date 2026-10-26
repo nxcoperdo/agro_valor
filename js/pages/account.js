@@ -118,6 +118,12 @@ export async function renderAccount(container) {
       </div>
 
       <div class="panel">
+        <div class="panel-header"><h2>Compartir AgroValor</h2></div>
+        <p class="panel-intro">Envíale la app a otros caficultores y compradores.</p>
+        <button type="button" class="btn-primary" id="share-app-btn">Compartir</button>
+      </div>
+
+      <div class="panel">
         <div class="panel-header"><h2>Legal</h2></div>
         <p class="panel-intro">
           <a href="#/privacidad">Política de privacidad</a> ·
@@ -168,6 +174,20 @@ export async function renderAccount(container) {
         mpErrorEl.hidden = false;
         mpConfirmBtn.disabled = false;
       }
+    });
+
+    container.querySelector('#share-app-btn').addEventListener('click', async () => {
+      const text = 'Mira AgroValor: el precio del café y del cacao al día, calculadoras e inventario.';
+      const url = 'https://agrovalor.tech';
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'AgroValor', text, url });
+        } catch {
+          // El usuario cerró la hoja de compartir; no es un error.
+        }
+        return;
+      }
+      window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener');
     });
 
     const form = container.querySelector('#profile-form');

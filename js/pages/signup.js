@@ -112,7 +112,7 @@ export function renderSignup(root) {
                   minlength="8"
                   required
                 />
-                <button class="lg-toggle" type="button" aria-label="Mostrar contraseña">${icon('eye')}</button>
+                <button class="lg-toggle" type="button" aria-label="Mostrar contraseña">${icon('eyeOff')}</button>
               </span>
             </label>
 
@@ -151,7 +151,7 @@ export function renderSignup(root) {
   toggle.addEventListener('click', () => {
     const show = form.password.type === 'password';
     form.password.type = show ? 'text' : 'password';
-    toggle.innerHTML = icon(show ? 'eyeOff' : 'eye');
+    toggle.innerHTML = icon(show ? 'eye' : 'eyeOff');
     toggle.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
   });
 

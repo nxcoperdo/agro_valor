@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:in_app_review/in_app_review.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../format.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/forms.dart';
 import 'legal_screen.dart';
 import 'pro_screen.dart';
 import 'profile_screen.dart';
@@ -125,6 +129,18 @@ class AccountScreen extends StatelessWidget {
                       subtitle: 'Cuéntanos cuánto te pagó una cooperativa',
                       open: () => ReportScreen(session: session),
                     ),
+                    _ActionTile(
+                      icon: Icons.star_rate_rounded,
+                      title: 'Calificar AgroValor',
+                      subtitle: 'Cuéntanos qué tal te va con la app',
+                      onTap: () => _rateApp(context),
+                    ),
+                    _ActionTile(
+                      icon: Icons.ios_share_rounded,
+                      title: 'Compartir AgroValor',
+                      subtitle: 'Envíaselo a otros caficultores por WhatsApp',
+                      onTap: () => _shareApp(context),
+                    ),
                     _MenuTile(
                       icon: Icons.privacy_tip_outlined,
                       title: 'Política de privacidad',
@@ -178,6 +194,42 @@ class AccountScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  static const _storeUrl = 'https://play.google.com/store/apps/details?id=co.agrovalor.app';
+
+  Future<void> _rateApp(BuildContext context) async {
+    final review = InAppReview.instance;
+    try {
+      // La hoja nativa de Google/Apple limita cuántas veces se muestra; si no está
+      // disponible se abre la ficha de la tienda.
+      if (await review.isAvailable()) {
+        await review.requestReview();
+      } else {
+        await review.openStoreListing();
+      }
+    } catch (_) {
+      final opened = await launchUrl(Uri.parse(_storeUrl), mode: LaunchMode.externalApplication);
+      if (!opened && context.mounted) showMessage(context, 'No se pudo abrir la tienda.', error: true);
+    }
+  }
+
+  Future<void> _shareApp(BuildContext context) async {
+    // En iPad la hoja de compartir se ancla al botón.
+    final box = context.findRenderObject() as RenderBox?;
+    final origin = box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'Mira AgroValor: el precio del café y del cacao al día, calculadoras e inventario. '
+              'Descárgala en $_storeUrl o entra a https://agrovalor.tech',
+          subject: 'AgroValor',
+          sharePositionOrigin: origin,
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) showMessage(context, '$e', error: true);
+    }
   }
 
   Future<void> _confirmDeleteAccount(BuildContext context, Session session) async {
@@ -244,6 +296,27 @@ class AccountScreen extends StatelessWidget {
     );
 
     password.dispose();
+  }
+}
+
+/// Fila del menú que ejecuta una acción en vez de abrir otra pantalla.
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({required this.icon, required this.title, required this.subtitle, required this.onTap});
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: AvColors.accent),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle, style: const TextStyle(color: AvColors.fgMuted, fontSize: 12)),
+      trailing: const Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
+      onTap: onTap,
+    );
   }
 }
 

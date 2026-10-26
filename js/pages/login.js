@@ -69,7 +69,7 @@ export function renderLogin(root) {
               <span class="lg-input">
                 <span class="lg-input__icon">${icon('lock')}</span>
                 <input type="password" name="password" autocomplete="current-password" placeholder="Tu contraseña" required />
-                <button class="lg-toggle" type="button" aria-label="Mostrar contraseña">${icon('eye')}</button>
+                <button class="lg-toggle" type="button" aria-label="Mostrar contraseña">${icon('eyeOff')}</button>
               </span>
             </label>
 
@@ -100,7 +100,7 @@ export function renderLogin(root) {
   toggle.addEventListener('click', () => {
     const show = form.password.type === 'password';
     form.password.type = show ? 'text' : 'password';
-    toggle.innerHTML = icon(show ? 'eyeOff' : 'eye');
+    toggle.innerHTML = icon(show ? 'eye' : 'eyeOff');
     toggle.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
   });
 
