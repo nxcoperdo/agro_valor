@@ -88,9 +88,9 @@ class ErrorMessage extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.cloud_off_rounded, size: 40, color: AvColors.fgMuted),
+          Icon(Icons.cloud_off_rounded, size: 40, color: AvColors.fgMuted),
           const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AvColors.fgMuted)),
+          Text(message, textAlign: TextAlign.center, style: TextStyle(color: AvColors.fgMuted)),
           const SizedBox(height: 12),
           TextButton(onPressed: onRetry, child: const Text('Reintentar')),
         ],
@@ -110,13 +110,14 @@ class SectionCard extends StatelessWidget {
 }
 
 class Pill extends StatelessWidget {
-  const Pill({super.key, required this.label, this.color = AvColors.positive});
+  const Pill({super.key, required this.label, this.color});
 
   final String label;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final color = this.color ?? AvColors.positive;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -171,9 +172,9 @@ class ProUpsell extends StatelessWidget {
         const SizedBox(height: 20),
         Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
-        Text(body, textAlign: TextAlign.center, style: const TextStyle(color: AvColors.fgMuted, fontSize: 15, height: 1.4)),
+        Text(body, textAlign: TextAlign.center, style: TextStyle(color: AvColors.fgMuted, fontSize: 15, height: 1.4)),
         const SizedBox(height: 20),
-        const Center(child: Pill(label: 'Función de AgroValor Pro', color: AvColors.accent)),
+        Center(child: Pill(label: 'Función de AgroValor Pro', color: AvColors.accent)),
         if (onUpgrade != null) ...[
           const SizedBox(height: 20),
           FilledButton(onPressed: onUpgrade, child: const Text('Ver plan Pro')),
@@ -233,7 +234,7 @@ class LockedTeaser extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Pill(label: 'AgroValor Pro', color: AvColors.accent),
+                        Pill(label: 'AgroValor Pro', color: AvColors.accent),
                         const SizedBox(height: 10),
                         Text(
                           title,
@@ -278,7 +279,7 @@ class SectionLabel extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
         child: Text(
           text.toUpperCase(),
-          style: const TextStyle(fontSize: 11, color: AvColors.fgMuted, letterSpacing: 1.1, fontWeight: FontWeight.w600),
+          style: TextStyle(fontSize: 11, color: AvColors.fgMuted, letterSpacing: 1.1, fontWeight: FontWeight.w600),
         ),
       );
 }

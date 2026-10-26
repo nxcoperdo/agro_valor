@@ -17,7 +17,7 @@ class MarketSelector extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Row(
         children: [
-          const Text('Mercado', style: TextStyle(fontSize: 13, color: AvColors.fgMuted)),
+          Text('Mercado', style: TextStyle(fontSize: 13, color: AvColors.fgMuted)),
           const SizedBox(width: 10),
           Container(
             height: 44,

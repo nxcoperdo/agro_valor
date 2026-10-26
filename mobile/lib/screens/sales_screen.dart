@@ -192,7 +192,7 @@ class _SaleTile extends StatelessWidget {
           IconButton(
             tooltip: 'Eliminar',
             onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline_rounded, color: AvColors.fgMuted),
+            icon: Icon(Icons.delete_outline_rounded, color: AvColors.fgMuted),
           ),
         ],
       ),
@@ -281,7 +281,7 @@ class _NewSaleFormState extends State<_NewSaleForm> {
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(56),
                     foregroundColor: AvColors.fg,
-                    side: const BorderSide(color: AvColors.border),
+                    side: BorderSide(color: AvColors.border),
                   ),
                 ),
               ),

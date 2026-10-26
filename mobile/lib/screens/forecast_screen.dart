@@ -46,7 +46,7 @@ class _ForecastTabs extends StatelessWidget {
       length: 3,
       child: Column(
         children: [
-          const TabBar(
+          TabBar(
             tabs: [Tab(text: 'Días'), Tab(text: 'Semanas'), Tab(text: 'Meses')],
             indicatorColor: AvColors.accent,
             labelColor: AvColors.accent,
@@ -174,7 +174,7 @@ class _ForecastList extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               'Este es solo el pronóstico de mañana. Activa Pro para ver los próximos $lockedCount días.',
-              style: const TextStyle(color: AvColors.accent, fontSize: 13, fontWeight: FontWeight.w600),
+              style: TextStyle(color: AvColors.accent, fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         if (note != null) ...[const SizedBox(height: 8), Muted(note!, size: 12)],

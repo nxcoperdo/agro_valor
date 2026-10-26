@@ -122,7 +122,7 @@ class _LotTile extends StatelessWidget {
               ),
             ),
             Text(formatCop(lot['totalCompra'] as num?), style: mono(size: 14, weight: FontWeight.w600)),
-            const Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
+            Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
           ],
         ),
       ),

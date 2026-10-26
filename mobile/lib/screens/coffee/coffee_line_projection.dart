@@ -156,7 +156,7 @@ class _CoffeeLineProjectionState extends State<CoffeeLineProjection> {
       return const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: LinearProgressIndicator());
     }
     final d = _data;
-    if (d == null) return _error == null ? const SizedBox.shrink() : Text(_error!, style: const TextStyle(color: AvColors.danger));
+    if (d == null) return _error == null ? const SizedBox.shrink() : Text(_error!, style: TextStyle(color: AvColors.danger));
 
     final noSale = d['ingresoProyectado'] == null;
     return Column(
@@ -172,7 +172,7 @@ class _CoffeeLineProjectionState extends State<CoffeeLineProjection> {
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
-            if (d['guardada'] == true) const Pill(label: 'Guardada', color: AvColors.positive),
+            if (d['guardada'] == true) Pill(label: 'Guardada', color: AvColors.positive),
             Icon(_expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: AvColors.fgMuted),
           ]),
         ),
@@ -238,7 +238,7 @@ class _CoffeeLineProjectionState extends State<CoffeeLineProjection> {
               label: const Text('Agregar costo proyectado'),
             ),
           ),
-          if (_error != null) Text(_error!, style: const TextStyle(color: AvColors.danger)),
+          if (_error != null) Text(_error!, style: TextStyle(color: AvColors.danger)),
           const SizedBox(height: 8),
           BusyButton(label: 'Calcular y guardar', busy: _busy, onPressed: _save),
         ],
@@ -277,7 +277,7 @@ class _CoffeeLineProjectionState extends State<CoffeeLineProjection> {
           IconButton(
             tooltip: 'Quitar costo',
             onPressed: () => setState(() => _costs.removeAt(i).dispose()),
-            icon: const Icon(Icons.close_rounded, color: AvColors.fgMuted),
+            icon: Icon(Icons.close_rounded, color: AvColors.fgMuted),
           ),
         ],
       ),

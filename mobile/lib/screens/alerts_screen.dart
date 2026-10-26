@@ -200,7 +200,7 @@ class _AlertTile extends StatelessWidget {
           IconButton(
             tooltip: 'Eliminar',
             onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline_rounded, color: AvColors.fgMuted),
+            icon: Icon(Icons.delete_outline_rounded, color: AvColors.fgMuted),
           ),
         ],
       ),

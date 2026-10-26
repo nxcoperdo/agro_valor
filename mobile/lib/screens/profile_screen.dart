@@ -129,21 +129,21 @@ class _ProfileFormState extends State<_ProfileForm> {
                 SwitchListTile.adaptive(
                   value: _notifyPush,
                   onChanged: (v) => setState(() => _notifyPush = v),
-                  secondary: const Icon(Icons.notifications_rounded, color: AvColors.accent),
+                  secondary: Icon(Icons.notifications_rounded, color: AvColors.accent),
                   title: const Text('Notificaciones en la app'),
                   subtitle: Text(
                     widget.session.push.available
                         ? 'Llegan a este teléfono, sin costo'
                         : 'Esta versión de la app todavía no tiene notificaciones',
-                    style: const TextStyle(color: AvColors.fgMuted, fontSize: 12),
+                    style: TextStyle(color: AvColors.fgMuted, fontSize: 12),
                   ),
                 ),
                 SwitchListTile.adaptive(
                   value: _notifyWhatsapp,
                   onChanged: (v) => setState(() => _notifyWhatsapp = v),
-                  secondary: const Icon(Icons.chat_rounded, color: AvColors.positive),
+                  secondary: Icon(Icons.chat_rounded, color: AvColors.positive),
                   title: const Text('WhatsApp'),
-                  subtitle: const Text(
+                  subtitle: Text(
                     'Al número de arriba',
                     style: TextStyle(color: AvColors.fgMuted, fontSize: 12),
                   ),

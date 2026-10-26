@@ -109,7 +109,7 @@ class _CoffeeSaleFormScreenState extends State<CoffeeSaleFormScreen> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Seguir editando')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Descartar', style: TextStyle(color: AvColors.danger)),
+            child: Text('Descartar', style: TextStyle(color: AvColors.danger)),
           ),
         ],
       ),
@@ -406,7 +406,7 @@ class _CoffeeSaleFormScreenState extends State<CoffeeSaleFormScreen> {
                 IconButton(
                   tooltip: 'Quitar este lote',
                   onPressed: () => _removeLine(i),
-                  icon: const Icon(Icons.delete_outline_rounded, color: AvColors.fgMuted),
+                  icon: Icon(Icons.delete_outline_rounded, color: AvColors.fgMuted),
                 ),
             ],
           ),
@@ -498,7 +498,7 @@ class _NoInventory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
         padding: EdgeInsets.all(32),
         child: Column(

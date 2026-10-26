@@ -28,8 +28,8 @@ class AvGlass extends StatelessWidget {
 
     return LiquidGlass.withOwnLayer(
       shape: LiquidRoundedSuperellipse(borderRadius: radius),
-      settings: const LiquidGlassSettings(
-        glassColor: Color(0x29163020),
+      settings: LiquidGlassSettings(
+        glassColor: AvColors.glass,
         thickness: 14,
         blur: 8,
         lightIntensity: 0.6,
@@ -57,7 +57,7 @@ class _Frosted extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: const Color(0xEB0A1F10),
+            color: AvColors.glassBar,
             borderRadius: BorderRadius.circular(radius),
             border: Border.all(color: AvColors.border),
           ),

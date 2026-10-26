@@ -121,7 +121,7 @@ class _Header extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'AGRO VALOR',
                   style: TextStyle(fontSize: 11, color: AvColors.fgMuted, letterSpacing: 1.2, fontWeight: FontWeight.w600),
                 ),
@@ -138,7 +138,7 @@ class _Header extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AvColors.border),
             ),
-            child: const Icon(Icons.coffee_rounded, size: 20, color: AvColors.accent),
+            child: Icon(Icons.coffee_rounded, size: 20, color: AvColors.accent),
           ),
         ],
       ),
@@ -160,8 +160,8 @@ class _BottomNav extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          decoration: const BoxDecoration(
-            color: Color(0xEB0A1F10),
+          decoration: BoxDecoration(
+            color: AvColors.glassBar,
             border: Border(top: BorderSide(color: AvColors.border)),
           ),
           padding: EdgeInsets.only(top: 8, bottom: MediaQuery.paddingOf(context).bottom + 8),
@@ -194,7 +194,7 @@ class _BottomNav extends StatelessWidget {
                             child: Container(
                               width: 4,
                               height: 4,
-                              decoration: const BoxDecoration(color: AvColors.accent, shape: BoxShape.circle),
+                              decoration: BoxDecoration(color: AvColors.accent, shape: BoxShape.circle),
                             ),
                           ),
                         ],

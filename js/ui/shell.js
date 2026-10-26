@@ -1,5 +1,6 @@
 import { getCachedUser, logout } from '../services/auth.js';
 import { isCalcRoute } from './calcTabs.js';
+import { createThemeToggle } from './theme.js';
 
 const BASE_NAV_ITEMS = [
   { hash: '#/dashboard', label: 'Mercado' },
@@ -132,7 +133,9 @@ export function renderShell(root, activeHash) {
     </div>
   `;
 
-  root.querySelector('#logout-btn').addEventListener('click', logout);
+  const logoutBtn = root.querySelector('#logout-btn');
+  logoutBtn.before(createThemeToggle());
+  logoutBtn.addEventListener('click', logout);
   setupDrawer(root);
 
   return root.querySelector('#page-content');

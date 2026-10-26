@@ -114,8 +114,8 @@ class _Tag extends StatelessWidget {
   }
 }
 
-const _muted13 = TextStyle(fontSize: 13, color: AvColors.fgMuted);
-const _muted11 = TextStyle(fontSize: 11, color: AvColors.fgMuted, height: 1.5);
+TextStyle get _muted13 => TextStyle(fontSize: 13, color: AvColors.fgMuted);
+TextStyle get _muted11 => TextStyle(fontSize: 11, color: AvColors.fgMuted, height: 1.5);
 
 // --- Tarjetas de precio -------------------------------------------------------------
 
@@ -131,7 +131,7 @@ class _InternalCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Lo que le pagan al caficultor', style: _muted13),
+          Text('Lo que le pagan al caficultor', style: _muted13),
           const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -142,7 +142,7 @@ class _InternalCard extends StatelessWidget {
                 style: mono(size: 36, weight: FontWeight.w700, spacing: -1),
               ),
               const SizedBox(width: 6),
-              const Text('\$', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: AvColors.fgMuted)),
+              Text('\$', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: AvColors.fgMuted)),
             ],
           ),
           const SizedBox(height: 4),
@@ -151,12 +151,12 @@ class _InternalCard extends StatelessWidget {
             style: _muted13,
           ),
           const SizedBox(height: 10),
-          const Divider(height: 1, thickness: 1, color: AvColors.border),
+          Divider(height: 1, thickness: 1, color: AvColors.border),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Factor $referenceFactor', style: _muted13),
+              Text('Factor $referenceFactor', style: _muted13),
               Text('${_int.format(internal['copPerCarga'] as num)} \$', style: mono(size: 13)),
             ],
           ),
@@ -164,7 +164,7 @@ class _InternalCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Factor 88', style: _muted13),
+              Text('Factor 88', style: _muted13),
               Text(
                 '${_int.format(copPerCargaAtFactor(internal['copPerCarga'] as num, 88))} \$',
                 style: mono(size: 13),
@@ -172,16 +172,16 @@ class _InternalCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          const Divider(height: 1, thickness: 1, color: AvColors.border),
+          Divider(height: 1, thickness: 1, color: AvColors.border),
           const SizedBox(height: 10),
           Row(
             children: [
-              const _Tag('FNC', color: AvColors.accent),
+              _Tag('FNC', color: AvColors.accent),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   '${internal['label']} · $date',
-                  style: const TextStyle(fontSize: 12, color: AvColors.fgMuted),
+                  style: TextStyle(fontSize: 12, color: AvColors.fgMuted),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -219,7 +219,7 @@ class _CocoaHeroCard extends StatelessWidget {
                 style: mono(size: 36, weight: FontWeight.w700, spacing: -1),
               ),
               const SizedBox(width: 6),
-              const Text('\$', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: AvColors.fgMuted)),
+              Text('\$', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: AvColors.fgMuted)),
             ],
           ),
           const SizedBox(height: 4),
@@ -298,7 +298,7 @@ class _CocoaMarketCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          const Text('por tonelada métrica', style: _muted13),
+          Text('por tonelada métrica', style: _muted13),
           const SizedBox(height: 8),
           Text(meta, style: _muted11),
         ],
@@ -434,7 +434,7 @@ class _ParityCardState extends State<_ParityCard> {
                               text: '${_int.format(p['copPerCarga'] as num)} ',
                               style: mono(size: 18, weight: FontWeight.w700, color: AvColors.accent),
                             ),
-                            const TextSpan(
+                            TextSpan(
                               text: '\$ por carga',
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AvColors.accent),
                             ),
@@ -447,7 +447,7 @@ class _ParityCardState extends State<_ParityCard> {
                 AnimatedRotation(
                   turns: _open ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.expand_more_rounded, color: AvColors.fgMuted),
+                  child: Icon(Icons.expand_more_rounded, color: AvColors.fgMuted),
                 ),
               ],
             ),
@@ -460,7 +460,7 @@ class _ParityCardState extends State<_ParityCard> {
                   : Column(
                       children: [
                         const SizedBox(height: 12),
-                        const Divider(height: 1, thickness: 1, color: AvColors.border),
+                        Divider(height: 1, thickness: 1, color: AvColors.border),
                         const SizedBox(height: 8),
                         for (final (k, v) in rows)
                           Padding(
@@ -815,12 +815,12 @@ class _ChartPanelState extends State<_ChartPanel> {
             ? '● 0,00%'
             : '${v > 0 ? '▲ +' : '▼ '}${v.toStringAsFixed(2).replaceAll('.', ',')}%';
     return Container(
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AvColors.border))),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: AvColors.border))),
       padding: const EdgeInsets.only(top: 10, bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: Text(
               'PROYECCIÓN · DÍAS SIGUIENTES',
@@ -873,7 +873,7 @@ class _ChartPanelState extends State<_ChartPanel> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(k, style: const TextStyle(fontSize: 11, color: AvColors.fgMuted)),
+                                Text(k, style: TextStyle(fontSize: 11, color: AvColors.fgMuted)),
                                 Text(_two.format(v), style: mono(size: 11, weight: FontWeight.w600, color: AvColors.fg)),
                               ],
                             ),
@@ -887,7 +887,7 @@ class _ChartPanelState extends State<_ChartPanel> {
           if (_lockedDays > 0)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-              child: Text('Con Pro ves $_lockedDays días más.', style: const TextStyle(fontSize: 11, color: AvColors.fgMuted)),
+              child: Text('Con Pro ves $_lockedDays días más.', style: TextStyle(fontSize: 11, color: AvColors.fgMuted)),
             ),
         ],
       ),
@@ -902,12 +902,12 @@ class _ChartPanelState extends State<_ChartPanel> {
       ('CIERRE', last.close, AvColors.fg),
     ];
     return Container(
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AvColors.border))),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: AvColors.border))),
       child: IntrinsicHeight(
         child: Row(
           children: [
             for (var i = 0; i < cells.length; i++) ...[
-              if (i > 0) const VerticalDivider(width: 1, thickness: 1, color: AvColors.border),
+              if (i > 0) VerticalDivider(width: 1, thickness: 1, color: AvColors.border),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 10),
@@ -915,7 +915,7 @@ class _ChartPanelState extends State<_ChartPanel> {
                     children: [
                       Text(
                         cells[i].$1,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 9,
                           color: AvColors.fgMuted,
                           letterSpacing: 0.5,
@@ -1008,7 +1008,7 @@ class _Tooltip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = candle.isUp ? AvColors.positive : AvColors.danger;
     final change = (candle.close - candle.open) / candle.open * 100;
-    const labelStyle = TextStyle(fontSize: 11, color: Color(0x73E8F5E9));
+    final labelStyle = TextStyle(fontSize: 11, color: AvColors.fgFaint);
 
     return IgnorePointer(
       child: Container(
@@ -1024,7 +1024,7 @@ class _Tooltip extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(candle.label, style: mono(size: 10, color: const Color(0x80E8F5E9), spacing: 0.5)),
+            Text(candle.label, style: mono(size: 10, color: AvColors.fgMuted, spacing: 0.5)),
             const SizedBox(height: 7),
             for (final (k, v) in [
               ('Apertura', candle.open),
@@ -1046,11 +1046,11 @@ class _Tooltip extends StatelessWidget {
             Container(
               margin: const EdgeInsets.only(top: 4),
               padding: const EdgeInsets.only(top: 7),
-              decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0x0FFFFFFF)))),
+              decoration: BoxDecoration(border: Border(top: BorderSide(color: AvColors.border))),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(width: 60, child: Text('Cambio', style: labelStyle)),
+                  SizedBox(width: 60, child: Text('Cambio', style: labelStyle)),
                   const SizedBox(width: 14),
                   Text(
                     '${candle.isUp ? '+' : ''}${change.toStringAsFixed(2)}%',
@@ -1113,7 +1113,7 @@ class _CandlePainter extends CustomPainter {
 
     // Cuadrícula y eje Y
     final grid = Paint()
-      ..color = const Color(0x0DFFFFFF)
+      ..color = AvColors.border
       ..strokeWidth = 1;
     for (var i = 0; i <= 5; i++) {
       final t = minP + i * (maxP - minP) / 5;
@@ -1177,8 +1177,8 @@ class _CandlePainter extends CustomPainter {
     if (hover != null) {
       final d = data[hover!];
       final y = py(d.close);
-      _dashed(canvas, Offset(cx(hover!), padTop), Offset(cx(hover!), size.height - padBottom), const Color(0x26FFFFFF));
-      _dashed(canvas, Offset(padLeft, y), Offset(size.width - padRight, y), const Color(0x1AFFFFFF));
+      _dashed(canvas, Offset(cx(hover!), padTop), Offset(cx(hover!), size.height - padBottom), AvColors.fgFaint);
+      _dashed(canvas, Offset(padLeft, y), Offset(size.width - padRight, y), AvColors.border);
       canvas.drawRRect(
         RRect.fromRectAndRadius(Rect.fromLTWH(0, y - 9, padLeft - 2, 16), const Radius.circular(3)),
         Paint()..color = d.isUp ? AvColors.positive : AvColors.danger,

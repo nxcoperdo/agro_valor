@@ -103,7 +103,7 @@ class _EmptySales extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
       child: Column(
         children: [
-          const Icon(Icons.point_of_sale_rounded, size: 48, color: AvColors.fgMuted),
+          Icon(Icons.point_of_sale_rounded, size: 48, color: AvColors.fgMuted),
           const SizedBox(height: 16),
           const Text('Aún no hay ventas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
@@ -150,7 +150,7 @@ class _SaleTile extends StatelessWidget {
                 ),
               ),
               Text(formatCop(sale['total'] as num?), style: mono(size: 14, weight: FontWeight.w600)),
-              const Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
+              Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
             ],
           ),
         ),
@@ -219,7 +219,7 @@ class _CoffeeSaleDetailScreenState extends State<CoffeeSaleDetailScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Anular venta', style: TextStyle(color: AvColors.danger)),
+            child: Text('Anular venta', style: TextStyle(color: AvColors.danger)),
           ),
         ],
       ),
@@ -261,7 +261,7 @@ class _CoffeeSaleDetailScreenState extends State<CoffeeSaleDetailScreen> {
                     ]),
                     const SizedBox(height: 4),
                     Muted(formatDate(sale['soldOn'] as String?), size: 12),
-                    if (voided) Text('Anulada: ${sale['voidReason'] ?? ''}', style: const TextStyle(color: AvColors.danger, fontSize: 12)),
+                    if (voided) Text('Anulada: ${sale['voidReason'] ?? ''}', style: TextStyle(color: AvColors.danger, fontSize: 12)),
                     const SizedBox(height: 8),
                     Text('${customer['name']}', style: const TextStyle(fontWeight: FontWeight.w600)),
                     SupplierDetails(supplier: customer),
@@ -321,7 +321,7 @@ class _CoffeeSaleDetailScreenState extends State<CoffeeSaleDetailScreen> {
                   onPressed: () => _void(sale),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AvColors.danger,
-                    side: const BorderSide(color: AvColors.danger),
+                    side: BorderSide(color: AvColors.danger),
                   ),
                   icon: const Icon(Icons.block_rounded),
                   label: const Text('Anular venta'),

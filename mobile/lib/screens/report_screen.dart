@@ -73,7 +73,7 @@ class _ReportScreenState extends State<ReportScreen> {
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          icon: const Icon(Icons.volunteer_activism_rounded, color: AvColors.accent),
+          icon: Icon(Icons.volunteer_activism_rounded, color: AvColors.accent),
           title: const Text('¡Gracias por reportar!'),
           content: Text(res['message'] as String? ?? ''),
           actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Listo'))],
@@ -142,7 +142,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
                       foregroundColor: AvColors.fg,
-                      side: const BorderSide(color: AvColors.border),
+                      side: BorderSide(color: AvColors.border),
                     ),
                   ),
                   const SizedBox(height: 16),

@@ -131,6 +131,11 @@ textarea {
   --av-chart-line: #d4a017;
   --av-border-hover: #475569;
   --av-on-accent: #052e16;
+  --av-glass: rgba(11, 61, 46, 0.88);
+  --av-glass-strong: rgba(11, 61, 46, 0.92);
+  --av-scrim: rgba(8, 29, 22, 0.6);
+  --av-scrim-strong: rgba(8, 29, 22, 0.65);
+  color-scheme: dark;
 
   --av-radius-sm: 8px;
   --av-radius-md: 12px;
@@ -422,7 +427,7 @@ button,
   top: 0;
   z-index: 10;
   padding-top: env(safe-area-inset-top);
-  background: rgba(11, 61, 46, 0.88);
+  background: var(--av-glass);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -1239,7 +1244,7 @@ button,
   position: fixed;
   inset: 0;
   z-index: 19;
-  background: rgba(8, 29, 22, 0.6);
+  background: var(--av-scrim);
   opacity: 0;
   transition: opacity var(--av-duration-lg) var(--av-ease-out);
 }
@@ -1262,7 +1267,7 @@ button,
   padding-top: calc(var(--av-space-4) + env(safe-area-inset-top));
   padding-right: calc(var(--av-space-3) + env(safe-area-inset-right));
   padding-bottom: calc(var(--av-space-4) + env(safe-area-inset-bottom));
-  background: rgba(11, 61, 46, 0.92);
+  background: var(--av-glass-strong);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-left: 1px solid var(--av-border);
@@ -1579,7 +1584,7 @@ body.nav-locked {
 .trial-modal-scrim {
   position: fixed;
   inset: 0;
-  background: rgba(8, 29, 22, 0.65);
+  background: var(--av-scrim-strong);
   opacity: 0;
   transition: opacity var(--av-duration-lg) var(--av-ease-out);
 }
@@ -2792,6 +2797,15 @@ body.nav-locked {
   --pv-up: #4ade80;
   --pv-down: #f87171;
   --pv-ma: #facc15;
+  --pv-grid: rgba(255, 255, 255, 0.05);
+  --pv-cross: rgba(255, 255, 255, 0.15);
+  --pv-cross-h: rgba(255, 255, 255, 0.1);
+  --pv-hair: rgba(255, 255, 255, 0.06);
+  --pv-axis: rgba(232, 245, 233, 0.38);
+  --pv-tip-bg: #0d2016;
+  --pv-tip-label: rgba(232, 245, 233, 0.5);
+  --pv-tip-label-2: rgba(232, 245, 233, 0.45);
+  --pv-seg-bg: rgba(0, 0, 0, 0.25);
 
   display: flex;
   flex-direction: column;
@@ -2875,7 +2889,7 @@ body.nav-locked {
 .pv-updown-bar div { height: 100%; background: var(--pv-up); border-radius: 4px; }
 
 .pv-controls { margin-top: 12px; }
-.pv-seg { display: flex; gap: 2px; background: rgba(0, 0, 0, 0.25); border-radius: 9px; padding: 3px; }
+.pv-seg { display: flex; gap: 2px; background: var(--pv-seg-bg); border-radius: 9px; padding: 3px; }
 .pv-seg button,
 .pv-ma-toggle {
   font: inherit;
@@ -2905,12 +2919,12 @@ body.nav-locked {
 
 .pv-chart-body { position: relative; padding: 0 12px 8px; }
 .pv-svg { display: block; overflow: visible; touch-action: pan-y; }
-.pv-grid { stroke: rgba(255, 255, 255, 0.05); stroke-width: 1; }
-.pv-axis { fill: rgba(232, 245, 233, 0.38); font-size: 9px; font-family: "DM Mono", monospace; }
+.pv-grid { stroke: var(--pv-grid); stroke-width: 1; }
+.pv-axis { fill: var(--pv-axis); font-size: 9px; font-family: "DM Mono", monospace; }
 .pv-axis-tag { fill: var(--pv-bg); font-size: 8px; font-weight: 700; }
 .pv-ma { fill: none; stroke: var(--pv-ma); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
-.pv-cross { stroke: rgba(255, 255, 255, 0.15); stroke-width: 1; stroke-dasharray: 3 3; }
-.pv-cross-h { stroke: rgba(255, 255, 255, 0.1); }
+.pv-cross { stroke: var(--pv-cross); stroke-width: 1; stroke-dasharray: 3 3; }
+.pv-cross-h { stroke: var(--pv-cross-h); }
 .pv-empty { padding: 40px 8px; text-align: center; font-size: 13px; color: var(--pv-muted); }
 
 .pv-tip {
@@ -2918,7 +2932,7 @@ body.nav-locked {
   top: 8px;
   min-width: 148px;
   padding: 10px 14px;
-  background: #0d2016;
+  background: var(--pv-tip-bg);
   border: 1px solid rgba(74, 222, 128, 0.4);
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
@@ -2928,15 +2942,15 @@ body.nav-locked {
 .pv-tip.is-down { border-color: rgba(248, 113, 113, 0.4); }
 .pv-tip.at-left { left: 20px; }
 .pv-tip.at-right { right: 20px; }
-.pv .pv-tip-date { margin-bottom: 7px; font-size: 10px; color: rgba(232, 245, 233, 0.5); font-family: "DM Mono", monospace; letter-spacing: 0.5px; }
+.pv .pv-tip-date { margin-bottom: 7px; font-size: 10px; color: var(--pv-tip-label); font-family: "DM Mono", monospace; letter-spacing: 0.5px; }
 .pv-tip-row { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 3px; }
 .pv-tip-row span:first-child,
-.pv-tip-change span:first-child { font-size: 11px; color: rgba(232, 245, 233, 0.45); }
+.pv-tip-change span:first-child { font-size: 11px; color: var(--pv-tip-label-2); }
 .pv-tip-row span:last-child { font-size: 12px; font-weight: 600; }
 .pv-tip-change {
   margin-top: 7px;
   padding-top: 7px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--pv-hair);
   display: flex;
   justify-content: space-between;
 }
@@ -3049,4 +3063,55 @@ body.nav-locked {
   height: 20px;
   flex: none;
   accent-color: var(--av-accent);
+}
+
+/* Tema claro: se activa con data-theme="light" en <html> (ver js/ui/theme.js). */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --av-bg: #f4f7f2;
+  --av-surface: #ffffff;
+  --av-surface-alt: #eaf0e7;
+  --av-muted-bg: #eef3ec;
+  --av-border: #cfdccf;
+  --av-border-hover: #94a3b8;
+  --av-fg: #14281d;
+  --av-fg-muted: #526759;
+  --av-accent: #a16207;
+  --av-accent-strong: #854d0e;
+  --av-accent-soft: rgba(161, 98, 7, 0.14);
+  --av-warning-fg: #92400e;
+  --av-danger: #dc2626;
+  --av-danger-soft: rgba(220, 38, 38, 0.1);
+  --av-danger-fg: #b91c1c;
+  --av-positive: #15803d;
+  --av-positive-soft: rgba(21, 128, 61, 0.12);
+  --av-positive-fg: #166534;
+  --av-chart-line: #a16207;
+  --av-on-accent: #ffffff;
+  --av-glass: rgba(255, 255, 255, 0.9);
+  --av-glass-strong: rgba(255, 255, 255, 0.94);
+  --av-scrim: rgba(244, 247, 242, 0.7);
+  --av-scrim-strong: rgba(244, 247, 242, 0.75);
+}
+
+:root[data-theme="light"] .pv {
+  --pv-bg: #f4f7f2;
+  --pv-surface: #ffffff;
+  --pv-surface-2: #e9f0e7;
+  --pv-border: rgba(10, 31, 16, 0.12);
+  --pv-gold: #a16207;
+  --pv-text: #0f2417;
+  --pv-muted: rgba(15, 36, 23, 0.62);
+  --pv-up: #15803d;
+  --pv-down: #b91c1c;
+  --pv-ma: #ca8a04;
+  --pv-grid: rgba(10, 31, 16, 0.07);
+  --pv-cross: rgba(10, 31, 16, 0.25);
+  --pv-cross-h: rgba(10, 31, 16, 0.18);
+  --pv-hair: rgba(10, 31, 16, 0.08);
+  --pv-axis: rgba(15, 36, 23, 0.55);
+  --pv-tip-bg: #ffffff;
+  --pv-tip-label: rgba(15, 36, 23, 0.6);
+  --pv-tip-label-2: rgba(15, 36, 23, 0.55);
+  --pv-seg-bg: rgba(10, 31, 16, 0.07);
 }

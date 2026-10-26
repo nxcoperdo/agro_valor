@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api/api_client.dart';
@@ -16,6 +17,7 @@ class Session extends ChangeNotifier {
 
   static const _tokenKey = 'av_token';
   static const _marketKey = 'av_market';
+  static const _themeKey = 'av_theme';
   final _storage = const FlutterSecureStorage();
   final api = ApiClient();
   late final PushNotifications push;
@@ -37,6 +39,20 @@ class Session extends ChangeNotifier {
     }
   }
 
+  /// Apariencia elegida en Cuenta (sistema por defecto). Se recuerda entre sesiones.
+  ThemeMode themeMode = ThemeMode.system;
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    if (mode == themeMode) return;
+    themeMode = mode;
+    notifyListeners();
+    try {
+      await _storage.write(key: _themeKey, value: mode.name);
+    } catch (_) {
+      // Sin almacenamiento la elección dura solo mientras la app esté abierta.
+    }
+  }
+
   bool get isLoggedIn => user != null;
   bool get isPro => user?['isPro'] == true;
 
@@ -50,6 +66,8 @@ class Session extends ChangeNotifier {
   Future<void> restore() async {
     try {
       market = marketById(await _storage.read(key: _marketKey)).id;
+      final savedTheme = await _storage.read(key: _themeKey);
+      themeMode = ThemeMode.values.firstWhere((m) => m.name == savedTheme, orElse: () => ThemeMode.system);
       api.token = await _storage.read(key: _tokenKey);
       if (api.token != null) {
         user = (await api.me())['user'] as Json;

@@ -128,7 +128,7 @@ class _BuyerTile extends StatelessWidget {
                     '${formatCop(price)}/kg',
                     style: const TextStyle(fontWeight: FontWeight.w700, fontFeatures: tabular),
                   ),
-                  const Pill(label: 'Reportado', color: AvColors.positive),
+                  Pill(label: 'Reportado', color: AvColors.positive),
                 ],
               )
             else
@@ -224,7 +224,7 @@ class _ReportPrompt extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ReportScreen(session: session))),
-        child: const Padding(
+        child: Padding(
           padding: EdgeInsets.all(16),
           child: Row(
             children: [

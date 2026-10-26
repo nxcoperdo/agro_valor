@@ -44,7 +44,7 @@ class LegalScreen extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           section['body'] as String? ?? '',
-                          style: const TextStyle(color: AvColors.fgMuted, height: 1.4),
+                          style: TextStyle(color: AvColors.fgMuted, height: 1.4),
                         ),
                       ],
                     ),

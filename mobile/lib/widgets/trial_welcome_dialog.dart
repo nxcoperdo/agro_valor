@@ -16,7 +16,7 @@ Future<void> showTrialWelcomeDialog(BuildContext context, Json user) {
       backgroundColor: AvColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: AvColors.border),
+        side: BorderSide(color: AvColors.border),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -30,13 +30,13 @@ Future<void> showTrialWelcomeDialog(BuildContext context, Json user) {
                 color: AvColors.accent.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(99),
               ),
-              child: const Text(
+              child: Text(
                 '7 DÍAS GRATIS DE REGALO',
                 style: TextStyle(color: AvColors.accent, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1),
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'Ya tienes acceso a AgroValor Pro',
               style: TextStyle(color: AvColors.fg, fontSize: 22, fontWeight: FontWeight.w700),
             ),
@@ -45,7 +45,7 @@ Future<void> showTrialWelcomeDialog(BuildContext context, Json user) {
               'Como bienvenida, activamos tu plan Pro gratis por 7 días'
               '${expiry != null ? ', hasta el $expiry' : ''}. Cuando termine, vuelves al plan gratis '
               'automáticamente; puedes pagar en cualquier momento desde Plan Pro para seguir sin interrupciones.',
-              style: const TextStyle(color: AvColors.fgMuted, height: 1.4),
+              style: TextStyle(color: AvColors.fgMuted, height: 1.4),
             ),
             if (features.isNotEmpty) ...[
               const SizedBox(height: 14),
@@ -55,9 +55,9 @@ Future<void> showTrialWelcomeDialog(BuildContext context, Json user) {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.check_rounded, size: 18, color: AvColors.positive),
+                      Icon(Icons.check_rounded, size: 18, color: AvColors.positive),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(f, style: const TextStyle(color: AvColors.fg))),
+                      Expanded(child: Text(f, style: TextStyle(color: AvColors.fg))),
                     ],
                   ),
                 ),

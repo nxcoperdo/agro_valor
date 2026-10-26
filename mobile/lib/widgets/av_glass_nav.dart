@@ -30,8 +30,8 @@ class AvGlassNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LiquidGlassLayer(
-      settings: const LiquidGlassSettings(
-        glassColor: Color(0x29163020),
+      settings: LiquidGlassSettings(
+        glassColor: AvColors.glass,
         thickness: 24,
         blur: 8,
         saturation: 1.4,
@@ -257,7 +257,7 @@ class _BubbleState extends State<_Bubble> {
                     child: LiquidGlass.withOwnLayer(
                       settings: LiquidGlassSettings(
                         visibility: thickness,
-                        glassColor: const Color(0x1AFFFFFF),
+                        glassColor: AvColors.glassHighlight,
                         saturation: 1.5,
                         refractiveIndex: 1.15,
                         thickness: 20,

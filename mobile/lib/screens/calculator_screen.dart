@@ -214,7 +214,7 @@ class _CalculatorState extends State<_Calculator> with AutomaticKeepAliveClientM
               const SizedBox(height: 12),
               Text(
                 'El precio de referencia es del ${formatDate(result['referenceScrapedAt'] as String?)} y puede estar desactualizado.',
-                style: const TextStyle(fontSize: 12, color: AvColors.danger),
+                style: TextStyle(fontSize: 12, color: AvColors.danger),
               ),
             ],
             const Divider(height: 28),
@@ -309,7 +309,7 @@ class _CoopResult extends StatelessWidget {
                   if (best)
                     const Muted('La mejor opción para tu café', size: 12)
                   else
-                    Text('Dejas de ganar ${formatCop(lost)}', style: const TextStyle(fontSize: 12, color: AvColors.danger)),
+                    Text('Dejas de ganar ${formatCop(lost)}', style: TextStyle(fontSize: 12, color: AvColors.danger)),
                 ],
               ),
             ),

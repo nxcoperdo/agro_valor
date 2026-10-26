@@ -90,7 +90,7 @@ class AccountScreen extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.check_rounded, size: 18, color: AvColors.positive),
+                            Icon(Icons.check_rounded, size: 18, color: AvColors.positive),
                             const SizedBox(width: 8),
                             Expanded(child: Text(f)),
                           ],
@@ -129,6 +129,7 @@ class AccountScreen extends StatelessWidget {
                       subtitle: 'Cuéntanos cuánto te pagó una cooperativa',
                       open: () => ReportScreen(session: session),
                     ),
+                    _ThemeTile(session: session),
                     _ActionTile(
                       icon: Icons.star_rate_rounded,
                       title: 'Calificar AgroValor',
@@ -170,23 +171,23 @@ class AccountScreen extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                   foregroundColor: AvColors.fg,
-                  side: const BorderSide(color: AvColors.border),
+                  side: BorderSide(color: AvColors.border),
                 ),
               ),
               const SizedBox(height: 28),
-              const Divider(color: AvColors.border),
+              Divider(color: AvColors.border),
               const SizedBox(height: 12),
-              const Text('Zona de peligro', style: TextStyle(fontWeight: FontWeight.w700, color: AvColors.danger)),
+              Text('Zona de peligro', style: TextStyle(fontWeight: FontWeight.w700, color: AvColors.danger)),
               const SizedBox(height: 4),
               const Muted('Elimina tu cuenta, tus alertas y tu historial de ventas. No se puede deshacer.', size: 12),
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => _confirmDeleteAccount(context, session),
-                icon: const Icon(Icons.delete_forever_rounded, color: AvColors.danger),
-                label: const Text('Eliminar mi cuenta', style: TextStyle(color: AvColors.danger)),
+                icon: Icon(Icons.delete_forever_rounded, color: AvColors.danger),
+                label: Text('Eliminar mi cuenta', style: TextStyle(color: AvColors.danger)),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
-                  side: const BorderSide(color: AvColors.danger),
+                  side: BorderSide(color: AvColors.danger),
                 ),
               ),
             ],
@@ -256,7 +257,7 @@ class AccountScreen extends StatelessWidget {
               ),
               if (error != null) ...[
                 const SizedBox(height: 8),
-                Text(error!, style: const TextStyle(color: AvColors.danger, fontSize: 13)),
+                Text(error!, style: TextStyle(color: AvColors.danger, fontSize: 13)),
               ],
             ],
           ),
@@ -299,6 +300,46 @@ class AccountScreen extends StatelessWidget {
   }
 }
 
+/// Selector de apariencia: sigue al sistema o fuerza el tema claro u oscuro.
+class _ThemeTile extends StatelessWidget {
+  const _ThemeTile({required this.session});
+
+  final Session session;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.brightness_6_rounded, color: AvColors.accent),
+              const SizedBox(width: 16),
+              const Text('Apariencia', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<ThemeMode>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: ThemeMode.system, label: Text('Sistema')),
+                ButtonSegment(value: ThemeMode.light, label: Text('Claro')),
+                ButtonSegment(value: ThemeMode.dark, label: Text('Oscuro')),
+              ],
+              selected: {session.themeMode},
+              onSelectionChanged: (s) => session.setThemeMode(s.first),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Fila del menú que ejecuta una acción en vez de abrir otra pantalla.
 class _ActionTile extends StatelessWidget {
   const _ActionTile({required this.icon, required this.title, required this.subtitle, required this.onTap});
@@ -313,8 +354,8 @@ class _ActionTile extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: AvColors.accent),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle, style: const TextStyle(color: AvColors.fgMuted, fontSize: 12)),
-      trailing: const Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
+      subtitle: Text(subtitle, style: TextStyle(color: AvColors.fgMuted, fontSize: 12)),
+      trailing: Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
       onTap: onTap,
     );
   }
@@ -334,10 +375,10 @@ class _MenuTile extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: AvColors.accent),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle, style: const TextStyle(color: AvColors.fgMuted, fontSize: 12)),
+      subtitle: Text(subtitle, style: TextStyle(color: AvColors.fgMuted, fontSize: 12)),
       trailing: pro
-          ? const Pill(label: 'Pro', color: AvColors.accent)
-          : const Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
+          ? Pill(label: 'Pro', color: AvColors.accent)
+          : Icon(Icons.chevron_right_rounded, color: AvColors.fgMuted),
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => open())),
     );
   }

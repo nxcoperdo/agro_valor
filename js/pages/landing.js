@@ -1,5 +1,6 @@
 import { api } from '../services/api.js';
 import { formatCop } from '../utils/currency.js';
+import { createThemeToggle } from '../ui/theme.js';
 import { canInstall, promptInstall, onInstallAvailabilityChange, isStandalone } from '../services/pwa.js';
 
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=co.agrovalor.app';
@@ -13,6 +14,7 @@ const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=co.agroval
 function setupInstallButtons(root) {
   if (isStandalone()) return;
 
+  root.querySelector('#landing-theme').replaceWith(createThemeToggle('btn-ghost'));
   const playBtn = root.querySelector('#play-store-btn');
   const iosBtn = root.querySelector('#ios-install-btn');
   const iosSteps = root.querySelector('#ios-install-steps');
@@ -86,6 +88,7 @@ export async function renderLanding(root) {
           <span class="brand-word"><span class="brand-agro">Agro</span><span class="brand-valor">Valor</span></span>
         </div>
         <div class="landing-actions">
+          <span id="landing-theme"></span>
           <a class="btn-ghost" href="#/login">Entrar</a>
           <a class="btn-primary" href="#/registro">Crear cuenta</a>
         </div>

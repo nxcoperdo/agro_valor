@@ -136,26 +136,26 @@ class _Hero extends StatelessWidget {
                 ? 'Tu prueba gratis de 7 días está activa hasta el ${formatDate(expiresAt)}. Paga ahora '
                     'para seguir con Pro sin interrupciones cuando termine.'
                 : 'Tu prueba gratis está activa. Paga ahora para seguir con Pro sin interrupciones.',
-            style: const TextStyle(color: AvColors.fgMuted, fontSize: 15, height: 1.4),
+            style: TextStyle(color: AvColors.fgMuted, fontSize: 15, height: 1.4),
           ),
         ] else ...[
           Text.rich(
             TextSpan(
-              style: const TextStyle(
+              style: TextStyle(
                 color: AvColors.fg,
                 fontSize: 30,
                 fontWeight: FontWeight.w800,
                 height: 1.08,
                 letterSpacing: -0.5,
               ),
-              children: const [
+              children: [
                 TextSpan(text: 'Vende tu café con más certeza y '),
                 TextSpan(text: 'mejores decisiones', style: TextStyle(color: AvColors.accent)),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Convierte precios, factor y humedad en información útil para saber cuándo vender, '
             'dónde te conviene y cuánto recibirás.',
             style: TextStyle(color: AvColors.fgMuted, fontSize: 15, height: 1.4),
@@ -196,11 +196,11 @@ class _EyebrowBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 6, height: 6, decoration: const BoxDecoration(color: AvColors.accent, shape: BoxShape.circle)),
+          Container(width: 6, height: 6, decoration: BoxDecoration(color: AvColors.accent, shape: BoxShape.circle)),
           const SizedBox(width: 8),
           Text(
             label.toUpperCase(),
-            style: const TextStyle(color: AvColors.accent, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.6),
+            style: TextStyle(color: AvColors.accent, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.6),
           ),
         ],
       ),
@@ -221,7 +221,7 @@ class _CheckBullet extends StatelessWidget {
         Container(
           width: 20,
           height: 20,
-          decoration: const BoxDecoration(color: AvColors.positive, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: AvColors.positive, shape: BoxShape.circle),
           child: const Icon(Icons.check_rounded, size: 14, color: Colors.white),
         ),
         const SizedBox(width: 8),
@@ -266,7 +266,7 @@ class _PriceCard extends StatelessWidget {
                     style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, fontFeatures: tabular, letterSpacing: -0.5),
                   ),
                   const SizedBox(width: 6),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.only(bottom: 5),
                     child: Text('COP', style: TextStyle(color: AvColors.fgMuted, fontWeight: FontWeight.w600)),
                   ),
@@ -283,7 +283,7 @@ class _PriceCard extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.only(top: 2),
                         child: Icon(Icons.check_rounded, size: 16, color: AvColors.accent),
                       ),
@@ -297,7 +297,7 @@ class _PriceCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   Icon(Icons.shield_rounded, size: 14, color: AvColors.fgMuted),
                   SizedBox(width: 6),
                   Muted('Pago seguro con Mercado Pago', size: 11.5),
@@ -328,7 +328,7 @@ class _PriceCard extends StatelessWidget {
             ),
             child: Text(
               badgeLabel.toUpperCase(),
-              style: const TextStyle(color: AvColors.onAccent, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.4),
+              style: TextStyle(color: AvColors.onAccent, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.4),
             ),
           ),
         ),
@@ -359,7 +359,7 @@ class _BenefitsGrid extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (title == null) ...[
-          const Text('MENOS DUDAS. MÁS CONTROL.', style: TextStyle(color: AvColors.accent, fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+          Text('MENOS DUDAS. MÁS CONTROL.', style: TextStyle(color: AvColors.accent, fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
           const SizedBox(height: 6),
           const Text('Todo lo que necesitas antes de decir «vendo»', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
           const SizedBox(height: 16),
@@ -413,7 +413,7 @@ class _HowTo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('UNA INVERSIÓN SIMPLE', style: TextStyle(color: AvColors.accent, fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+          Text('UNA INVERSIÓN SIMPLE', style: TextStyle(color: AvColors.accent, fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
           const SizedBox(height: 6),
           const Text('Una buena decisión puede hacer la diferencia', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
@@ -433,8 +433,8 @@ class _HowTo extends StatelessWidget {
                     width: 26,
                     height: 26,
                     alignment: Alignment.center,
-                    decoration: const BoxDecoration(color: AvColors.accent, shape: BoxShape.circle),
-                    child: Text(n, style: const TextStyle(color: AvColors.onAccent, fontWeight: FontWeight.w800, fontSize: 12)),
+                    decoration: BoxDecoration(color: AvColors.accent, shape: BoxShape.circle),
+                    child: Text(n, style: TextStyle(color: AvColors.onAccent, fontWeight: FontWeight.w800, fontSize: 12)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -508,13 +508,13 @@ class _FinalCta extends StatelessWidget {
       decoration: BoxDecoration(color: AvColors.accent, borderRadius: BorderRadius.circular(24)),
       child: Column(
         children: [
-          const Text(
+          Text(
             'TU PRÓXIMA VENTA EMPIEZA CON UNA MEJOR DECISIÓN',
             textAlign: TextAlign.center,
             style: TextStyle(color: AvColors.onAccent, fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.6),
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Ten la información lista cuando llegue el momento de vender',
             textAlign: TextAlign.center,
             style: TextStyle(color: AvColors.onAccent, fontSize: 18, fontWeight: FontWeight.w800, height: 1.2),
@@ -529,7 +529,7 @@ class _FinalCta extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             '\$150.000 COP por 1 año · Pago único',
             style: TextStyle(color: AvColors.onAccent, fontSize: 11.5, fontWeight: FontWeight.w600),
           ),
@@ -557,14 +557,14 @@ class _PaidState extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Pill(label: 'AgroValor Pro', color: AvColors.accent),
+              Pill(label: 'AgroValor Pro', color: AvColors.accent),
               const SizedBox(height: 14),
               const Text('Ya eres Pro', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               Text(
                 expiresAt != null ? 'Tu plan está activo hasta el ${formatDate(expiresAt)}.' : 'Tu plan está activo.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AvColors.fgMuted),
+                style: TextStyle(color: AvColors.fgMuted),
               ),
             ],
           ),
@@ -580,7 +580,7 @@ class _PaidState extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.check_rounded, size: 18, color: AvColors.positive),
+                      Icon(Icons.check_rounded, size: 18, color: AvColors.positive),
                       const SizedBox(width: 8),
                       Expanded(child: Text(f)),
                     ],

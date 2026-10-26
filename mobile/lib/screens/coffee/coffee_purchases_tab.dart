@@ -182,7 +182,7 @@ class _InvoiceTile extends StatelessWidget {
                 IconButton(
                   tooltip: 'Anular factura',
                   onPressed: onVoid,
-                  icon: const Icon(Icons.block_rounded, color: AvColors.fgMuted),
+                  icon: Icon(Icons.block_rounded, color: AvColors.fgMuted),
                 )
               else
                 const SizedBox(width: 12),
@@ -283,7 +283,7 @@ class _CoffeeInvoiceDetailScreenState extends State<CoffeeInvoiceDetailScreen> {
                     children: [
                       Row(children: [
                         Expanded(child: Text('${l['productLabel']} · ${l['code']}', style: const TextStyle(fontWeight: FontWeight.w700))),
-                        if (l['requiresDrying'] == false) const Pill(label: 'Sin secado', color: AvColors.fgMuted),
+                        if (l['requiresDrying'] == false) Pill(label: 'Sin secado', color: AvColors.fgMuted),
                       ]),
                       const SizedBox(height: 6),
                       Muted(

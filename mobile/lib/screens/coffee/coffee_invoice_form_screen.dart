@@ -439,7 +439,7 @@ class SupplierDetails extends StatelessWidget {
             child: Text.rich(
               TextSpan(
                 children: [
-                  TextSpan(text: '${r.$1}: ', style: const TextStyle(color: AvColors.fgMuted, fontSize: 12)),
+                  TextSpan(text: '${r.$1}: ', style: TextStyle(color: AvColors.fgMuted, fontSize: 12)),
                   TextSpan(text: r.$2!, style: const TextStyle(fontSize: 12)),
                 ],
               ),
@@ -525,7 +525,7 @@ class _PartyPickerSheetState extends State<PartyPickerSheet> {
             const SizedBox(height: 8),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.person_add_alt_1_rounded, color: AvColors.accent),
+              leading: Icon(Icons.person_add_alt_1_rounded, color: AvColors.accent),
               title: Text(widget.newLabel),
               onTap: () => Navigator.pop(context, <String, dynamic>{'new': true}),
             ),

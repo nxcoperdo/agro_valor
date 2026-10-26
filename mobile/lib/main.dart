@@ -34,17 +34,46 @@ class AgroValorApp extends StatefulWidget {
 
 class _AgroValorAppState extends State<AgroValorApp> {
   bool _introDone = false;
+  Brightness _applied = AvColors.palette.brightness;
 
   Session get session => widget.session;
 
+  void _markDirty(Element element) {
+    element.markNeedsBuild();
+    element.visitChildren(_markDirty);
+  }
+
+  /// Los colores de AvColors no pasan por Theme.of, así que los widgets que no dependen del
+  /// tema (los const, por ejemplo) no se enteran del cambio. Se fuerza su reconstrucción.
+  void _applyBrightness(Brightness brightness) {
+    if (brightness == _applied) return;
+    _applied = brightness;
+    AvColors.use(brightness);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) (context as Element).visitChildren(_markDirty);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: session,
+      builder: (context, _) => _buildApp(),
+    );
+  }
+
+  Widget _buildApp() {
     return MaterialApp(
       title: 'AgroValor',
       debugShowCheckedModeBanner: false,
       scaffoldMessengerKey: messengerKey,
-      theme: buildTheme(),
-      builder: (context, child) => KeyboardDismisser(child: child ?? const SizedBox.shrink()),
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      themeMode: session.themeMode,
+      builder: (context, child) {
+        _applyBrightness(Theme.of(context).brightness);
+        return KeyboardDismisser(child: child ?? const SizedBox.shrink());
+      },
       home: ListenableBuilder(
         listenable: session,
         builder: (context, _) {
