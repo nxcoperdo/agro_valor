@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const userRepository = require('../repositories/userRepository');
+const { canonicalDepartment } = require('../config/departments');
 const subscriptionService = require('../services/subscriptionService');
 const whatsappService = require('../services/whatsappService');
 const authService = require('../services/authService');
@@ -18,6 +19,7 @@ function serialize(user) {
     fullName: user.full_name,
     phone: user.phone,
     municipality: user.municipality,
+    department: user.department,
     defaultFactor: user.default_factor,
     defaultHumidity: user.default_humidity,
     transportCostCopCarga: user.transport_cost_cop_carga,
@@ -34,7 +36,7 @@ router.get('/profile', (req, res) => {
 
 router.put('/profile', (req, res, next) => {
   try {
-    const { fullName, phone, municipality, defaultFactor, defaultHumidity, transportCostCopCarga, notifyWhatsapp, notifyPush } =
+    const { fullName, phone, municipality, department, defaultFactor, defaultHumidity, transportCostCopCarga, notifyWhatsapp, notifyPush } =
       req.body || {};
 
     const normalizedPhone = phone ? whatsappService.normalizePhone(phone) : null;
@@ -42,10 +44,16 @@ router.put('/profile', (req, res, next) => {
       return res.status(400).json({ error: 'El número de WhatsApp no parece válido' });
     }
 
+    const canonicalDept = canonicalDepartment(department);
+    if (department != null && department !== '' && !canonicalDept) {
+      return res.status(400).json({ error: 'Elige un departamento de la lista' });
+    }
+
     userRepository.updateProfile(req.user.id, {
       fullName: fullName != null && fullName !== '' ? String(fullName).trim() : null,
       phone: normalizedPhone,
       municipality: municipality != null && municipality !== '' ? String(municipality).trim() : null,
+      department: canonicalDept,
       defaultFactor: defaultFactor != null && defaultFactor !== '' ? parseFloat(defaultFactor) : null,
       defaultHumidity: defaultHumidity != null && defaultHumidity !== '' ? parseFloat(defaultHumidity) : null,
       transportCostCopCarga:

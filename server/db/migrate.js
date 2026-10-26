@@ -7,6 +7,8 @@ const ADDED_COLUMNS = [
   ['users', 'phone', 'TEXT'],
   ['users', 'full_name', 'TEXT'],
   ['users', 'municipality', 'TEXT'],
+  // Departamento del usuario (lista cerrada en config/departments.js), para ver primero su región.
+  ['users', 'department', 'TEXT'],
   ['users', 'plan', "TEXT NOT NULL DEFAULT 'free'"],
   ['users', 'plan_expires_at', 'TEXT'],
   ['users', 'default_factor', 'REAL'],

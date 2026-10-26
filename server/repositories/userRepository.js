@@ -1,6 +1,6 @@
 const db = require('../db/connection');
 
-const PUBLIC_FIELDS = `id, username, role, plan, plan_expires_at, phone, full_name, municipality,
+const PUBLIC_FIELDS = `id, username, role, plan, plan_expires_at, phone, full_name, municipality, department,
   default_factor, default_humidity, transport_cost_cop_carga, notify_whatsapp, notify_push, created_at`;
 
 function count() {
@@ -19,18 +19,18 @@ function findPublicById(id) {
   return db.prepare(`SELECT ${PUBLIC_FIELDS} FROM users WHERE id = ?`).get(id);
 }
 
-function create({ username, passwordHash, role = 'user', phone = null, fullName = null, municipality = null, plan = 'free', ageVerified = false }) {
+function create({ username, passwordHash, role = 'user', phone = null, fullName = null, municipality = null, department = null, plan = 'free', ageVerified = false }) {
   const info = db
     .prepare(
-      "INSERT INTO users (username, password_hash, role, phone, full_name, municipality, plan, age_verified_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO users (username, password_hash, role, phone, full_name, municipality, department, plan, age_verified_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
-    .run(username, passwordHash, role, phone, fullName, municipality, plan, ageVerified ? new Date().toISOString().replace('T', ' ').slice(0, 19) : null);
+    .run(username, passwordHash, role, phone, fullName, municipality, department, plan, ageVerified ? new Date().toISOString().replace('T', ' ').slice(0, 19) : null);
   return findById(info.lastInsertRowid);
 }
 
 function updateProfile(
   id,
-  { fullName, phone, municipality, defaultFactor, defaultHumidity, transportCostCopCarga, notifyWhatsapp, notifyPush }
+  { fullName, phone, municipality, department, defaultFactor, defaultHumidity, transportCostCopCarga, notifyWhatsapp, notifyPush }
 ) {
   const flag = (value) => (value == null ? null : value ? 1 : 0);
   db.prepare(
@@ -38,6 +38,7 @@ function updateProfile(
        full_name = COALESCE(?, full_name),
        phone = COALESCE(?, phone),
        municipality = COALESCE(?, municipality),
+       department = COALESCE(?, department),
        default_factor = COALESCE(?, default_factor),
        default_humidity = COALESCE(?, default_humidity),
        transport_cost_cop_carga = COALESCE(?, transport_cost_cop_carga),
@@ -48,6 +49,7 @@ function updateProfile(
     fullName,
     phone,
     municipality,
+    department,
     defaultFactor,
     defaultHumidity,
     transportCostCopCarga,

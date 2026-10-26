@@ -85,6 +85,13 @@ export async function renderAccount(container) {
             <input type="text" id="municipality" name="municipality" value="${profile.municipality || ''}" />
           </div>
           <div class="field">
+            <label for="department">Departamento</label>
+            <select id="department" name="department">
+              <option value="">Sin elegir</option>
+            </select>
+            <small>Así resaltamos las cooperativas de tu región.</small>
+          </div>
+          <div class="field">
             <label for="defaultFactor">Factor habitual de mi café</label>
             <input type="number" id="defaultFactor" name="defaultFactor" value="${profile.defaultFactor ?? ''}" step="0.1" placeholder="94" inputmode="decimal" />
           </div>
@@ -274,6 +281,19 @@ export async function renderAccount(container) {
     });
 
     const form = container.querySelector('#profile-form');
+
+    api
+      .departments()
+      .then(({ departments }) => {
+        form.department.insertAdjacentHTML(
+          'beforeend',
+          departments.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('')
+        );
+        form.department.value = profile.department || '';
+      })
+      .catch(() => {
+        // Sin la lista el campo queda en "Sin elegir"; el resto del perfil se puede guardar igual.
+      });
     const errorEl = container.querySelector('#profile-error');
     const successEl = container.querySelector('#profile-success');
     const submitBtn = form.querySelector('button[type="submit"]');
@@ -289,6 +309,7 @@ export async function renderAccount(container) {
           fullName: form.fullName.value.trim(),
           phone: form.phone.value.trim(),
           municipality: form.municipality.value.trim(),
+          department: form.department.value,
           defaultFactor: form.defaultFactor.value,
           defaultHumidity: form.defaultHumidity.value,
           transportCostCopCarga: form.transportCostCopCarga.value,

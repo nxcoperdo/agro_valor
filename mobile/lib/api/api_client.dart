@@ -103,6 +103,7 @@ class ApiClient {
   Future<Json> sendFeedback(Json payload) async => await _request('POST', '/feedback', payload) as Json;
   Future<Json> myFeedback() async => await _request('GET', '/feedback/mine') as Json;
   Future<Json> roadmap() async => await _request('GET', '/public/roadmap') as Json;
+  Future<Json> departments() async => await _request('GET', '/public/departments') as Json;
 
   // Pro
   Future<Json> forecast([String market = 'coffee']) async =>

@@ -5,6 +5,7 @@ const authService = require('../services/authService');
 const subscriptionService = require('../services/subscriptionService');
 const whatsappService = require('../services/whatsappService');
 const userRepository = require('../repositories/userRepository');
+const { canonicalDepartment } = require('../config/departments');
 const authMiddleware = require('../middleware/authMiddleware');
 const { loadUser } = require('../middleware/requirePlan');
 const { loginRateLimit, signupRateLimit, passwordResetRateLimit } = require('../middleware/rateLimit');
@@ -68,6 +69,7 @@ function publicUser(user) {
     fullName: user.full_name,
     phone: user.phone,
     municipality: user.municipality,
+    department: user.department,
     ...subscriptionService.describe(user),
   };
 }
@@ -78,7 +80,7 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
       return res.status(403).json({ error: 'El registro público está desactivado' });
     }
 
-    const { email, password, phone, fullName, municipality, birthDate } = req.body || {};
+    const { email, password, phone, fullName, municipality, department, birthDate } = req.body || {};
 
     // Verificación de edad (COPPA / Ley 1581): solo mayores de edad. La fecha NO se guarda,
     // solo la constancia de que se verificó (users.age_verified_at).
@@ -128,6 +130,7 @@ router.post('/signup', signupRateLimit, (req, res, next) => {
       phone: normalizedPhone,
       fullName: fullName ? String(fullName).trim() : null,
       municipality: municipality ? String(municipality).trim() : null,
+      department: canonicalDepartment(department),
       plan: 'free',
       ageVerified: true,
     });

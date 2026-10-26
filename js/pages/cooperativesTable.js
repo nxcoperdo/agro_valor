@@ -1,5 +1,7 @@
 import { api } from '../services/api.js';
 import { formatCop, formatUsd, LB_PER_CARGA } from '../utils/currency.js';
+import { getCachedUser } from '../services/auth.js';
+import { escapeHtml } from '../utils/format.js';
 
 function formatUsdPerCarga(usdPerLb) {
   return `US$ ${formatUsd(usdPerLb * LB_PER_CARGA)}`;
@@ -115,6 +117,8 @@ export async function renderCooperativesTable(container, market = 'coffee') {
       data.fncReference.priceCopCarga
     )}</strong>${fncUsd} ${staleBadge}</p>`;
 
+    const myDepartment = getCachedUser()?.department;
+
     tbody.innerHTML = data.cooperatives
       .map(
         (c) => `
@@ -123,7 +127,9 @@ export async function renderCooperativesTable(container, market = 'coffee') {
             <td data-label="Cooperativa" class="cell-name">${c.name} ${
           c.isHighestBuyer ? '<span class="tag tag-best">Paga más</span>' : ''
         }${c.isLowestBuyer ? '<span class="tag tag-worst">Paga menos</span>' : ''}</td>
-            <td data-label="Región">${c.region || '—'}</td>
+            <td data-label="Región">${escapeHtml(c.region || '—')}${
+          myDepartment && c.region === myDepartment ? ' <span class="tag tag-region">Tu región</span>' : ''
+        }</td>
             <td data-label="Precio por carga" class="tabular-nums">
               <span class="cop">${formatCop(c.estimatedPriceCopCarga)}</span>
               ${c.estimatedPriceUsdPerLb != null ? `<span class="usd">${formatUsdPerCarga(c.estimatedPriceUsdPerLb)}</span>` : ''}

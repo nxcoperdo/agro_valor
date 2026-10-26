@@ -42,6 +42,8 @@ class _ProfileFormState extends State<_ProfileForm> {
   late final _factor = TextEditingController(text: decimalInputText(widget.profile['defaultFactor'] as num?));
   late final _humidity = TextEditingController(text: decimalInputText(widget.profile['defaultHumidity'] as num?));
   late final _transport = TextEditingController(text: copInputText(widget.profile['transportCostCopCarga'] as num?));
+  late String? _department = widget.profile['department'] as String?;
+  late final Future<Json> _departments = widget.session.api.departments();
   late bool _notifyWhatsapp = widget.profile['notifyWhatsapp'] != false;
   late bool _notifyPush = widget.profile['notifyPush'] != false;
   bool _busy = false;
@@ -63,6 +65,7 @@ class _ProfileFormState extends State<_ProfileForm> {
         'fullName': _fullName.text.trim(),
         'phone': _phone.text.trim(),
         'municipality': _municipality.text.trim(),
+        if (_department != null) 'department': _department,
         'defaultFactor': parseDecimal(_factor.text),
         'defaultHumidity': parseDecimal(_humidity.text),
         'transportCostCopCarga': parseCop(_transport.text),
@@ -117,6 +120,25 @@ class _ProfileFormState extends State<_ProfileForm> {
                   controller: _municipality,
                   textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(labelText: 'Municipio'),
+                ),
+                const SizedBox(height: 12),
+                FutureBuilder<Json>(
+                  future: _departments,
+                  builder: (context, snap) {
+                    // Sin la lista el campo no se muestra; el resto del perfil se guarda igual.
+                    final names = (snap.data?['departments'] as List<dynamic>? ?? const []).cast<String>();
+                    if (names.isEmpty) return const SizedBox.shrink();
+                    return DropdownButtonFormField<String>(
+                      initialValue: names.contains(_department) ? _department : null,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Departamento',
+                        helperText: 'Así resaltamos las cooperativas de tu región',
+                      ),
+                      items: [for (final d in names) DropdownMenuItem(value: d, child: Text(d))],
+                      onChanged: (v) => setState(() => _department = v),
+                    );
+                  },
                 ),
               ],
             ),

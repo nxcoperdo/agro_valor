@@ -13,6 +13,12 @@ class CooperativesScreen extends StatelessWidget {
 
   final Session session;
 
+  /// Una cooperativa es "de mi región" cuando su departamento es el que el usuario guardó en su perfil.
+  bool _isMine(Json c) {
+    final department = session.user?['department'];
+    return department != null && c['region'] == department;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isCocoa = session.market == 'cocoa';
@@ -62,7 +68,9 @@ class CooperativesScreen extends StatelessWidget {
                       ),
                     ),
                   for (final c in coops) ...[
-                    isCocoa ? _BuyerTile(buyer: c) : _CoopTile(coop: c),
+                    isCocoa
+                        ? _BuyerTile(buyer: c, mine: _isMine(c))
+                        : _CoopTile(coop: c, mine: _isMine(c)),
                     const SizedBox(height: 8),
                   ],
                   const SizedBox(height: 8),
@@ -79,9 +87,10 @@ class CooperativesScreen extends StatelessWidget {
 
 /// Comprador de cacao: sin estimación. Muestra el precio solo si varios productores lo reportaron.
 class _BuyerTile extends StatelessWidget {
-  const _BuyerTile({required this.buyer});
+  const _BuyerTile({required this.buyer, this.mine = false});
 
   final Json buyer;
+  final bool mine;
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +126,10 @@ class _BuyerTile extends StatelessWidget {
                 children: [
                   Text(buyer['name'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
                   if (place.isNotEmpty) Muted(place, size: 12),
+                  if (mine) ...[
+                    const SizedBox(height: 6),
+                    Pill(label: 'Tu región', color: AvColors.accent),
+                  ],
                 ],
               ),
             ),
@@ -141,9 +154,10 @@ class _BuyerTile extends StatelessWidget {
 }
 
 class _CoopTile extends StatelessWidget {
-  const _CoopTile({required this.coop});
+  const _CoopTile({required this.coop, this.mine = false});
 
   final Json coop;
+  final bool mine;
 
   @override
   Widget build(BuildContext context) {
@@ -181,9 +195,16 @@ class _CoopTile extends StatelessWidget {
                   Text(coop['name'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
                   if (place.isNotEmpty) Muted(place, size: 12),
                   const SizedBox(height: 6),
-                  Pill(
-                    label: reported ? 'Reportado' : 'Estimado',
-                    color: reported ? AvColors.positive : AvColors.fgMuted,
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      Pill(
+                        label: reported ? 'Reportado' : 'Estimado',
+                        color: reported ? AvColors.positive : AvColors.fgMuted,
+                      ),
+                      if (mine) Pill(label: 'Tu región', color: AvColors.accent),
+                    ],
                   ),
                 ],
               ),

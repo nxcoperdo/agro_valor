@@ -128,6 +128,7 @@ export const api = {
   sendFeedback: (payload) => request('/feedback', { method: 'POST', ...body(payload) }),
   myFeedback: () => request('/feedback/mine'),
   roadmap: () => request('/public/roadmap'),
+  departments: () => request('/public/departments'),
 
   // Admin
   adminUsers: () => request('/admin/users'),

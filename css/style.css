@@ -772,6 +772,11 @@ button,
   color: var(--av-positive-fg);
 }
 
+.tag-region {
+  background: var(--av-accent-soft);
+  color: var(--av-accent);
+}
+
 .disclaimer {
   margin-top: var(--av-space-3);
   font-size: 0.75rem;
