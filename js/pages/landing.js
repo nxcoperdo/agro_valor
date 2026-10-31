@@ -9,7 +9,8 @@ const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=co.agroval
  * En Android se manda a la ficha de Google Play (la app nativa es mejor que la PWA:
  * push real, más fluida). En iPhone no existe instalador: Safari solo deja agregar a
  * la pantalla de inicio a mano, así que se explica el paso a paso. En todo lo demás
- * (escritorio) se deja el instalador de PWA de siempre, que ahí sí tiene sentido.
+ * (escritorio) se muestra también el enlace a Google Play (para abrirlo desde el celular)
+ * junto al instalador de PWA de siempre, que ahí sí tiene sentido.
  */
 function setupInstallButtons(root) {
   if (isStandalone()) return;
@@ -28,7 +29,7 @@ function setupInstallButtons(root) {
   if (isAndroid) {
     playBtn.hidden = false;
     note.hidden = false;
-    note.textContent = 'Se abre Google Play. La app tiene alertas push y va más fluida que la web.';
+    note.textContent = 'Ya está disponible en Google Play. Tiene alertas push y va más fluida que la web.';
     return;
   }
 
@@ -42,12 +43,13 @@ function setupInstallButtons(root) {
     return;
   }
 
+  playBtn.hidden = false;
   if (!pwaBtn) return;
 
   const sync = (available) => {
     pwaBtn.hidden = !available;
     note.hidden = !available;
-    note.textContent = 'Instálala en tu equipo y ábrela aunque estés sin señal.';
+    note.textContent = 'Descárgala en tu celular Android desde Google Play, o instálala en este equipo y ábrela aunque estés sin señal.';
   };
 
   sync(canInstall());
@@ -106,7 +108,7 @@ export async function renderLanding(root) {
         <p class="hero-meta" id="hero-meta"></p>
         <div class="hero-cta">
           <a class="btn-primary btn-lg" href="#/registro">Empieza gratis</a>
-          <a class="btn-ghost btn-lg" id="play-store-btn" href="${PLAY_STORE_URL}" hidden>Descargar en Google Play</a>
+          <a class="btn-ghost btn-lg" id="play-store-btn" href="${PLAY_STORE_URL}" target="_blank" rel="noopener" hidden>Descargar en Google Play</a>
           <button
             type="button"
             class="btn-ghost btn-lg"
