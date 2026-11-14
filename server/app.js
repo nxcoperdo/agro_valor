@@ -10,6 +10,7 @@ const healthService = require('./services/healthService');
 const pricesRoutes = require('./routes/prices.routes');
 const cooperativesRoutes = require('./routes/cooperatives.routes');
 const forecastRoutes = require('./routes/forecast.routes');
+const nyCoffeeRoutes = require('./routes/nyCoffee.routes');
 const accountRoutes = require('./routes/account.routes');
 const alertsRoutes = require('./routes/alerts.routes');
 const calculatorRoutes = require('./routes/calculator.routes');
@@ -62,6 +63,7 @@ function createApp() {
 
   // Requiere cuenta (plan gratis incluido).
   app.use('/api/prices', authMiddleware, pricesRoutes);
+  app.use('/api/ny-coffee', authMiddleware, nyCoffeeRoutes);
   app.use('/api/cooperatives', authMiddleware, cooperativesRoutes);
   app.use('/api/account', authMiddleware, loadUser, accountRoutes);
   app.use('/api/reports', authMiddleware, loadUser, reportsRoutes);

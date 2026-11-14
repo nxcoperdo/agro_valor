@@ -9,6 +9,7 @@ import '../session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/market_selector.dart';
+import '../widgets/ny_coffee_dec26_card.dart';
 
 final _int = NumberFormat('#,##0', 'es_CO');
 final _two = NumberFormat('#,##0.00', 'en_US');
@@ -49,6 +50,7 @@ class PriceScreen extends StatelessWidget {
                       _MarketCard(international: international, exchange: exchange),
                       const SizedBox(height: 12),
                     ],
+                    NyCoffeeDec26Card(session: session),
                   ],
                   _ChartPanel(session: session, market: session.market),
                   if (parity != null) ...[

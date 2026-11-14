@@ -1,5 +1,6 @@
 import { api } from '../services/api.js';
 import { usdPerLbToCarga } from '../utils/currency.js';
+import { mountNyCoffeeDec26Card } from '../components/NyCoffeeDec26Card.js';
 
 /** Cada cuánto el navegador vuelve a pedir la cotización sin recargar la página. */
 const REFRESH_MS = 60000;
@@ -559,6 +560,7 @@ export async function renderPriceChart(container, market = 'coffee') {
   const marketEl = container.querySelector('.pv-market-card');
   const chartEl = container.querySelector('.pv-chart');
   const parityEl = container.querySelector('.pv-parity');
+  mountNyCoffeeDec26Card(marketEl, market);
 
   function renderPrices(summary) {
     if (market === 'cocoa') {
