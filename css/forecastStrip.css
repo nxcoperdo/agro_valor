@@ -1,0 +1,14 @@
+/* Franja de histórico + proyección: encabezado con selector de unidad y tarjetas pasadas. */
+.pv-fcst-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0 12px 8px; }
+.pv-fcst-head .pv-fcst-title { padding: 0; }
+.pv-fcst-seg button { padding: 4px 10px; font-size: 11px; }
+.pv-fcst-card.is-past { background: rgba(255, 255, 255, 0.02); }
+.pv-fcst-card.is-past .pv-fcst-date { color: var(--pv-muted); }
+.pv-fcst-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--pv-muted);
+  margin: -4px 0 6px;
+}

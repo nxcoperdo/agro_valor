@@ -1,6 +1,7 @@
 import { api } from '../services/api.js';
 import { usdPerLbToCarga } from '../utils/currency.js';
 import { mountNyCoffeeDec26Card } from '../components/NyCoffeeDec26Card.js';
+import { renderForecastStrip } from '../components/ForecastStrip.js';
 
 /** Cada cuánto el navegador vuelve a pedir la cotización sin recargar la página. */
 const REFRESH_MS = 60000;
@@ -456,39 +457,12 @@ function renderChartPanel(el, market = 'coffee') {
 
   /** Velas de los días siguientes: abre donde cerró el día anterior, cierra en el precio central. */
   async function loadForecast() {
-    try {
-      const data = await api.forecast(market);
-      const cocoa = market === 'cocoa';
-      const conv = (cents, usdT) => (cocoa ? usdT : usdPerLbToCarga((cents ?? 0) / 100));
-      const days = (data.daily || []).map((f) => ({
-        date: new Date(`${f.predictedForDate}T12:00:00`),
-        open: conv(f.openCentsPerLb, f.openUsdPerTonne),
-        high: conv(f.highCentsPerLb, f.highUsdPerTonne),
-        low: conv(f.lowCentsPerLb, f.lowUsdPerTonne),
-        close: conv(f.centsPerLb, f.usdPerTonne),
-        pct: f.dayChangePct,
-      }));
-      if (!days.length) return;
-      const pct = (v) =>
-        v == null ? '' : Math.abs(v) < 0.005 ? '● 0,00%' : `${v > 0 ? '▲ +' : '▼ '}${v.toFixed(2).replace('.', ',')}%`;
-      fcstEl.innerHTML = `
-        <p class="pv-fcst-title">Proyección · días siguientes</p>
-        <div class="pv-fcst-row">${days
-          .map(
-            (d) => `<div class="pv-fcst-card">
-              <p class="pv-fcst-date">${d.date.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
-              <p class="pv-fcst-pct ${d.pct > 0.005 ? 'is-up' : d.pct < -0.005 ? 'is-down' : ''}">${pct(d.pct)}</p>
-              ${[['Apertura', d.open], ['Máximo', d.high], ['Mínimo', d.low], ['Cierre', d.close]]
-                .map(([k, v]) => `<p class="pv-fcst-line"><span>${k}</span><span class="pv-mono">${fmt2(v)}</span></p>`)
-                .join('')}
-            </div>`
-          )
-          .join('')}</div>
-        ${data.locked && data.locked.dailyCount > 0 ? `<p class="pv-fcst-lock">Con <a href="#/pro">Pro</a> ves ${data.locked.dailyCount} días más.</p>` : ''}`;
-      fcstEl.hidden = false;
-    } catch (_) {
-      fcstEl.hidden = true;
-    }
+    // Cada fuente falla por su lado: sin histórico queda solo la proyección y viceversa.
+    const [forecast, history] = await Promise.all([
+      api.forecast(market).catch(() => null),
+      api.priceHistory(30, market).catch(() => null),
+    ]);
+    renderForecastStrip(fcstEl, { market, forecast, history });
   }
 
   async function load() {

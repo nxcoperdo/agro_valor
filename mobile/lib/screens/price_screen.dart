@@ -531,11 +531,17 @@ class _FutureCandle {
     required this.low,
     required this.close,
     required this.pct,
+    this.isPast = false,
+    this.isToday = false,
   });
 
   final DateTime date;
+
+  /// En la unidad base del mercado: centavos/libra (café) o USD/tonelada (cacao).
   final double open, high, low, close;
   final double? pct;
+  final bool isPast;
+  final bool isToday;
 }
 
 class _ChartPanel extends StatefulWidget {
@@ -556,8 +562,11 @@ class _ChartPanelState extends State<_ChartPanel> {
   List<Candle> _data = const [];
   String? _error;
   bool _loading = true;
-  List<_FutureCandle> _future = const [];
+  List<_FutureCandle> _strip = const [];
+  int _firstFuture = 0;
   int _lockedDays = 0;
+  bool _stripNy = false;
+  final _stripScroll = ScrollController();
 
   (String, int, int) get _p => _periods.firstWhere((p) => p.$1 == _period);
 
@@ -568,33 +577,87 @@ class _ChartPanelState extends State<_ChartPanel> {
     _loadForecast();
   }
 
-  /// Velas de los días siguientes: abren donde cerró el día anterior y cierran en el precio central.
+  @override
+  void dispose() {
+    _stripScroll.dispose();
+    super.dispose();
+  }
+
+  /// Franja: hasta 30 días reales hacia atrás y la proyección hacia adelante. Cada fuente falla
+  /// por su lado: sin histórico queda solo la proyección y viceversa.
   Future<void> _loadForecast() async {
-    try {
-      final data = await widget.session.api.forecast(widget.market);
-      final cocoa = widget.market == 'cocoa';
-      double conv(Object? cents, Object? usdT) =>
-          cocoa ? ((usdT as num?) ?? 0).toDouble() : usdPerLbToCarga(((cents as num?) ?? 0) / 100);
-      final days = [
-        for (final f in (data['daily'] as List? ?? const []).cast<Map>())
-          _FutureCandle(
-            date: DateTime.parse('${f['predictedForDate']}T12:00:00'),
-            open: conv(f['openCentsPerLb'], f['openUsdPerTonne']),
-            high: conv(f['highCentsPerLb'], f['highUsdPerTonne']),
-            low: conv(f['lowCentsPerLb'], f['lowUsdPerTonne']),
-            close: conv(f['centsPerLb'], f['usdPerTonne']),
-            pct: (f['dayChangePct'] as num?)?.toDouble(),
-          ),
-      ];
-      final locked = (data['locked'] as Map?)?['dailyCount'] as num?;
-      if (!mounted) return;
-      setState(() {
-        _future = days;
-        _lockedDays = locked?.toInt() ?? 0;
-      });
-    } catch (_) {
-      // Sin proyección el panel simplemente no se muestra.
+    final cocoa = widget.market == 'cocoa';
+    final api = widget.session.api;
+    final results = await Future.wait<Object?>([
+      api.forecast(widget.market).then<Object?>((v) => v, onError: (_) => null),
+      api.priceHistory(30, widget.market).then<Object?>((v) => v, onError: (_) => null),
+    ]);
+    final data = results[0] as Json?;
+    final history = results[1] as List<dynamic>?;
+
+    double base(Object? cents, Object? usdT) => ((cocoa ? usdT : cents) as num?)?.toDouble() ?? 0;
+
+    final future = [
+      for (final f in ((data?['daily'] as List?) ?? const []).cast<Map>())
+        _FutureCandle(
+          date: DateTime.parse('${f['predictedForDate']}T12:00:00'),
+          open: base(f['openCentsPerLb'], f['openUsdPerTonne']),
+          high: base(f['highCentsPerLb'], f['highUsdPerTonne']),
+          low: base(f['lowCentsPerLb'], f['lowUsdPerTonne']),
+          close: base(f['centsPerLb'], f['usdPerTonne']),
+          pct: (f['dayChangePct'] as num?)?.toDouble(),
+        ),
+    ];
+
+    // Velas reales por día (hora de Colombia, UTC-5), en la misma unidad base.
+    final byDay = <String, List<double>>{}; // [open, high, low, close]
+    final dayDate = <String, DateTime>{};
+    for (final raw in history ?? const []) {
+      final row = raw as Json;
+      final v = ((cocoa ? row['usdPerTonne'] : row['centsPerLb']) as num?)?.toDouble();
+      if (v == null) continue;
+      final at = DateTime.parse((row['fetchedAt'] ?? row['quotedAt']) as String).toUtc().subtract(const Duration(hours: 5));
+      final key = DateFormat('yyyy-MM-dd').format(at);
+      final c = byDay[key];
+      if (c == null) {
+        byDay[key] = [v, v, v, v];
+        dayDate[key] = DateTime(at.year, at.month, at.day, 12);
+      } else {
+        c[1] = math.max(c[1], v);
+        c[2] = math.min(c[2], v);
+        c[3] = v;
+      }
     }
+    final todayKey = DateFormat('yyyy-MM-dd').format(DateTime.now().toUtc().subtract(const Duration(hours: 5)));
+    final keys = byDay.keys.toList()..sort();
+    final shown = keys.length > 30 ? keys.sublist(keys.length - 30) : keys;
+    final past = [
+      for (var i = 0; i < shown.length; i++)
+        _FutureCandle(
+          date: dayDate[shown[i]]!,
+          open: byDay[shown[i]]![0],
+          high: byDay[shown[i]]![1],
+          low: byDay[shown[i]]![2],
+          close: byDay[shown[i]]![3],
+          pct: i == 0 ? null : (byDay[shown[i]]![3] - byDay[shown[i - 1]]![3]) / byDay[shown[i - 1]]![3] * 100,
+          isPast: true,
+          isToday: shown[i] == todayKey,
+        ),
+    ];
+
+    final locked = (data?['locked'] as Map?)?['dailyCount'] as num?;
+    if (!mounted) return;
+    setState(() {
+      _strip = [...past, ...future];
+      _firstFuture = past.length;
+      _lockedDays = locked?.toInt() ?? 0;
+    });
+    // Arranca en el primer día de proyección; el pasado queda a la izquierda.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_stripScroll.hasClients) return;
+      final target = _firstFuture < _strip.length ? _firstFuture * (_stripCardW + 8) : _stripScroll.position.maxScrollExtent;
+      _stripScroll.jumpTo(target.clamp(0, _stripScroll.position.maxScrollExtent).toDouble());
+    });
   }
 
   Future<void> _load() async {
@@ -664,7 +727,7 @@ class _ChartPanelState extends State<_ChartPanel> {
                       ),
           ),
           if (enough) _ohlc(_data.last),
-          if (_future.isNotEmpty) _futureStrip(),
+          if (_strip.isNotEmpty) _futureStrip(),
         ],
       ),
     );
@@ -810,12 +873,39 @@ class _ChartPanelState extends State<_ChartPanel> {
     );
   }
 
+  static const double _stripCardW = 132;
+
   Widget _futureStrip() {
+    final cocoa = widget.market == 'cocoa';
+    final ny = _stripNy && !cocoa;
+    final nyFmt = NumberFormat('#,##0.00', 'es_CO');
+    String val(double v) => cocoa ? _two.format(v) : (ny ? nyFmt.format(v) : _two.format(usdPerLbToCarga(v / 100)));
+    final unit = cocoa ? 'US\$ POR TONELADA' : (ny ? 'BOLSA NY · C/LB' : 'US\$ POR CARGA');
     String pct(double? v) => v == null
         ? ''
         : v.abs() < 0.005
             ? '● 0,00%'
             : '${v > 0 ? '▲ +' : '▼ '}${v.toStringAsFixed(2).replaceAll('.', ',')}%';
+
+    Widget unitButton(String label, bool active, VoidCallback onTap) => GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: active ? AvColors.accent : Colors.transparent,
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: active ? AvColors.surface : AvColors.fgMuted,
+              ),
+            ),
+          ),
+        );
+
     return Container(
       decoration: BoxDecoration(border: Border(top: BorderSide(color: AvColors.border))),
       padding: const EdgeInsets.only(top: 10, bottom: 12),
@@ -823,23 +913,46 @@ class _ChartPanelState extends State<_ChartPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: Text(
-              'PROYECCIÓN · DÍAS SIGUIENTES',
-              style: TextStyle(fontSize: 10, color: AvColors.fgMuted, letterSpacing: 0.5, fontWeight: FontWeight.w700),
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'HISTÓRICO Y PROYECCIÓN · $unit',
+                    style: TextStyle(fontSize: 10, color: AvColors.fgMuted, letterSpacing: 0.5, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                if (!cocoa)
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: AvColors.border.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        unitButton('Por carga', !ny, () => setState(() => _stripNy = false)),
+                        unitButton('Bolsa NY', ny, () => setState(() => _stripNy = true)),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
           SingleChildScrollView(
+            controller: _stripScroll,
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                for (final d in _future)
+                for (final d in _strip)
                   Container(
-                    width: 132,
+                    width: _stripCardW,
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
+                      color: d.isPast ? AvColors.border.withValues(alpha: 0.12) : null,
                       border: Border.all(color: AvColors.border),
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -848,7 +961,11 @@ class _ChartPanelState extends State<_ChartPanel> {
                       children: [
                         Text(
                           DateFormat('EEE d MMM', 'es').format(d.date),
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: d.isPast ? AvColors.fgMuted : null,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -863,7 +980,11 @@ class _ChartPanelState extends State<_ChartPanel> {
                                     : AvColors.fgMuted,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        Text(
+                          d.isPast ? (d.isToday ? 'HOY' : 'REAL') : 'PROYECCIÓN',
+                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.6, color: AvColors.fgMuted),
+                        ),
+                        const SizedBox(height: 4),
                         for (final (k, v) in [
                           ('Apertura', d.open),
                           ('Máximo', d.high),
@@ -876,7 +997,7 @@ class _ChartPanelState extends State<_ChartPanel> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(k, style: TextStyle(fontSize: 11, color: AvColors.fgMuted)),
-                                Text(_two.format(v), style: mono(size: 11, weight: FontWeight.w600, color: AvColors.fg)),
+                                Text(val(v), style: mono(size: 11, weight: FontWeight.w600, color: AvColors.fg)),
                               ],
                             ),
                           ),
