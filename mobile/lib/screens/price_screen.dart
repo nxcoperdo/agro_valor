@@ -652,10 +652,12 @@ class _ChartPanelState extends State<_ChartPanel> {
       _firstFuture = past.length;
       _lockedDays = locked?.toInt() ?? 0;
     });
-    // Arranca en el primer día de proyección; el pasado queda a la izquierda.
+    // Arranca en la tarjeta de hoy (si no hay, en la primera de proyección); el pasado queda a la izquierda.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_stripScroll.hasClients) return;
-      final target = _firstFuture < _strip.length ? _firstFuture * (_stripCardW + 8) : _stripScroll.position.maxScrollExtent;
+      final todayAt = _strip.indexWhere((d) => d.isToday);
+      final anchor = todayAt >= 0 ? todayAt : _firstFuture;
+      final target = anchor < _strip.length ? anchor * (_stripCardW + 8) : _stripScroll.position.maxScrollExtent;
       _stripScroll.jumpTo(target.clamp(0, _stripScroll.position.maxScrollExtent).toDouble());
     });
   }

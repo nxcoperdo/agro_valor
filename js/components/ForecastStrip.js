@@ -79,6 +79,8 @@ export function renderForecastStrip(el, { market = 'coffee', forecast = null, hi
   const all = [...past, ...future];
   const locked = forecast && forecast.locked && forecast.locked.dailyCount > 0 ? forecast.locked.dailyCount : 0;
   let unit = 'carga';
+  // La franja abre en la tarjeta de hoy (o, si no hay, en la primera de proyección).
+  const anchor = past.find((d) => d.today) || future[0];
 
   const value = (v) => {
     if (v == null) return '—';
@@ -107,7 +109,7 @@ export function renderForecastStrip(el, { market = 'coffee', forecast = null, hi
         .map((d) => {
           const cls = d.pct > 0.005 ? 'is-up' : d.pct < -0.005 ? 'is-down' : '';
           const tag = d.past ? (d.today ? 'Hoy' : 'Real') : 'Proyección';
-          return `<div class="pv-fcst-card${d.past ? ' is-past' : ''}"${!d.past && d === future[0] ? ' data-first-future' : ''}>
+          return `<div class="pv-fcst-card${d.past ? ' is-past' : ''}"${d === anchor ? ' data-anchor' : ''}>
             <p class="pv-fcst-date">${d.date.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
             <p class="pv-fcst-pct ${cls}">${pctText(d.pct)}</p>
             <p class="pv-fcst-tag">${tag}</p>
@@ -124,8 +126,8 @@ export function renderForecastStrip(el, { market = 'coffee', forecast = null, hi
     if (keepScroll) {
       row.scrollLeft = prevScroll;
     } else {
-      // Arranca en el primer día de proyección; el pasado queda a la izquierda.
-      const first = row.querySelector('[data-first-future]');
+      // Arranca en hoy; el pasado queda a la izquierda y la proyección a la derecha.
+      const first = row.querySelector('[data-anchor]');
       if (first) row.scrollLeft = first.getBoundingClientRect().left - row.getBoundingClientRect().left + row.scrollLeft - 12;
       else row.scrollLeft = row.scrollWidth;
     }
